@@ -131,9 +131,17 @@ L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/
   {maxZoom:19}).addTo(map);
 document.getElementById('ttl').innerHTML = cfg.title + '<small>'+cfg.sub+' &nbsp;·&nbsp; <a href="index.html">🗺️ all spots</a></small>';
 let leg = '<h4>WHERE TO CAST</h4>';
+function gm(ll){return `https://www.google.com/maps/search/?api=1&query=${ll[0]},${ll[1]}`;}
+function gd(ll){return `https://www.google.com/maps/dir/?api=1&destination=${ll[0]},${ll[1]}`;}
 cfg.targets.forEach(t=>{
   const ic = L.divIcon({className:'',html:`<div class="ct${t.n===1?' first':''}">${t.n}</div>`,iconSize:[30,30],iconAnchor:[15,15]});
-  L.marker(t.ll,{icon:ic}).addTo(map);
+  const pop = `<div style="font-size:13px;line-height:1.5;min-width:150px">
+     <b>${t.n}. ${t.w}</b><br><span style="color:#5a5a4a">${t.x}</span>
+     <div style="font-family:ui-monospace,monospace;font-size:11px;color:#666;margin:5px 0">${t.ll[0]}, ${t.ll[1]}</div>
+     <a href="${gm(t.ll)}" target="_blank" rel="noopener" style="display:inline-block;background:#7a2f12;color:#fff;text-decoration:none;padding:5px 8px;border-radius:6px;font-size:12px;font-weight:700;margin:2px 3px 0 0">📍 Maps pin</a>
+     <a href="${gd(t.ll)}" target="_blank" rel="noopener" style="display:inline-block;background:#2b6cb0;color:#fff;text-decoration:none;padding:5px 8px;border-radius:6px;font-size:12px;font-weight:700;margin-top:2px">🧭 Navigate</a>
+   </div>`;
+  L.marker(t.ll,{icon:ic}).addTo(map).bindPopup(pop,{maxWidth:230});
   leg += `<div class="r"><span class="b">${t.n}</span><span><span class="w">${t.w}</span> <span class="x">— ${t.x}</span></span></div>`;
 });
 if(cfg.haz) leg += `<div class="haz">${cfg.haz}</div>`;
