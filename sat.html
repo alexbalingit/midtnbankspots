@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cast Map</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<style>
+  html,body{margin:0;height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+  #map{position:absolute;inset:0}
+  .ct{width:30px;height:30px;border-radius:50%;background:#d1603a;border:3px solid #fff;
+      box-shadow:0 1px 4px rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;
+      color:#fff;font-weight:800;font-size:16px}
+  .ct.first{box-shadow:0 0 0 4px rgba(224,163,43,.9),0 1px 4px rgba(0,0,0,.6)}
+  .ttl{position:absolute;top:14px;left:14px;z-index:1000;background:rgba(31,36,33,.92);color:#f6f1e7;
+       padding:9px 14px;border-radius:9px;font-size:17px;font-weight:800;letter-spacing:.2px;max-width:60%}
+  .ttl small{display:block;font-size:12px;font-weight:600;opacity:.85;letter-spacing:0;margin-top:2px}
+  .leg{position:absolute;right:14px;top:14px;z-index:1000;background:rgba(255,250,240,.97);
+       border:1.5px solid #7a2f12;border-radius:11px;padding:11px 13px;font-size:13px;max-width:330px;box-shadow:0 2px 10px rgba(0,0,0,.4)}
+  .leg h4{margin:0 0 8px;font-size:14px;color:#7a2f12;font-weight:800}
+  .leg .r{display:flex;align-items:center;gap:9px;margin:5px 0;line-height:1.25}
+  .leg .b{width:21px;height:21px;border-radius:50%;background:#d1603a;color:#fff;font-weight:800;font-size:12px;
+          display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+  .leg .w{font-weight:700;color:#2b3a44}
+  .leg .x{color:#5a5a4a}
+  .cred{position:absolute;bottom:6px;right:8px;z-index:1000;background:rgba(255,255,255,.75);
+        padding:1px 6px;border-radius:4px;font-size:10px;color:#333}
+  .cmp{position:absolute;bottom:14px;left:14px;z-index:1000}
+  .cmp svg{filter:drop-shadow(0 1px 3px rgba(0,0,0,.5))}
+  .leaflet-control-attribution{display:none}
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div class="ttl" id="ttl"></div>
+<div class="leg" id="leg"></div>
+<div class="cmp">
+  <svg width="52" height="52" viewBox="0 0 52 52"><circle cx="26" cy="26" r="22" fill="rgba(255,250,240,.95)" stroke="#27424a" stroke-width="1.5"/>
+   <polygon points="26,8 31,27 26,23 21,27" fill="#b5532a"/><polygon points="26,44 31,25 26,29 21,25" fill="#8a8468"/>
+   <circle cx="26" cy="26" r="2.6" fill="#27424a"/><text x="26" y="7" font-size="11" text-anchor="middle" font-weight="800" fill="#27424a" font-family="Arial">N</text></svg>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const SPOTS = {
+ 'eastern-flank':{
+   title:'Eastern Flank — Harpeth (Franklin)', sub:'Smallmouth · the dam-removal cross-vane',
+   center:[35.90905,-86.85540], zoom:18,
+   targets:[
+     {n:1,ll:[35.90910,-86.85505],w:'Seam over the vane',x:'tube, up-current'},
+     {n:2,ll:[35.90880,-86.85540],w:'Plunge pool below',x:'craw tube / Ned'},
+     {n:3,ll:[35.90930,-86.85560],w:'Left slack eddy',x:'Ned rig'},
+     {n:4,ll:[35.90895,-86.85490],w:'Right slack eddy',x:'wacky Senko'},
+     {n:5,ll:[35.90855,-86.85560],w:'Pool tailout',x:'jerkbait (low light)'}
+   ]
+ }
+};
+const id = new URLSearchParams(location.search).get('id') || 'eastern-flank';
+const cfg = SPOTS[id];
+const map = L.map('map',{zoomControl:false,attributionControl:false}).setView(cfg.center,cfg.zoom);
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+  {maxZoom:19}).addTo(map);
+document.getElementById('ttl').innerHTML = cfg.title + '<small>'+cfg.sub+'</small>';
+let leg = '<h4>WHERE TO CAST</h4>';
+cfg.targets.forEach(t=>{
+  const ic = L.divIcon({className:'',html:`<div class="ct${t.n===1?' first':''}">${t.n}</div>`,iconSize:[30,30],iconAnchor:[15,15]});
+  L.marker(t.ll,{icon:ic}).addTo(map);
+  leg += `<div class="r"><span class="b">${t.n}</span><span><span class="w">${t.w}</span> <span class="x">— ${t.x}</span></span></div>`;
+});
+document.getElementById('leg').innerHTML = leg;
+document.querySelector('#map').insertAdjacentHTML('afterend','<div class="cred">Imagery © Esri, Maxar</div>');
+</script>
+</body>
+</html>
