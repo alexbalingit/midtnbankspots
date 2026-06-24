@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+<title>🐟 Catch Logger — Harpeth → Duck Corridor</title>
+<style>
+  :root{--ink:#1f2421;--cream:#f6f1e7;--card:#fff;--gold:#c79a3b;--green:#2e7d32;--rust:#b5532a;--line:#e3dccb;--mut:#6b6657}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--cream);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.45}
+  header{background:var(--ink);color:var(--cream);padding:14px 16px}
+  header h1{margin:0;font-size:18px;font-weight:700}
+  header p{margin:3px 0 0;font-size:12px;opacity:.8}
+  .wrap{max-width:860px;margin:0 auto;padding:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+  .card h2{margin:0 0 10px;font-size:14px;text-transform:uppercase;letter-spacing:.6px;color:var(--mut)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+  label{display:block;font-size:11px;font-weight:600;color:var(--mut);margin:0 0 3px;text-transform:uppercase;letter-spacing:.4px}
+  input,select,textarea{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;font-size:15px;background:#fdfbf6;color:var(--ink);font-family:inherit}
+  textarea{min-height:46px;resize:vertical}
+  .full{grid-column:1/-1}
+  .btn{appearance:none;border:none;border-radius:9px;padding:12px 16px;font-size:15px;font-weight:700;cursor:pointer}
+  .btn.add{background:var(--gold);color:var(--ink);width:100%;margin-top:6px}
+  .btn.sm{padding:8px 12px;font-size:13px}
+  .btn.ghost{background:#efe9db;color:var(--ink)}
+  .btn.danger{background:#f3dada;color:#7a2020}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+  .stat{background:#fbf7ee;border:1px solid var(--line);border-radius:10px;padding:10px}
+  .stat .k{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.4px}
+  .stat .v{font-size:17px;font-weight:800;margin-top:2px}
+  .stat .v small{font-weight:600;font-size:12px;color:var(--mut)}
+  .tbl{width:100%;overflow:auto}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:680px}
+  th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--mut);position:sticky;top:0;background:#fff}
+  tr.zA td:first-child{box-shadow:inset 3px 0 0 var(--green)}
+  tr.zB td:first-child{box-shadow:inset 3px 0 0 var(--gold)}
+  tr.zC td:first-child{box-shadow:inset 3px 0 0 var(--rust)}
+  .del{color:#a33;cursor:pointer;font-weight:700;border:none;background:none;font-size:14px}
+  .empty{color:var(--mut);font-size:13px;text-align:center;padding:18px}
+  .note{font-size:11px;color:var(--mut);margin-top:8px}
+  .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--cream);padding:10px 16px;border-radius:20px;font-size:13px;opacity:0;transition:.25s;pointer-events:none;z-index:50}
+  .toast.show{opacity:1}
+</style>
+</head>
+<body>
+<header><h1>🐟 Catch Logger <a href="index.html" style="float:right;font-size:13px;font-weight:600;color:var(--gold);text-decoration:none">🗺️ Map →</a></h1><p>Harpeth → Duck Corridor · Brentwood to Pulaski — log it, spot the pattern. Saves on this device; export with the buttons below.</p></header>
+<div class="wrap">
+
+  <div class="card">
+    <h2>Log a catch</h2>
+    <div class="grid">
+      <div><label>Date</label><input type="date" id="f_date"></div>
+      <div><label>Time</label><input type="time" id="f_time"></div>
+      <div><label>Spot</label><select id="f_spot"></select></div>
+      <div><label>Species</label><select id="f_species"></select></div>
+      <div><label>Length (in)</label><input type="number" id="f_len" step="0.25" inputmode="decimal" placeholder="14"></div>
+      <div><label>Weight (lb)</label><input type="number" id="f_wt" step="0.1" inputmode="decimal" placeholder="1.8"></div>
+      <div><label>Bait</label><select id="f_bait"></select></div>
+      <div><label>Color</label><select id="f_color"></select></div>
+      <div><label>Rig</label><select id="f_rig"></select></div>
+      <div><label>Hook</label><select id="f_hook"></select></div>
+      <div><label>Line</label><select id="f_line"></select></div>
+      <div><label>Retrieve</label><select id="f_retr"></select></div>
+      <div><label>Clarity</label><select id="f_clar"></select></div>
+      <div><label>Sky</label><select id="f_sky"></select></div>
+      <div><label>Water temp (°F)</label><input type="number" id="f_temp" inputmode="numeric" placeholder="72"></div>
+      <div><label>Flow / level</label><select id="f_flow"></select></div>
+      <div class="full"><label>Notes (cover, bite feel, etc.)</label><textarea id="f_notes" placeholder="Tube through the cross-vane seam, thumped on the fall"></textarea></div>
+    </div>
+    <button class="btn add" onclick="addCatch()">+ Add catch</button>
+  </div>
+
+  <div class="card">
+    <h2>What's working <span id="cnt" style="float:right;color:var(--gold)"></span></h2>
+    <div class="stats" id="stats"><div class="stat"><div class="k">No catches yet</div><div class="v">—</div></div></div>
+  </div>
+
+  <div class="card">
+    <h2>Catches</h2>
+    <div class="tbl">
+      <table id="tbl"><thead><tr>
+        <th>Date</th><th>Time</th><th>Spot</th><th>Species</th><th>Size</th><th>Bait</th><th>Rig</th><th>Hook</th><th>Color</th><th>Line</th><th>Retrieve</th><th>Conditions</th><th>Notes</th><th></th>
+      </tr></thead><tbody id="tbody"></tbody></table>
+    </div>
+    <div id="emptyMsg" class="empty">Tap “Add catch” above to start your log.</div>
+    <div class="row" style="margin-top:12px">
+      <button class="btn sm ghost" onclick="copyMarkdown()">📋 Copy as Markdown</button>
+      <button class="btn sm ghost" onclick="downloadCSV()">⬇︎ Download CSV</button>
+      <button class="btn sm danger" onclick="clearAll()">Clear all</button>
+    </div>
+    <p class="note">Data is stored only in this browser. To keep a permanent, cross-device record, hit <b>Copy as Markdown</b> and paste into <b>00 - Catch Log.md</b> in your vault.</p>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const KEY='midtnCatchLog_v1';
+const ZONE={
+  'Eastern Flank (Franklin)':'A','Pinkerton Park (Franklin)':'A','WC Rec Complex (Franklin)':'A',
+  'River Park (Brentwood)':'A','Crockett Park (Brentwood)':'A','Henry Horton (Duck)':'A',
+  'Howards Bridge (Duck)':'A','Rock Creek Park (Lewisburg)':'A','Richland Creek (Pulaski)':'A',
+  'Williamsport Lakes':'B','New Lake (Lewisburg)':'B','Harlinsdale pond (Franklin)':'B','Jim Warren pond (Franklin)':'B',
+  'Normandy tailwater':'C','Elk River tailwater':'C'
+};
+const OPTS={
+  spot:['Eastern Flank (Franklin)','Pinkerton Park (Franklin)','WC Rec Complex (Franklin)','River Park (Brentwood)','Crockett Park (Brentwood)','Henry Horton (Duck)','Howards Bridge (Duck)','Rock Creek Park (Lewisburg)','Richland Creek (Pulaski)','Williamsport Lakes','New Lake (Lewisburg)','Harlinsdale pond (Franklin)','Jim Warren pond (Franklin)','Normandy tailwater','Elk River tailwater','Other'],
+  species:['Smallmouth','Largemouth','Spotted','Rock bass','Bluegill','Redear','Crappie','Channel catfish','Trout','Other'],
+  bait:['Tube','Ned rig','Senko','Wacky Senko','Shaky head','Texas worm','Creature','Craw','Fluke','Drop shot','Spinnerbait','Chatterbait','Squarebill','Crankbait','Craw crankbait','Lipless','Jerkbait','Flipping jig','Football jig','Swim jig','Swimbait','Popper','Walker','Buzzbait','Frog','Crappie jig','Beetle-spin','Live bait','Other'],
+  color:['Green pumpkin','Watermelon','Black/blue','Shad','White','Chartreuse','Red/craw','Bluegill','Natural','Other'],
+  rig:['Ned','Wacky','Texas','Weightless Texas','Carolina','Drop shot','Shaky','Neko','Jika','Tokyo','Jig head','Float/bobber','Moving bait (n/a)','Other'],
+  hook:['Ned mushroom','Wacky 1/0','EWG 3/0','EWG 4/0','EWG 5/0','Offset worm','Straight-shank (flip)','Drop-shot #1','Drop-shot #2','Shaky head','Treble','Swimbait EWG','Jig head','Octopus (live)','Other'],
+  line:['Braid + fluoro leader','8-10 lb fluoro (finesse)','15 lb fluoro','Mono 12–15','Braid 30–65 (frog)','Other'],
+  retr:['Drag/shake bottom','Dead-stick fall','Up-current drift','Steady reel','Twitch-pause','Yo-yo','Topwater walk','Burn','Slow-roll','Flip & fall','Other'],
+  clar:['Stained','Muddy','Clear'],
+  sky:['Sunny / bluebird','Partly cloudy','Overcast','Rain','Dawn / dusk'],
+  flow:['Low / clear','Normal','Stained / rising','High / muddy']
+};
+function fill(id,arr){const s=document.getElementById(id);arr.forEach(o=>{const e=document.createElement('option');e.value=o;e.textContent=o;s.appendChild(e);});}
+fill('f_spot',OPTS.spot);fill('f_species',OPTS.species);fill('f_bait',OPTS.bait);fill('f_color',OPTS.color);
+fill('f_rig',OPTS.rig);fill('f_hook',OPTS.hook);fill('f_line',OPTS.line);fill('f_retr',OPTS.retr);
+fill('f_clar',OPTS.clar);fill('f_sky',OPTS.sky);fill('f_flow',OPTS.flow);
+
+function nowDefaults(){
+  const d=new Date();
+  document.getElementById('f_date').value=d.toISOString().slice(0,10);
+  document.getElementById('f_time').value=d.toTimeString().slice(0,5);
+  document.getElementById('f_line').value='Braid + fluoro leader';
+}
+let data=load();
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||[];}catch(e){return [];}}
+function save(){localStorage.setItem(KEY,JSON.stringify(data));}
+function val(id){return document.getElementById(id).value;}
+
+function sizeStr(len,wt){const a=[];if(len)a.push(len+'"');if(wt)a.push(wt+'lb');return a.join(' / ');}
+function condStr(c){return [c.clar,c.sky,(c.temp?c.temp+'°':''),c.flow].filter(Boolean).join(' · ');}
+
+function addCatch(){
+  const c={date:val('f_date'),time:val('f_time'),spot:val('f_spot'),species:val('f_species'),
+    len:val('f_len'),wt:val('f_wt'),bait:val('f_bait'),color:val('f_color'),rig:val('f_rig'),
+    hook:val('f_hook'),line:val('f_line'),retr:val('f_retr'),clar:val('f_clar'),sky:val('f_sky'),
+    temp:val('f_temp'),flow:val('f_flow'),notes:val('f_notes').replace(/\|/g,'/').replace(/\n/g,' ')};
+  data.unshift(c);save();render();
+  document.getElementById('f_len').value='';document.getElementById('f_wt').value='';document.getElementById('f_notes').value='';
+  toast('Logged: '+c.species+' on '+c.bait);
+}
+function del(i){data.splice(i,1);save();render();}
+function clearAll(){if(confirm('Delete ALL '+data.length+' logged catches on this device? Export first if you want to keep them.')){data=[];save();render();}}
+
+function topOf(field){
+  const m={};data.forEach(c=>{const k=c[field];if(k)m[k]=(m[k]||0)+1;});
+  let best='—',n=0;for(const k in m){if(m[k]>n){n=m[k];best=k;}}
+  return n?best+' <small>('+n+')</small>':'—';
+}
+function render(){
+  const tb=document.getElementById('tbody');tb.innerHTML='';
+  document.getElementById('emptyMsg').style.display=data.length?'none':'block';
+  document.getElementById('cnt').textContent=data.length?data.length+' logged':'';
+  data.forEach((c,i)=>{
+    const tr=document.createElement('tr');tr.className='z'+(ZONE[c.spot]||'');
+    const cells=[c.date,c.time,c.spot,c.species,sizeStr(c.len,c.wt),c.bait,c.rig,c.hook,c.color,c.line,c.retr,condStr(c),c.notes||''];
+    cells.forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.appendChild(td);});
+    const td=document.createElement('td');const b=document.createElement('button');b.className='del';b.textContent='✕';b.onclick=()=>del(i);td.appendChild(b);tr.appendChild(td);
+    tb.appendChild(tr);
+  });
+  const st=document.getElementById('stats');
+  if(!data.length){st.innerHTML='<div class="stat"><div class="k">No catches yet</div><div class="v">—</div></div>';return;}
+  let big=null;data.forEach(c=>{const w=parseFloat(c.wt)||0,l=parseFloat(c.len)||0;const score=w*100+l;if(!big||score>big.score)big={score,c};});
+  const bigStr=big?(big.c.species+' '+sizeStr(big.c.len,big.c.wt)):'—';
+  st.innerHTML=`
+    <div class="stat"><div class="k">Total catches</div><div class="v">${data.length}</div></div>
+    <div class="stat"><div class="k">Top bait</div><div class="v">${topOf('bait')}</div></div>
+    <div class="stat"><div class="k">Top spot</div><div class="v">${topOf('spot')}</div></div>
+    <div class="stat"><div class="k">Top color</div><div class="v">${topOf('color')}</div></div>
+    <div class="stat"><div class="k">Top species</div><div class="v">${topOf('species')}</div></div>
+    <div class="stat"><div class="k">Biggest</div><div class="v" style="font-size:14px">${bigStr}</div></div>`;
+}
+
+function rowVals(c){return [c.date,c.time,c.spot,c.species,sizeStr(c.len,c.wt),c.bait,c.rig,c.hook,c.color,c.line,c.retr,condStr(c),c.notes||''];}
+function copyMarkdown(){
+  if(!data.length){toast('Nothing to copy yet');return;}
+  const lines=data.map(c=>'| '+rowVals(c).map(v=>String(v).replace(/\|/g,'/')).join(' | ')+' |');
+  navigator.clipboard.writeText(lines.join('\n')).then(()=>toast(data.length+' row(s) copied — paste into Catch Log.md')).catch(()=>toast('Copy failed — select & copy manually'));
+}
+function downloadCSV(){
+  if(!data.length){toast('Nothing to export yet');return;}
+  const head=['Date','Time','Spot','Species','Size','Bait','Rig','Hook','Color','Line','Retrieve','Conditions','Notes'];
+  const esc=v=>'"'+String(v).replace(/"/g,'""')+'"';
+  const rows=[head.join(',')].concat(data.map(c=>rowVals(c).map(esc).join(',')));
+  const blob=new Blob([rows.join('\n')],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='midtn-corridor-catch-log.csv';a.click();
+  toast('CSV downloaded');
+}
+let tT;function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),2200);}
+
+nowDefaults();render();
+</script>
+</body>
+</html>
