@@ -81,7 +81,7 @@ const CAT = {
 const CITY_ORDER = ['Brentwood','Franklin','Kingston Springs — Harpeth SP','Spring Hill / Williamsport','Columbia','Culleoka / Chapel Hill','Lewisburg','Shelbyville','Manchester / Normandy','Pulaski','Fayetteville — Elk River'];
 const spots = [
  {n:'Eastern Flank ⭐ (Franklin)',cat:'S',city:'Franklin',cast:'eastern-flank',park:[35.90915,-86.85587],water:[35.90975,-86.85490],d:'~120 yd (wade below the cross-vane)',sp:'Smallmouth, rock bass',note:'The 2012 dam-removal cross-vane — boulder vanes, plunge pool, riffle seams. Most diverse reach on the Franklin Harpeth.'},
- {n:'Pinkerton Park (Franklin)',cat:'S',city:'Franklin',park:[35.9212,-86.8643],water:[35.92060,-86.86510],d:'~90 yd',sp:'Smallmouth, rock bass, bluegill',note:'Easy in-town Harpeth bend with gravel bars, wadeable runs. Fort Granger across the water.'},
+ {n:'Pinkerton Park (Franklin)',cat:'S',city:'Franklin',park:[35.92119,-86.86291],water:[35.92060,-86.86510],d:'~90 yd to the river',sp:'Smallmouth, rock bass, bluegill',note:'Easy in-town Harpeth bend with gravel bars, wadeable runs. Fort Granger across the water.'},
  {n:'Harlinsdale Farm (Franklin)',cat:'S',city:'Franklin',park:[35.9357,-86.8664],water:[35.93600,-86.86520],d:'~150 yd to river',sp:'Smallmouth (river) · bluegill/catfish (pond, C&R)',note:'River frontage = big-rock pocket water, wadeable. Also a 3-ac C&R pond (effluent-fed — no wading).'},
  {n:'Williamson Co. Rec Complex (Franklin)',cat:'S',city:'Franklin',park:[35.9480,-86.8767],water:[35.94740,-86.87620],d:'~110 yd',sp:'Smallmouth, rock bass',note:'River bend at the launch + greenway banks toward downtown. Gentle new launch. Gated facility hours.'},
  {n:'Ladd Park / S. Carothers (Franklin)',cat:'S',city:'Franklin',park:[35.8781,-86.8148],water:[35.87850,-86.81400],d:'~80 yd',sp:'Smallmouth',note:'Bridge pilings + the upper river’s near-riffle stretch; gravel bars, wadeable.'},
@@ -169,17 +169,19 @@ CITY_ORDER.forEach(city=>{
   html += `</div>`;
 });
 cl.innerHTML = html;
+const legendEl=document.querySelector('.legend');
+function setPanel(open){ panel.classList.toggle('open',open); legendEl.style.display=open?'none':''; }
 cl.querySelectorAll('.spot').forEach(el=>{
   el.addEventListener('click',e=>{
     if(e.target.classList.contains('cast')) return;
     const s = spots[+el.dataset.idx];
-    panel.classList.remove('open');
+    setPanel(false);
     map.flyTo(s.park, 16, {duration:.8});
     setTimeout(()=>s._m.openPopup(), 850);
   });
 });
-document.getElementById('navbtn').onclick=()=>panel.classList.toggle('open');
-document.getElementById('panelclose').onclick=()=>panel.classList.remove('open');
+document.getElementById('navbtn').onclick=()=>setPanel(!panel.classList.contains('open'));
+document.getElementById('panelclose').onclick=()=>setPanel(false);
 </script>
 </body>
 </html>
