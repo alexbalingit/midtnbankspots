@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>QA</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<style>
+ html,body{margin:0;height:100%;font-family:Arial,sans-serif} #map{position:absolute;inset:0}
+ .hud{position:absolute;top:8px;left:8px;z-index:1000;background:rgba(0,0,0,.82);color:#fff;padding:8px 12px;border-radius:8px;font-size:14px;max-width:46%}
+ .hud b{color:#ffd24a} .hud .rd{font-family:monospace;font-size:16px;color:#19e0a0;margin-top:4px}
+ .pmark{width:26px;height:26px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid #fff;display:flex;align-items:center;justify-content:center}
+ .pmark span{transform:rotate(45deg);color:#fff;font-weight:800;font-size:12px}
+</style></head><body>
+<div id="map"></div><div class="hud" id="hud"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const SP=[
+["Eastern Flank",35.90915,-86.85587,35.90975,-86.85490],["Pinkerton",35.9212,-86.8643,35.92060,-86.86510],
+["Harlinsdale",35.9357,-86.8664,35.93600,-86.86520],["WC Rec",35.9480,-86.8767,35.94740,-86.87620],
+["Ladd Park",35.8781,-86.8148,35.87850,-86.81400],["Jim Warren pond",35.9290,-86.8920,35.92860,-86.89150],
+["River Park",36.0240,-86.7720,36.02430,-86.77280],["Tower Park",36.0080,-86.7660,36.00770,-86.76520],
+["Deerwood",36.0090,-86.8160,36.00940,-86.81560],["Edwin Warner",36.05064,-86.90483,36.05010,-86.90420],
+["Narrows",36.1370,-87.1390,36.13660,-87.13820],["Newsoms Mill",36.0850,-87.0400,36.08540,-87.03930],
+["Hidden Lake",36.0920,-87.0730,36.09160,-87.07230],["Williamsport Lakes",35.7290,-87.2210,35.72860,-87.22040],
+["Williamsport Bridge",35.6949,-87.2208,35.69455,-87.22096],["Iron Bridge",35.6119,-87.0028,35.61157,-87.00285],
+["Yanahli",35.6090,-86.9993,35.60973,-86.99786],["Riverwalk",35.6190,-87.0244,35.61823,-87.02482],
+["Riverside Drive",35.6184,-87.0251,35.61823,-87.02482],["Chickasaw Trace",35.6628,-87.0932,35.66260,-87.09369],
+["Leftwich",35.5725,-86.8693,35.57258,-86.86949],["Fountain Creek",35.5678,-86.9644,35.56849,-86.96433],
+["Carpenter Bridge",35.6176,-86.8659,35.61790,-86.85700],["Hardison Mill",35.6087,-86.8222,35.60869,-86.82210],
+["Howard Bridge",35.57205,-86.92240,35.57250,-86.92175],["Milltown",35.58618,-86.78639,35.58580,-86.78570],
+["Henry Horton Wilhoite",35.5935,-86.6959,35.58950,-86.69330],["Henry Horton ramp",35.591768,-86.689200,35.59140,-86.68870],
+["New Lake",35.4033,-86.8391,35.40290,-86.83840],["Mullins Mill",35.4687,-86.3792,35.46830,-86.37870],
+["VFW Landing",35.477357,-86.435945,35.47700,-86.43540],["Fishermans Park",35.481642,-86.462026,35.48130,-86.46150],
+["Three Forks",35.4801,-86.3243,35.47970,-86.32380],["Dement Bridge",35.46639,-86.29418,35.46600,-86.29360],
+["Old Stone Fort",35.48626,-86.10269,35.48420,-86.10560],["Normandy TW",35.466,-86.243,35.46560,-86.24250],
+["Vales Mill",35.1939,-87.0625,35.19350,-87.06190],["Old Dam Ford",35.12406,-86.33227,35.12370,-86.33170],
+["Stone Bridge Park",35.14472,-86.56833,35.14430,-86.56770],["Veto Rd",35.01306,-86.99528,35.01270,-86.99470],
+["Elk TN-50",35.1919,-86.2800,35.19150,-86.27940],["Farris Creek",35.1635,-86.3186,35.16310,-86.31800]
+];
+const i=+(new URLSearchParams(location.search).get('i')||0);
+const s=SP[i];
+const map=L.map('map',{attributionControl:false}).setView([s[1],s[2]],18);
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19}).addTo(map);
+function pm(c,g){return L.divIcon({className:'',html:`<div class="pmark" style="background:${c}"><span>${g}</span></div>`,iconSize:[26,26],iconAnchor:[13,26]});}
+L.marker([s[1],s[2]],{icon:pm('#d1603a','P')}).addTo(map);
+L.marker([s[3],s[4]],{icon:pm('#1f78d6','W')}).addTo(map);
+const hud=document.getElementById('hud');
+function draw(extra){hud.innerHTML=`<b>#${i} ${s[0]}</b><br>P ${s[1]}, ${s[2]}<br>W ${s[3]}, ${s[4]}${extra||''}`;}
+draw();
+map.on('click',e=>{
+ const la=+e.latlng.lat.toFixed(5), lo=+e.latlng.lng.toFixed(5);
+ L.circleMarker(e.latlng,{radius:6,color:'#ffd24a',fillColor:'#ffd24a',fillOpacity:1}).addTo(map);
+ draw(`<div class="rd">CLICK ▶ ${la}, ${lo}</div>`);
+});
+</script></body></html>
