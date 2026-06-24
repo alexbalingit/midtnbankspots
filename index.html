@@ -6,7 +6,7 @@
 <title>Harpeth → Duck Corridor — Bank Spots Map</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
 <style>
-  :root{ --ink:#1f2421; --cream:#f6f1e7; --gold:#c79a3b; --green:#2e7d32; --rust:#b5532a; }
+  :root{ --ink:#1f2421; --cream:#f6f1e7; --gold:#c79a3b; --green:#2e7d32; --rust:#b5532a; --steel:#3a6b7d; }
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink)}
   #map{position:absolute;inset:0;z-index:1}
@@ -14,87 +14,109 @@
        padding:8px 12px;display:flex;align-items:center;gap:10px;backdrop-filter:blur(4px)}
   .hdr h1{font-size:15px;margin:0;font-weight:700;letter-spacing:.2px}
   .hdr .sub{font-size:11px;opacity:.85;margin-left:auto}
-  .legend{position:absolute;left:10px;bottom:18px;z-index:1000;background:rgba(246,241,231,.95);
-          border-radius:10px;padding:9px 11px;font-size:12px;box-shadow:0 2px 10px rgba(0,0,0,.25);line-height:1.7}
-  .legend b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;color:#555}
-  .dot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:6px;vertical-align:middle;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.25)}
+  .legend{position:absolute;left:10px;bottom:18px;z-index:1000;background:rgba(246,241,231,.96);
+          border-radius:10px;padding:10px 12px;font-size:12.5px;box-shadow:0 2px 10px rgba(0,0,0,.25);line-height:1.8}
+  .legend b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;color:#555}
+  .dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:7px;vertical-align:middle;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.25)}
   .legend .row{white-space:nowrap}
-  .legend .key{margin-top:6px;font-size:11px;color:#555}
-  .pin{width:26px;height:26px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);
+  .legend .row b2{font-weight:700}
+  .legend .key{margin-top:7px;font-size:11px;color:#555}
+  .pin{width:24px;height:24px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);
        border:2px solid #fff;box-shadow:0 2px 5px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center}
-  .pin span{transform:rotate(45deg);font-size:12px;font-weight:700;color:#fff}
-  .pin.water{border-radius:50%;width:20px;height:20px;opacity:.95}
-  .pin.water span{font-size:11px}
+  .pin span{transform:rotate(45deg);font-size:11px;font-weight:700;color:#fff}
   .leaflet-popup-content{margin:10px 12px;font-size:13px;line-height:1.5}
   .pop h3{margin:0 0 4px;font-size:14px}
   .pop .z{font-size:10px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;padding:1px 6px;border-radius:6px;color:#fff}
   .pop p{margin:6px 0}
   .pop a.btn{display:inline-block;margin:3px 4px 0 0;padding:6px 9px;border-radius:7px;font-size:12px;font-weight:600;text-decoration:none;color:#fff}
-  .pop a.park{background:#374b43} .pop a.water{background:var(--gold);color:#1f2421} .pop a.dir{background:#2b6cb0}
+  .pop a.park{background:#374b43} .pop a.dir{background:#2b6cb0}
   .pop .co{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:#555}
+  .pop .warn{color:#a33;font-weight:700}
 </style>
 </head>
 <body>
-<div class="hdr"><h1>🎣 Harpeth → Duck Corridor — Bank Spots</h1><span class="sub">15 spots · <a href="logger.html" style="color:var(--gold);text-decoration:none;font-weight:700">🐟 Log a catch →</a></span></div>
+<div class="hdr"><h1>🎣 Harpeth → Duck Corridor — Bank Spots</h1><span class="sub">32 spots · <a href="logger.html" style="color:var(--gold);text-decoration:none;font-weight:700">🐟 Log a catch →</a></span></div>
 <div id="map"></div>
 <div class="legend">
-  <b>Zones (water type)</b>
-  <div class="row"><span class="dot" style="background:var(--green)"></span>River &amp; creek current</div>
-  <div class="row"><span class="dot" style="background:var(--gold)"></span>Lake &amp; pond stillwater</div>
-  <div class="row"><span class="dot" style="background:var(--rust)"></span>Tailwater bonus (drive)</div>
-  <div class="key">📍 = park · 🎣 = water · tap a pin</div>
+  <b>What you'll catch</b>
+  <div class="row"><span class="dot" style="background:var(--green)"></span><b2>Smallmouth</b2> — fast, rocky, wadeable</div>
+  <div class="row"><span class="dot" style="background:var(--gold)"></span><b2>Largemouth</b2> — slow &amp; deep (lakes &amp; pools)</div>
+  <div class="row"><span class="dot" style="background:var(--rust)"></span><b2>Mixed + catfish</b2> — gravel bars &amp; pools</div>
+  <div class="row"><span class="dot" style="background:var(--steel)"></span><b2>Trout</b2> — stocked tailwater (cool months)</div>
+  <div class="key">📍 = access / parking · tap a pin</div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
-const ZONE = {
-  A:{c:'#2e7d32',label:'River & creek current'},
-  B:{c:'#c79a3b',label:'Lake & pond stillwater'},
-  C:{c:'#b5532a',label:'Tailwater bonus (drive)'}
+const CAT = {
+  S:{c:'#2e7d32',label:'Smallmouth — fast, rocky, wadeable'},
+  L:{c:'#c79a3b',label:'Largemouth — slow & deep'},
+  M:{c:'#b5532a',label:'Mixed + catfish — gravel bars & pools'},
+  T:{c:'#3a6b7d',label:'Trout — stocked tailwater'}
 };
+// One pin per spot (sourced parking/access coordinate). cat = what you'll catch.
 const spots = [
- {n:'1 · Eastern Flank ⭐ (Franklin)',z:'A',park:[35.90921,-86.85597],water:[35.90990,-86.85540],d:'~120 yd',sp:'Smallmouth, rock bass, largemouth',note:'Removed 1963 dam is now a boulder cross-vane — concentrates a current seam + plunge pool. Smallmouth on the seam, eddies on each side. Best Harpeth wade near town.'},
- {n:'2 · Pinkerton Park (Franklin)',z:'A',park:[35.9213,-86.8540],water:[35.92070,-86.85360],d:'~90 yd',sp:'Smallmouth, rock bass, bluegill',note:'Easy in-town Harpeth bank (grass-field parking — soft after rain). Fish the outside bends, laydowns, bridge shade. Family-friendly evening spot.'},
- {n:'3 · Williamson Co. Rec Complex (Franklin)',z:'A',park:[35.9168,-86.8782],water:[35.91720,-86.87740],d:'~110 yd',sp:'Smallmouth, rock bass, sunfish',note:'Harpeth River Trail rides the bank — walk it and hit every seam, laydown, first drop-off. Gated facility hours.'},
- {n:'4 · River Park (Brentwood)',z:'A',park:[36.0145,-86.7720],water:[36.01410,-86.77150],d:'~40 yd',sp:'Smallmouth (small), rock bass, sunfish',note:'Little Harpeth — small clear water. Finesse the deeper bend pools, undercut banks, wood. Easiest bank in Brentwood.'},
- {n:'5 · Crockett Park (Brentwood)',z:'A',park:[35.9808,-86.7715],water:[35.98120,-86.77100],d:'~60 yd',sp:'Rock bass, sunfish, smallmouth + pond largemouth',note:'Two looks: Little Harpeth creek (finesse) + a park pond (still-water largemouth/bluegill). Confirm pond rules with Brentwood Parks.'},
- {n:'6 · Henry Horton ⭐ (Chapel Hill / Duck R.)',z:'A',park:[35.5500,-86.6920],water:[35.54950,-86.69130],d:'~150 yd',sp:'Smallmouth, largemouth, spotted, channel cat',note:'Duck widened into long slow pools with old mill-dam rock. Smallmouth on current/rock; largemouth in the pools (gurgled topwater at low sun). NO lake — it is a river park.'},
- {n:'7 · Howards Bridge (Maury / Duck R.)',z:'A',park:[35.6300,-86.9700],water:[35.62960,-86.97040],d:'~30 yd',sp:'Smallmouth, spotted, largemouth, channel cat',note:'Bridge-crossing access with a concrete ramp. Pilings break current into eddies, ramp riprap holds crayfish + smallmouth, gravel bar drops to channel.'},
- {n:'8 · Rock Creek Park (Lewisburg)',z:'A',park:[35.4480,-86.7980],water:[35.44760,-86.79850],d:'~40 yd',sp:'Bluegill, sunfish, creek smallmouth/rock bass',note:'Small urban panfish creek with a shot at creek smallmouth in the deeper bend pools. Light tackle, kid-friendly.'},
- {n:'9 · Sam Davis / Richland Creek ⚠️ (Pulaski)',z:'A',park:[35.2010,-87.0330],water:[35.20060,-87.03250],d:'varies',sp:'Smallmouth, largemouth, green sunfish',note:'⚠️ Richland Creek is real smallmouth water but a dedicated PUBLIC bank access could NOT be verified — largely private/bridge. Call Pulaski Parks & Rec or TWRA (615-781-6622) before you go.'},
- {n:'10 · Williamsport Lakes ⭐ (TWRA)',z:'B',park:[35.7290,-87.2210],water:[35.72950,-87.22050],d:'easy (piers)',sp:'Trophy largemouth, crappie, redear, catfish, hybrid striper',note:'Best stocked stillwater for Spring Hill / Thompson’s Station / Columbia. 4 lakes, piers, bait + boat rental + license on site (931-583-2477). Largemouth 20" min, 1/day — bring heavier line.'},
- {n:'11 · New Lake Park (Lewisburg)',z:'B',park:[35.4350,-86.7600],water:[35.43540,-86.75960],d:'easy',sp:'Largemouth, crappie, bluegill, catfish',note:'~47-ac community reservoir — shoreline + trail + ramp. Fish cover, timber/brush, dam riprap, creek inflow. Largemouth 15" min, 5/day.'},
- {n:'12 · Harlinsdale Farm pond (Franklin)',z:'B',park:[35.9425,-86.8612],water:[35.94290,-86.86080],d:'~80 yd',sp:'Bluegill, channel cat, white crappie (C&R)',note:'City-stocked 3-ac pond — CATCH & RELEASE ONLY, hook-and-line, no wading, TN license required. Park also fronts the Harpeth (2-for-1).'},
- {n:'13 · Jim Warren Park pond (Franklin)',z:'B',park:[35.9258,-86.8895],water:[35.92610,-86.88910],d:'easy',sp:'Bluegill, green & redbreast sunfish (C&R)',note:'Panfish pond, catch-and-release. Cricket or worm under a bobber. Perfect quick-stop or kids’ trip.'},
- {n:'14 · Three Forks / Normandy tailwater',z:'C',park:[35.44,-86.24],water:[35.44,-86.24],d:'~35 min drive',sp:'Stocked rainbow trout (Nov–Jun) + smallmouth/rock bass',note:'Duck below Normandy Dam — winter trout + year-round smallmouth in the rock. Approx pin: get the exact ramp from TWRA. ⚠️ Never wade on a TVA generation release.'},
- {n:'15 · Elk River (below Tims Ford)',z:'C',park:[35.20,-86.58],water:[35.20,-86.58],d:'~25 min S of Pulaski',sp:'Stocked trout + smallmouth/largemouth',note:'Cold tailwater — wadeable, trout up high + bass downstream. Approx pin: get the exact access from TWRA/TVA. ⚠️ Check the Tims Ford generation schedule before wading.'}
+ // ---- Harpeth — Franklin / Brentwood (north) ----
+ {n:'Eastern Flank ⭐ (Franklin)',cat:'S',ll:[35.90915,-86.85587],sp:'Smallmouth, rock bass',note:'The 2012 dam-removal cross-vane — boulder vanes, plunge pool, riffle seams. Most diverse reach on the Franklin Harpeth.'},
+ {n:'Pinkerton Park (Franklin)',cat:'S',ll:[35.9212,-86.8643],sp:'Smallmouth, rock bass, bluegill',note:'Easy in-town Harpeth bend with gravel bars, wadeable runs. Fort Granger across the water.'},
+ {n:'Harlinsdale Farm (Franklin)',cat:'S',ll:[35.9357,-86.8664],sp:'Smallmouth (river) · bluegill/catfish (pond, C&R)',note:'River frontage = big-rock pocket water, wadeable. Also a 3-ac C&R pond (effluent-fed — no wading).'},
+ {n:'Williamson Co. Rec Complex (Franklin)',cat:'S',ll:[35.9480,-86.8767],sp:'Smallmouth, rock bass',note:'River bend at the launch + greenway banks toward downtown. Gentle new launch. Gated facility hours.'},
+ {n:'Ladd Park / S. Carothers (Franklin)',cat:'S',ll:[35.8781,-86.8148],sp:'Smallmouth',note:'Bridge pilings + the upper river’s near-riffle stretch; gravel bars, wadeable.'},
+ {n:'River Park (Brentwood)',cat:'S',ll:[36.0240,-86.7720],sp:'Smallmouth (small), sunfish',note:'Little Harpeth — bridge-piling seams, riffles, gravel bars, laydowns over ~2 mi. Finesse, clear water.'},
+ {n:'Tower Park (Brentwood)',cat:'S',ll:[36.0080,-86.7660],sp:'Smallmouth, rock bass, sunfish',note:'Little Harpeth bends, gravel bars, laydowns — a touch more water than River Park.'},
+ {n:'Deerwood Arboretum (Brentwood)',cat:'S',ll:[36.0090,-86.8160],sp:'Smallmouth, sunfish',note:'Footbridge pilings + a wooded river’s-edge point. Skip the two ponds (degraded).'},
+ {n:'Edwin Warner — Little Harpeth (Nashville)',cat:'S',ll:[36.05064,-86.90483],sp:'Smallmouth, rock bass',note:'Ledge tailouts, riffle seams, cut-bank laydowns; the Warner Rapid confluence is the best structure on the Little Harpeth. Fishing explicitly allowed.'},
+ {n:'Narrows of the Harpeth (state park)',cat:'S',ll:[36.1370,-87.1390],sp:'Smallmouth',note:'Downstream bonus — rocky/gravel runs, current seams behind boulders, ledge pools. Smallmouth within a quarter-mile of the put-in.'},
+ {n:"Newsom's Mill (state park)",cat:'S',ll:[36.0850,-87.0400],sp:'Smallmouth',note:'Downstream bonus — historic mill-ruin pool, log cover, wadeable runs.'},
+ {n:'Hidden Lake (state park)',cat:'S',ll:[36.0920,-87.0730],sp:'Smallmouth',note:'Downstream bonus — river-adjacent access + ledge pools (some trail closures).'},
+ // ---- Upper Duck (east/south of Columbia → Shelbyville → Normandy) ----
+ {n:'Howard Bridge ⭐ (Maury / Duck)',cat:'M',ll:[35.572155,-86.922066],sp:'Smallmouth, channel cat, rock bass',note:'Gravel lot at a concrete ramp, lot sits at water. Remote stretch below Leftwich — among the best catfish numbers in Middle TN. Gravel bars + undercut banks.'},
+ {n:"Milltown / below Lillard's Mill (Marshall / Duck)",cat:'S',ll:[35.58618,-86.78639],sp:'Smallmouth, rock bass',note:'TWRA gravel streamside below the mill dam — swift rock, pockets, undercut banks. ⚠️ Do NOT approach the dam.'},
+ {n:'Henry Horton — Wilhoite Trail ⭐ (Duck)',cat:'M',ll:[35.5935,-86.6959],sp:'Smallmouth, largemouth, redeye, catfish',note:'Park NE of US-31A bridge, 0.7-mi trail to the 1846 mill-dam rock + pools. Mixed bag on the rock and in the pools.'},
+ {n:'Henry Horton — campground ramp (Duck)',cat:'L',ll:[35.591768,-86.689200],sp:'Largemouth, spotted, catfish',note:'Gravel ramp at the Spring Creek confluence — long slow pools. Finesse worm/Senko; Jitterbug at dusk; cats below the park (18"+).'},
+ {n:'Mullins Mill Bridge (Bedford / Duck)',cat:'S',ll:[35.4687,-86.3792],sp:'Smallmouth, rock bass',note:'Streamside pull-off at the US-41A bridge — swift rocky Normandy-to-Hall’s-Mill character. Rock bass abundant.'},
+ {n:'VFW Landing (Shelbyville / Duck)',cat:'M',ll:[35.477357,-86.435945],sp:'Smallmouth, rock bass, channel cat',note:'TWRA concrete ramp behind the VFW post — bank-fish the ramp eddy and riffles.'},
+ {n:"Fisherman's Park (Shelbyville / Duck)",cat:'M',ll:[35.481642,-86.462026],sp:'Smallmouth, rock bass, catfish',note:'Lot overlooking the spillway — bank-fish the oxygenated swift water below the drop. ⚠️ Low-head Shelbyville dam here — stay clear.'},
+ {n:'Three Forks Bridge ⭐ (Bedford / Duck)',cat:'S',ll:[35.4801,-86.3243],sp:'Smallmouth, rock bass (+ winter trout)',note:'TWRA ramp + wade at the top of the swift rocky float. Live crayfish on a #1 hook around big rocks/undercuts. ⚠️ Parking closes at ≥400 cfs release.'},
+ {n:'Dement Bridge (Bedford / Duck)',cat:'S',ll:[35.46639,-86.29418],sp:'Smallmouth, rock bass (+ winter trout)',note:'TWRA streamside, swift rocky tailwater. ⚠️ Parking legally closed at ≥400 cfs Normandy release.'},
+ {n:'Old Stone Fort (Manchester / Duck)',cat:'S',ll:[35.48626,-86.10269],sp:'Smallmouth (trophy), rock bass',note:'Trails ~1.25 mi to Big Falls — deep rocky pool holds 4-lb-class smallmouth. Bluff-limited: hike-and-spot-fish. Jig live stonerollers at the falls base.'},
+ // ---- Stocked lakes (largemouth / panfish) ----
+ {n:'Williamsport Lakes ⭐ (TWRA)',cat:'L',ll:[35.7290,-87.2210],sp:'Trophy largemouth, crappie, redear, catfish, hybrid striper',note:'4 stocked lakes, piers, bait + boat rental + license on site. Largemouth 20" min, 1/day — heavier line. Best stocked water for Spring Hill / Thompson’s Station / Columbia.'},
+ {n:'New Lake Park (Lewisburg)',cat:'L',ll:[35.4033,-86.8391],sp:'Largemouth, bluegill, catfish',note:'~47-ac city reservoir — dam riprap (bass/bluegill), shoreline laydowns, ramp/dock (panfish/cat), upper creek-inflow flats. Bank + ramp + trail.'},
+ {n:'Jim Warren Park pond (Franklin)',cat:'L',ll:[35.9290,-86.8920],sp:'Bluegill, sunfish (C&R)',note:'Stocked panfish pond, catch-and-release. Cricket or worm under a bobber — kid-friendly quick stop.'},
+ // ---- Richland Creek / Elk warmwater (mixed) ----
+ {n:'Vales Mill Ramp ⭐⚠️ (Pulaski / Richland Cr.)',cat:'M',ll:[35.1939,-87.0625],sp:'Smallmouth, largemouth, catfish',note:'⚠️ Below a LOW-HEAD DAM (a swimmer was swept here 6/23/2026 — bank only, never wade near the dam). Fish the tailrace eddies, seams, undercut outside bends. Confirm the ramp pin on satellite.'},
+ {n:'Old Dam Ford (Elk R.)',cat:'M',ll:[35.12406,-86.33227],sp:'Smallmouth, largemouth (+ fall/spring trout)',note:'~14 mi below Tims Ford — trout-to-smallmouth transition zone. Shoals, riffles, rock. ⚠️ Tims Ford generation hazard.'},
+ {n:'Stone Bridge Memorial Park (Fayetteville / Elk R.)',cat:'M',ll:[35.14472,-86.56833],sp:'Smallmouth, largemouth',note:'Developed Fayetteville city park on the Elk — shoals, riffles/runs, rock. Warmwater smallmouth zone.'},
+ {n:'Veto Rd Ramp (Prospect / Elk R.)',cat:'M',ll:[35.01306,-86.99528],sp:'Smallmouth, largemouth, catfish',note:'TWRA ramp + bank in Giles County — lower Elk warmwater. Shoals and rock.'},
+ // ---- Trout tailwaters (cool months) ----
+ {n:'Normandy Dam Tailwater ⭐ (Duck)',cat:'T',ll:[35.466,-86.243],sp:'Stocked rainbow trout (Nov–Jun) + smallmouth',note:'TVA — park ~50 ft from a flat rocky shoal, wade in. Rooster Tails, nightcrawlers/Power Bait, wooly buggers. ⚠️ Never wade on a generation release — check USGS gage 03596500.'},
+ {n:'Elk River — TN-50 below-dam ⭐ (tailwater)',cat:'T',ll:[35.1919,-86.2800],sp:'Stocked rainbow + brown trout',note:'Densest stocked trout water, immediate below Tims Ford (~38k rainbows + 20k browns/yr). Wade the gravel bar; nymphs/midges in pools, streamers for browns. ⚠️ Highest surge exposure — check TVA.'},
+ {n:'Farris Creek Bridge (Elk R. tailwater)',cat:'T',ll:[35.1635,-86.3186],sp:'Stocked trout (rainbow/brown)',note:'~8.5 mi below the dam — gravel bars + creek mouth, end of the popular 9-mi float. ⚠️ Tims Ford generation hazard.'}
 ];
-const map = L.map('map',{zoomControl:true}).setView([35.62,-86.92],9);
+const map = L.map('map',{zoomControl:true}).setView([35.62,-86.66],9);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19, attribution:'&copy; OpenStreetMap'}).addTo(map);
-function pin(color, glyph, water){
+function pin(color){
   return L.divIcon({className:'',
-    html:`<div class="pin${water?' water':''}" style="background:${color}"><span>${glyph}</span></div>`,
-    iconSize:water?[20,20]:[26,26], iconAnchor:water?[10,10]:[13,26], popupAnchor:[0,water?-10:-24]});
+    html:`<div class="pin" style="background:${color}"><span>📍</span></div>`,
+    iconSize:[24,24], iconAnchor:[12,24], popupAnchor:[0,-22]});
 }
 function gmaps(ll){return `https://www.google.com/maps/search/?api=1&query=${ll[0]},${ll[1]}`;}
 function gdir(ll){return `https://www.google.com/maps/dir/?api=1&destination=${ll[0]},${ll[1]}`;}
 const bounds = [];
 spots.forEach(s=>{
-  const col = ZONE[s.z].c; bounds.push(s.park, s.water);
-  L.polyline([s.park,s.water],{color:col,weight:2,dashArray:'4,5',opacity:.7}).addTo(map);
+  const col = CAT[s.cat].c; bounds.push(s.ll);
   const html = `<div class="pop">
      <h3>${s.n}</h3>
-     <span class="z" style="background:${col}">${ZONE[s.z].label}</span>
+     <span class="z" style="background:${col}">${CAT[s.cat].label}</span>
      <p>${s.note}</p>
      <p style="margin:6px 0"><b>🐟 Fish here:</b> ${s.sp}</p>
-     <p class="co">📍 park ${s.park[0]}, ${s.park[1]}<br>🎣 water ${s.water[0]}, ${s.water[1]} &nbsp;·&nbsp; walk ${s.d}</p>
-     <a class="btn park" href="${gmaps(s.park)}" target="_blank" rel="noopener">📍 Park pin</a>
-     <a class="btn water" href="${gmaps(s.water)}" target="_blank" rel="noopener">🎣 Water pin</a>
-     <a class="btn dir" href="${gdir(s.park)}" target="_blank" rel="noopener">🧭 Navigate</a>
+     <p class="co">📍 ${s.ll[0]}, ${s.ll[1]}</p>
+     <a class="btn park" href="${gmaps(s.ll)}" target="_blank" rel="noopener">📍 Drop pin</a>
+     <a class="btn dir" href="${gdir(s.ll)}" target="_blank" rel="noopener">🧭 Navigate</a>
    </div>`;
-  L.marker(s.park,{icon:pin(col,'📍',false)}).addTo(map).bindPopup(html,{maxWidth:260});
-  L.marker(s.water,{icon:pin(col,'🎣',true)}).addTo(map).bindPopup(html,{maxWidth:260});
+  L.marker(s.ll,{icon:pin(col)}).addTo(map).bindPopup(html,{maxWidth:262});
 });
-map.fitBounds(bounds,{padding:[50,50]});
+map.fitBounds(bounds,{padding:[55,55]});
 </script>
 </body>
 </html>

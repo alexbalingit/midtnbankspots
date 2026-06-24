@@ -34,9 +34,10 @@
   table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:680px}
   th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
   th{font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--mut);position:sticky;top:0;background:#fff}
-  tr.zA td:first-child{box-shadow:inset 3px 0 0 var(--green)}
-  tr.zB td:first-child{box-shadow:inset 3px 0 0 var(--gold)}
-  tr.zC td:first-child{box-shadow:inset 3px 0 0 var(--rust)}
+  tr.zS td:first-child{box-shadow:inset 3px 0 0 var(--green)}
+  tr.zL td:first-child{box-shadow:inset 3px 0 0 var(--gold)}
+  tr.zM td:first-child{box-shadow:inset 3px 0 0 var(--rust)}
+  tr.zT td:first-child{box-shadow:inset 3px 0 0 #3a6b7d}
   .del{color:#a33;cursor:pointer;font-weight:700;border:none;background:none;font-size:14px}
   .empty{color:var(--mut);font-size:13px;text-align:center;padding:18px}
   .note{font-size:11px;color:var(--mut);margin-top:8px}
@@ -96,16 +97,23 @@
 </div>
 <div class="toast" id="toast"></div>
 <script>
-const KEY='midtnCatchLog_v1';
+const KEY='midtnCatchLog_v2';
+// zone = what you'll catch: S smallmouth · L largemouth · M mixed+catfish · T trout
 const ZONE={
-  'Eastern Flank (Franklin)':'A','Pinkerton Park (Franklin)':'A','WC Rec Complex (Franklin)':'A',
-  'River Park (Brentwood)':'A','Crockett Park (Brentwood)':'A','Henry Horton (Duck)':'A',
-  'Howards Bridge (Duck)':'A','Rock Creek Park (Lewisburg)':'A','Richland Creek (Pulaski)':'A',
-  'Williamsport Lakes':'B','New Lake (Lewisburg)':'B','Harlinsdale pond (Franklin)':'B','Jim Warren pond (Franklin)':'B',
-  'Normandy tailwater':'C','Elk River tailwater':'C'
+  'Eastern Flank (Franklin)':'S','Pinkerton Park (Franklin)':'S','Harlinsdale Farm (Franklin)':'S',
+  'WC Rec Complex (Franklin)':'S','Ladd Park (Franklin)':'S','River Park (Brentwood)':'S',
+  'Tower Park (Brentwood)':'S','Deerwood Arboretum (Brentwood)':'S','Edwin Warner (Little Harpeth)':'S',
+  'Narrows of the Harpeth':'S','Newsom\'s Mill':'S','Hidden Lake':'S',
+  'Milltown / Lillard\'s Mill (Duck)':'S','Mullins Mill Bridge (Duck)':'S','Three Forks Bridge (Duck)':'S',
+  'Dement Bridge (Duck)':'S','Old Stone Fort (Duck)':'S',
+  'Howard Bridge (Duck)':'M','Henry Horton — Wilhoite Trail (Duck)':'M','VFW Landing (Shelbyville)':'M',
+  'Fisherman\'s Park (Shelbyville)':'M','Vales Mill (Pulaski / Richland Cr.)':'M','Old Dam Ford (Elk)':'M',
+  'Stone Bridge Park (Fayetteville / Elk)':'M','Veto Rd Ramp (Elk)':'M',
+  'Williamsport Lakes':'L','New Lake (Lewisburg)':'L','Henry Horton — campground ramp (Duck)':'L','Jim Warren pond (Franklin)':'L',
+  'Normandy tailwater (Duck)':'T','Elk River — TN-50 tailwater':'T','Farris Creek (Elk)':'T'
 };
 const OPTS={
-  spot:['Eastern Flank (Franklin)','Pinkerton Park (Franklin)','WC Rec Complex (Franklin)','River Park (Brentwood)','Crockett Park (Brentwood)','Henry Horton (Duck)','Howards Bridge (Duck)','Rock Creek Park (Lewisburg)','Richland Creek (Pulaski)','Williamsport Lakes','New Lake (Lewisburg)','Harlinsdale pond (Franklin)','Jim Warren pond (Franklin)','Normandy tailwater','Elk River tailwater','Other'],
+  spot:['Eastern Flank (Franklin)','Pinkerton Park (Franklin)','Harlinsdale Farm (Franklin)','WC Rec Complex (Franklin)','Ladd Park (Franklin)','River Park (Brentwood)','Tower Park (Brentwood)','Deerwood Arboretum (Brentwood)','Edwin Warner (Little Harpeth)','Narrows of the Harpeth',"Newsom's Mill",'Hidden Lake',"Milltown / Lillard's Mill (Duck)",'Mullins Mill Bridge (Duck)','Three Forks Bridge (Duck)','Dement Bridge (Duck)','Old Stone Fort (Duck)','Howard Bridge (Duck)','Henry Horton — Wilhoite Trail (Duck)','Henry Horton — campground ramp (Duck)','VFW Landing (Shelbyville)',"Fisherman's Park (Shelbyville)",'Vales Mill (Pulaski / Richland Cr.)','Old Dam Ford (Elk)','Stone Bridge Park (Fayetteville / Elk)','Veto Rd Ramp (Elk)','Williamsport Lakes','New Lake (Lewisburg)','Jim Warren pond (Franklin)','Normandy tailwater (Duck)','Elk River — TN-50 tailwater','Farris Creek (Elk)','Other'],
   species:['Smallmouth','Largemouth','Spotted','Rock bass','Bluegill','Redear','Crappie','Channel catfish','Trout','Other'],
   bait:['Tube','Ned rig','Senko','Wacky Senko','Shaky head','Texas worm','Creature','Craw','Fluke','Drop shot','Spinnerbait','Chatterbait','Squarebill','Crankbait','Craw crankbait','Lipless','Jerkbait','Flipping jig','Football jig','Swim jig','Swimbait','Popper','Walker','Buzzbait','Frog','Crappie jig','Beetle-spin','Live bait','Other'],
   color:['Green pumpkin','Watermelon','Black/blue','Shad','White','Chartreuse','Red/craw','Bluegill','Natural','Other'],
