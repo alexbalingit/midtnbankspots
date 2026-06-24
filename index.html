@@ -32,7 +32,7 @@
   .spot .dot{width:10px;height:10px;border-radius:50%;flex:0 0 auto;border:1.5px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.25)}
   .spot .nm{flex:1;line-height:1.25}
   .spot .cast{flex:0 0 auto;font-size:14px;text-decoration:none}
-  .legend{position:absolute;left:10px;bottom:18px;z-index:1000;background:rgba(246,241,231,.96);
+  .legend{position:absolute;right:10px;bottom:24px;z-index:1000;background:rgba(246,241,231,.96);
           border-radius:10px;padding:10px 12px;font-size:12.5px;box-shadow:0 2px 10px rgba(0,0,0,.25);line-height:1.8}
   .legend .ltitle{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;color:#555;font-weight:700}
   .dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:7px;vertical-align:middle;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.25)}
@@ -169,8 +169,7 @@ CITY_ORDER.forEach(city=>{
   html += `</div>`;
 });
 cl.innerHTML = html;
-const legendEl=document.querySelector('.legend');
-function setPanel(open){ panel.classList.toggle('open',open); legendEl.style.display=open?'none':''; }
+function setPanel(open){ panel.classList.toggle('open',open); }
 cl.querySelectorAll('.spot').forEach(el=>{
   el.addEventListener('click',e=>{
     if(e.target.classList.contains('cast')) return;
