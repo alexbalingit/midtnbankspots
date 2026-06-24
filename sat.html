@@ -13,16 +13,18 @@
       color:#fff;font-weight:800;font-size:16px}
   .ct.first{box-shadow:0 0 0 4px rgba(224,163,43,.9),0 1px 4px rgba(0,0,0,.6)}
   .ttl{position:absolute;top:14px;left:14px;z-index:1000;background:rgba(31,36,33,.92);color:#f6f1e7;
-       padding:9px 14px;border-radius:9px;font-size:17px;font-weight:800;letter-spacing:.2px;max-width:60%}
+       padding:9px 14px;border-radius:9px;font-size:17px;font-weight:800;letter-spacing:.2px;max-width:58%}
   .ttl small{display:block;font-size:12px;font-weight:600;opacity:.85;letter-spacing:0;margin-top:2px}
+  .ttl a{color:#e0b45a;text-decoration:none;font-size:12px;font-weight:700}
   .leg{position:absolute;right:14px;top:14px;z-index:1000;background:rgba(255,250,240,.97);
-       border:1.5px solid #7a2f12;border-radius:11px;padding:11px 13px;font-size:13px;max-width:330px;box-shadow:0 2px 10px rgba(0,0,0,.4)}
+       border:1.5px solid #7a2f12;border-radius:11px;padding:11px 13px;font-size:13px;max-width:340px;box-shadow:0 2px 10px rgba(0,0,0,.4)}
   .leg h4{margin:0 0 8px;font-size:14px;color:#7a2f12;font-weight:800}
   .leg .r{display:flex;align-items:center;gap:9px;margin:5px 0;line-height:1.25}
   .leg .b{width:21px;height:21px;border-radius:50%;background:#d1603a;color:#fff;font-weight:800;font-size:12px;
           display:flex;align-items:center;justify-content:center;flex:0 0 auto}
   .leg .w{font-weight:700;color:#2b3a44}
   .leg .x{color:#5a5a4a}
+  .leg .haz{margin-top:8px;font-size:11.5px;color:#a33;font-weight:700;line-height:1.3}
   .cred{position:absolute;bottom:6px;right:8px;z-index:1000;background:rgba(255,255,255,.75);
         padding:1px 6px;border-radius:4px;font-size:10px;color:#333}
   .cmp{position:absolute;bottom:14px;left:14px;z-index:1000}
@@ -52,6 +54,74 @@ const SPOTS = {
      {n:4,ll:[35.90888,-86.85478],w:'Right slack eddy',x:'wacky Senko'},
      {n:5,ll:[35.90858,-86.85388],w:'Pool tailout',x:'jerkbait (low light)'}
    ]
+ },
+ 'howard-bridge':{
+   title:'Howard Bridge — Duck (Maury Co.)', sub:'Smallmouth + catfish · ramp, pilings, gravel bar',
+   center:[35.57195,-86.92175], zoom:18,
+   targets:[
+     {n:1,ll:[35.57205,-86.92150],w:'Eddy behind pilings',x:'tube, sweep into it'},
+     {n:2,ll:[35.57225,-86.92175],w:'Upstream piling face',x:'tube up-current'},
+     {n:3,ll:[35.57180,-86.92120],w:'Ramp riprap',x:'Ned — smallmouth'},
+     {n:4,ll:[35.57165,-86.92215],w:'Gravel-bar edge',x:'craw crankbait'},
+     {n:5,ll:[35.57150,-86.92085],w:'Channel below',x:'drag a craw tube'}
+   ]
+ },
+ 'henry-horton':{
+   title:'Henry Horton — Duck (Wilhoite Trail)', sub:'Smallmouth + largemouth · old mill-dam pool',
+   center:[35.59060,-86.69150], zoom:17,
+   targets:[
+     {n:1,ll:[35.59060,-86.69120],w:'Deep hole below dam',x:'Texas worm / cut bait'},
+     {n:2,ll:[35.59080,-86.69150],w:'Rock seam at the dam',x:'tube up-current'},
+     {n:3,ll:[35.59030,-86.69090],w:'Slow shallow flat',x:'topwater, low light'},
+     {n:4,ll:[35.59045,-86.69185],w:'Bank laydowns',x:'jig / wacky Senko'},
+     {n:5,ll:[35.59100,-86.69200],w:'Far shade line',x:'spotted bass — Ned'}
+   ]
+ },
+ 'chickasaw':{
+   title:'Knob Creek confluence — Duck (Chickasaw Trace)', sub:'Smallmouth + largemouth · creek mouth + bend',
+   center:[35.66265,-87.09360], zoom:18,
+   targets:[
+     {n:1,ll:[35.66280,-87.09340],w:'Creek mouth + seam',x:'topwater / Senko'},
+     {n:2,ll:[35.66255,-87.09380],w:'Point + eddy',x:'wacky Senko / Ned'},
+     {n:3,ll:[35.66290,-87.09400],w:'Shaded laydowns',x:'jig / Texas'},
+     {n:4,ll:[35.66230,-87.09320],w:'Outside bend (deep)',x:'craw tube / Ned'},
+     {n:5,ll:[35.66300,-87.09310],w:'Ramp riprap',x:'craw / Ned smallmouth'}
+   ]
+ },
+ 'williamsport':{
+   title:'Williamsport Lakes — Blue Cat', sub:'Largemouth + crappie · grass, brush, riprap',
+   center:[35.72900,-87.22100], zoom:16,
+   targets:[
+     {n:1,ll:[35.72980,-87.22060],w:'Grass mat (dawn)',x:'hollow-body frog'},
+     {n:2,ll:[35.72860,-87.21980],w:'Shoreline brush',x:'Texas worm / swimbait'},
+     {n:3,ll:[35.72940,-87.22220],w:'Creek inflow',x:'spinnerbait'},
+     {n:4,ll:[35.72800,-87.22150],w:'Dam riprap',x:'crankbait — crayfish'},
+     {n:5,ll:[35.72880,-87.22090],w:'Deep basin edge',x:'crappie jig / drop shot'}
+   ]
+ },
+ 'three-forks':{
+   title:'Three Forks Bridge — Duck (Bedford)', sub:'Smallmouth + winter trout · top of the rocky float',
+   center:[35.48010,-86.32420], zoom:18,
+   targets:[
+     {n:1,ll:[35.48020,-86.32400],w:'Big rocks / undercuts',x:'live crayfish / tube'},
+     {n:2,ll:[35.47995,-86.32440],w:'First pool below riffle',x:'Ned rig'},
+     {n:3,ll:[35.48035,-86.32380],w:'Current seam at ramp',x:'tube up-current'},
+     {n:4,ll:[35.47975,-86.32465],w:'Gravel-bar edge',x:'craw crankbait'},
+     {n:5,ll:[35.48050,-86.32355],w:'Eddy behind boulder',x:'Ned / small jerkbait'}
+   ],
+   haz:'⚠️ Parking closes at ≥400 cfs Normandy release — check the gage before driving.'
+ },
+ 'normandy':{
+   title:'Normandy Dam Tailwater — Duck (Coffee)', sub:'Stocked trout (Nov–Jun) + smallmouth · rocky shoal',
+   center:[35.46555,-86.24255], zoom:18,
+   targets:[
+     {n:1,ll:[35.46565,-86.24235],w:'Flat rocky shoal',x:'Rooster Tail / Power Bait'},
+     {n:2,ll:[35.46545,-86.24275],w:'Run below the shoal',x:'wooly bugger / nymph'},
+     {n:3,ll:[35.46580,-86.24210],w:'Bank seam',x:'nightcrawler drift'},
+     {n:4,ll:[35.46525,-86.24300],w:'Deep pool',x:'jerkbait — smallmouth'},
+     {n:5,ll:[35.46600,-86.24190],w:'Eddy behind rock',x:'drift bait'}
+   ],
+   haz:'☠️ NEVER wade on a TVA generation release — water rises fast & cold. Check USGS gage 03596500.'
  }
 };
 const id = new URLSearchParams(location.search).get('id') || 'eastern-flank';
@@ -59,13 +129,14 @@ const cfg = SPOTS[id];
 const map = L.map('map',{zoomControl:false,attributionControl:false}).setView(cfg.center,cfg.zoom);
 L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
   {maxZoom:19}).addTo(map);
-document.getElementById('ttl').innerHTML = cfg.title + '<small>'+cfg.sub+'</small>';
+document.getElementById('ttl').innerHTML = cfg.title + '<small>'+cfg.sub+' &nbsp;·&nbsp; <a href="index.html">🗺️ all spots</a></small>';
 let leg = '<h4>WHERE TO CAST</h4>';
 cfg.targets.forEach(t=>{
   const ic = L.divIcon({className:'',html:`<div class="ct${t.n===1?' first':''}">${t.n}</div>`,iconSize:[30,30],iconAnchor:[15,15]});
   L.marker(t.ll,{icon:ic}).addTo(map);
   leg += `<div class="r"><span class="b">${t.n}</span><span><span class="w">${t.w}</span> <span class="x">— ${t.x}</span></span></div>`;
 });
+if(cfg.haz) leg += `<div class="haz">${cfg.haz}</div>`;
 document.getElementById('leg').innerHTML = leg;
 document.querySelector('#map').insertAdjacentHTML('afterend','<div class="cred">Imagery © Esri, Maxar</div>');
 </script>
