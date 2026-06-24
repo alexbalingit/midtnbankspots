@@ -169,7 +169,9 @@ CITY_ORDER.forEach(city=>{
   html += `</div>`;
 });
 cl.innerHTML = html;
-function setPanel(open){ panel.classList.toggle('open',open); }
+const legendEl=document.querySelector('.legend');
+function setPanel(open){ panel.classList.toggle('open',open); legendEl.style.display=(open && window.innerWidth<760)?'none':''; }
+window.addEventListener('resize',()=>{ if(window.innerWidth>=760) legendEl.style.display=''; });
 cl.querySelectorAll('.spot').forEach(el=>{
   el.addEventListener('click',e=>{
     if(e.target.classList.contains('cast')) return;
