@@ -44,6 +44,41 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 const SPOTS = {
+ 'elk-tn50':{
+   title:'Elk River TN-50 — below Tims Ford (Lincoln)', sub:'Stocked rainbow + brown trout · tailwater runs & pools',
+   center:[35.19150,-86.28030], zoom:16,
+   targets:[
+     {n:1,ll:[35.19365,-86.28012],w:'Run below the dam',x:'nymph / midge'},
+     {n:2,ll:[35.19263,-86.27985],w:'Above-bridge pool',x:'Rooster Tail / Power Bait'},
+     {n:3,ll:[35.19182,-86.28001],w:'Bridge pool',x:'streamer — browns'},
+     {n:4,ll:[35.19060,-86.28063],w:'Deep run below the bridge',x:'nymph drift'},
+     {n:5,ll:[35.18928,-86.28087],w:'Lower run',x:'wooly bugger / nightcrawler'}
+   ],
+   haz:'☠️ Tims Ford generation rises fast &amp; cold — never wade on a release. Check TVA before you go.'
+ },
+ 'vales-mill':{
+   title:'Vales Mill — Richland Creek (Pulaski)', sub:'Smallmouth + catfish · BANK-ONLY tailrace below a low-head dam',
+   center:[35.19398,-87.06085], zoom:17,
+   targets:[
+     {n:1,ll:[35.19422,-87.06237],w:'Tailrace eddy by the ramp',x:'tube / Ned'},
+     {n:2,ll:[35.19392,-87.06179],w:'Outside bend (undercut)',x:'craw tube — work the bank'},
+     {n:3,ll:[35.19375,-87.06116],w:'Seam / run',x:'Ned rig'},
+     {n:4,ll:[35.19392,-87.06016],w:'Deep outside bend',x:'craw crankbait / cut bait'},
+     {n:5,ll:[35.19404,-87.05933],w:'Eddy',x:'wacky Senko'}
+   ],
+   haz:'☠️ BANK ONLY — a swimmer was swept &amp; killed at the Vales Mill low-head dam 6/23/2026. NEVER enter the dam pool; fish the tailrace bends from the bank only.'
+ },
+ 'leftwich':{
+   title:'Leftwich / Sowell Mill — Duck (Columbia)', sub:'Smallmouth · swift rocky riffle-and-pool',
+   center:[35.57248,-86.86893], zoom:17,
+   targets:[
+     {n:1,ll:[35.57258,-86.86902],w:'Riffle seam',x:'tube up-current'},
+     {n:2,ll:[35.57203,-86.86969],w:'Pool below the riffle',x:'Ned rig / craw tube'},
+     {n:3,ll:[35.57292,-86.86828],w:'Eddy / slack',x:'wacky Senko'},
+     {n:4,ll:[35.57324,-86.86768],w:'Rock pocket / undercut bank',x:'craw crankbait'},
+     {n:5,ll:[35.57166,-86.87038],w:'Pool tailout',x:'jerkbait (low light)'}
+   ]
+ },
  'iron-bridge':{
    title:'Iron Bridge — Duck (Columbia)', sub:'Largemouth + catfish · abandoned Columbia Dam slackwater',
    center:[35.61168,-87.00222], zoom:17,
