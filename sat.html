@@ -44,6 +44,17 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 const SPOTS = {
+ 'iron-bridge':{
+   title:'Iron Bridge — Duck (Columbia)', sub:'Largemouth + catfish · abandoned Columbia Dam slackwater',
+   center:[35.61168,-87.00222], zoom:17,
+   targets:[
+     {n:1,ll:[35.61277,-87.00195],w:'Bridge piling eddy',x:'tube / jig, sweep the pilings'},
+     {n:2,ll:[35.61214,-87.00182],w:'Bluff edge (deep)',x:'Texas worm / craw tube'},
+     {n:3,ll:[35.61139,-87.00242],w:'Slackwater flat',x:'wacky Senko / spinnerbait'},
+     {n:4,ll:[35.61228,-87.00267],w:'Ramp eddy',x:'Ned / craw — smallmouth'},
+     {n:5,ll:[35.61058,-87.00258],w:'Downstream pool',x:'Texas worm / cut bait'}
+   ]
+ },
  'eastern-flank':{
    title:'Eastern Flank — Harpeth (Franklin)', sub:'Smallmouth · the dam-removal cross-vane',
    center:[35.90905,-86.85540], zoom:18,
@@ -79,13 +90,13 @@ const SPOTS = {
  },
  'chickasaw':{
    title:'Knob Creek confluence — Duck (Chickasaw Trace)', sub:'Smallmouth + largemouth · creek mouth + bend',
-   center:[35.66270,-87.09332], zoom:18,
+   center:[35.66232,-87.09347], zoom:18,
    targets:[
-     {n:1,ll:[35.66297,-87.09346],w:'Creek mouth + seam',x:'topwater / Senko'},
-     {n:2,ll:[35.66261,-87.09329],w:'Point + eddy',x:'wacky Senko / Ned'},
-     {n:3,ll:[35.66250,-87.09302],w:'Shaded laydowns',x:'jig / Texas'},
-     {n:4,ll:[35.66217,-87.09311],w:'Outside bend (deep)',x:'craw tube / Ned'},
-     {n:5,ll:[35.66316,-87.09331],w:'Ramp riprap',x:'craw / Ned smallmouth'}
+     {n:1,ll:[35.66260,-87.09377],w:'Creek mouth + seam',x:'topwater / Senko'},
+     {n:2,ll:[35.66231,-87.09353],w:'Point + eddy',x:'wacky Senko / Ned'},
+     {n:3,ll:[35.66194,-87.09321],w:'Shaded laydowns',x:'jig / Texas'},
+     {n:4,ll:[35.66156,-87.09297],w:'Outside bend (deep)',x:'craw tube / Ned'},
+     {n:5,ll:[35.66308,-87.09397],w:'Ramp riprap',x:'craw / Ned smallmouth'}
    ]
  },
  'williamsport':{
@@ -101,13 +112,13 @@ const SPOTS = {
  },
  'three-forks':{
    title:'Three Forks Bridge — Duck (Bedford)', sub:'Smallmouth + winter trout · top of the rocky float',
-   center:[35.48018,-86.32392], zoom:18,
+   center:[35.48030,-86.32390], zoom:17,
    targets:[
-     {n:1,ll:[35.48059,-86.32327],w:'Big rocks / undercuts',x:'live crayfish / tube'},
-     {n:2,ll:[35.47979,-86.32465],w:'First pool below riffle',x:'Ned rig'},
-     {n:3,ll:[35.48028,-86.32395],w:'Current seam at ramp',x:'tube up-current'},
-     {n:4,ll:[35.48018,-86.32409],w:'Gravel-bar edge',x:'craw crankbait'},
-     {n:5,ll:[35.48044,-86.32362],w:'Eddy behind boulder',x:'Ned / small jerkbait'}
+     {n:1,ll:[35.48087,-86.32242],w:'Big rocks / undercuts',x:'live crayfish / tube'},
+     {n:2,ll:[35.47978,-86.32544],w:'First pool below riffle',x:'Ned rig'},
+     {n:3,ll:[35.48018,-86.32349],w:'Current seam at ramp',x:'tube up-current'},
+     {n:4,ll:[35.48025,-86.32399],w:'Gravel-bar edge',x:'craw crankbait'},
+     {n:5,ll:[35.48066,-86.32282],w:'Eddy behind boulder',x:'Ned / small jerkbait'}
    ],
    haz:'⚠️ Parking closes at ≥400 cfs Normandy release — check the gage before driving.'
  },
