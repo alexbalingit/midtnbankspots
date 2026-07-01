@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Cast Map</title>
+<title>Caster — Cast Map</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
 <style>
   html,body{margin:0;height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
@@ -46,7 +46,7 @@
 const SPOTS = {
  'elk-tn50':{
    title:'Elk River TN-50 — below Tims Ford (Lincoln)', sub:'Stocked rainbow + brown trout · tailwater runs & pools',
-   center:[35.19150,-86.28030], zoom:16,
+   center:[35.19150,-86.28030], zoom:16, unverified:true,
    targets:[
      {n:1,ll:[35.19365,-86.28012],w:'Run below the dam',x:'nymph / midge'},
      {n:2,ll:[35.19263,-86.27985],w:'Above-bridge pool',x:'Rooster Tail / Power Bait'},
@@ -58,7 +58,7 @@ const SPOTS = {
  },
  'vales-mill':{
    title:'Vales Mill — Richland Creek (Pulaski)', sub:'Smallmouth + catfish · BANK-ONLY tailrace below a low-head dam',
-   center:[35.19398,-87.06085], zoom:17,
+   center:[35.19398,-87.06085], zoom:17, unverified:true,
    targets:[
      {n:1,ll:[35.19422,-87.06237],w:'Tailrace eddy by the ramp',x:'tube / Ned'},
      {n:2,ll:[35.19392,-87.06179],w:'Outside bend (undercut)',x:'craw tube — work the bank'},
@@ -70,7 +70,7 @@ const SPOTS = {
  },
  'leftwich':{
    title:'Leftwich / Sowell Mill — Duck (Columbia)', sub:'Smallmouth · swift rocky riffle-and-pool',
-   center:[35.57248,-86.86893], zoom:17,
+   center:[35.57248,-86.86893], zoom:17, unverified:true,
    targets:[
      {n:1,ll:[35.57258,-86.86902],w:'Riffle seam',x:'tube up-current'},
      {n:2,ll:[35.57203,-86.86969],w:'Pool below the riffle',x:'Ned rig / craw tube'},
@@ -81,7 +81,7 @@ const SPOTS = {
  },
  'iron-bridge':{
    title:'Iron Bridge — Duck (Columbia)', sub:'Largemouth + catfish · abandoned Columbia Dam slackwater',
-   center:[35.61168,-87.00222], zoom:17,
+   center:[35.61168,-87.00222], zoom:17, unverified:true,
    targets:[
      {n:1,ll:[35.61277,-87.00195],w:'Bridge piling eddy',x:'tube / jig, sweep the pilings'},
      {n:2,ll:[35.61214,-87.00182],w:'Bluff edge (deep)',x:'Texas worm / craw tube'},
@@ -105,10 +105,10 @@ const SPOTS = {
    title:'Howard Bridge — Duck (Maury Co.)', sub:'Smallmouth + catfish · ramp, gravel bar, river bend',
    center:[35.57272,-86.92145], zoom:18,
    targets:[
-     {n:1,ll:[35.57270,-86.92167],w:'Ramp-mouth eddy',x:'tube, sweep through'},
+     {n:1,ll:[35.57270,-86.92167],w:'Eddy behind the bridge pilings',x:'tube, sweep into it'},
      {n:2,ll:[35.57254,-86.92205],w:'Ramp riprap',x:'Ned — smallmouth'},
      {n:3,ll:[35.57247,-86.92251],w:'Gravel-bar edge (downstream)',x:'craw crankbait'},
-     {n:4,ll:[35.57299,-86.92040],w:'Riffle seam (upstream)',x:'tube up-current'},
+     {n:4,ll:[35.57299,-86.92040],w:'Upstream piling face / riffle seam',x:'tube up-current'},
      {n:5,ll:[35.57290,-86.92101],w:'Deep channel (mid-river)',x:'craw tube / cut bait'}
    ]
  },
@@ -131,7 +131,8 @@ const SPOTS = {
      {n:2,ll:[35.66231,-87.09353],w:'Point + eddy',x:'wacky Senko / Ned'},
      {n:3,ll:[35.66194,-87.09321],w:'Shaded laydowns',x:'jig / Texas'},
      {n:4,ll:[35.66156,-87.09297],w:'Outside bend (deep)',x:'craw tube / Ned'},
-     {n:5,ll:[35.66308,-87.09397],w:'Ramp riprap',x:'craw / Ned smallmouth'}
+     {n:5,ll:[35.66260,-87.09369],w:'Inside flat (shallow) — confirm spot on water',x:'low-light topwater'},
+     {n:6,ll:[35.66308,-87.09397],w:'Ramp riprap',x:'craw / Ned smallmouth'}
    ]
  },
  'williamsport':{
@@ -147,7 +148,7 @@ const SPOTS = {
  },
  'three-forks':{
    title:'Three Forks Bridge — Duck (Bedford)', sub:'Smallmouth + winter trout · top of the rocky float',
-   center:[35.48030,-86.32390], zoom:17,
+   center:[35.48030,-86.32390], zoom:17, unverified:true,
    targets:[
      {n:1,ll:[35.48087,-86.32242],w:'Big rocks / undercuts',x:'live crayfish / tube'},
      {n:2,ll:[35.47978,-86.32544],w:'First pool below riffle',x:'Ned rig'},
@@ -159,7 +160,7 @@ const SPOTS = {
  },
  'normandy':{
    title:'Normandy Dam Tailwater — Duck (Coffee)', sub:'Stocked trout (Nov–Jun) + smallmouth · rocky shoal',
-   center:[35.46400,-86.24640], zoom:17,
+   center:[35.46400,-86.24640], zoom:17, unverified:true,
    targets:[
      {n:1,ll:[35.46493,-86.24655],w:'Flat rocky shoal',x:'Rooster Tail / Power Bait'},
      {n:2,ll:[35.46422,-86.24643],w:'Run below the shoal',x:'wooly bugger / nymph'},
@@ -176,7 +177,7 @@ const map = L.map('map',{zoomControl:false,attributionControl:false}).setView(cf
 L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
   {maxZoom:19}).addTo(map);
 document.getElementById('ttl').innerHTML = cfg.title + '<small>'+cfg.sub+' &nbsp;·&nbsp; <a href="index.html">🗺️ all spots</a></small>';
-let leg = '<h4>WHERE TO CAST</h4>';
+let leg = (cfg.unverified ? '<div class="haz" style="background:#9a6a2a;color:#fff;padding:5px 8px;border-radius:6px;margin:0 0 8px">⚠️ Unverified — targets satellite-placed, not yet field-scouted. Confirm structure on the water.</div>' : '') + '<h4>WHERE TO CAST</h4>';
 function gm(ll){return `https://www.google.com/maps/search/?api=1&query=${ll[0]},${ll[1]}`;}
 function gd(ll){return `https://www.google.com/maps/dir/?api=1&destination=${ll[0]},${ll[1]}`;}
 cfg.targets.forEach(t=>{

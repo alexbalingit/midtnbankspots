@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
-<title>Middle TN Honey Holes — Bank Spots Map</title>
+<title>Caster — Middle TN Honey Holes</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
 <style>
   :root{ --ink:#1f2421; --cream:#f6f1e7; --gold:#c79a3b; --green:#2e7d32; --rust:#b5532a; --steel:#3a6b7d; }
@@ -57,8 +57,8 @@
 <body>
 <div class="hdr">
   <button class="navbtn" id="navbtn">☰ Spots by city</button>
-  <h1>🎣 Middle TN Honey Holes</h1>
-  <span class="sub">42 spots · <a href="logger.html">🐟 Log a catch →</a></span>
+  <h1>🎣 Caster</h1>
+  <span class="sub">Middle TN Honey Holes · 42 spots · <a href="logger.html">🐟 Log a catch →</a></span>
 </div>
 <div class="panel" id="panel"><div class="ph"><b>Spots by city</b><button class="cl" id="panelclose">✕</button></div><div id="citylist"></div></div>
 <div id="map"></div>
@@ -96,7 +96,7 @@ const spots = [
  {n:'Williamsport Lakes (TWRA)',cat:'L',city:'Spring Hill / Williamsport',cast:'williamsport',park:[35.70254,-87.21891],water:[35.70411,-87.21567],d:'easy (piers + bank)',sp:'Trophy largemouth, crappie, redear, catfish, hybrid striper',note:'4 stocked lakes (Blue Cat 80ac + Shellcracker/Goldeneye/Whippoorwill), piers, bait + boat rental + license on site. Largemouth 20" min, 1/day — heavier line. Best stocked water for Spring Hill / Thompson’s Station / Columbia.'},
  {n:'Williamsport Bridge (Columbia / Duck)',cat:'M',city:'Spring Hill / Williamsport',park:[35.6949,-87.2208],water:[35.69455,-87.22096],d:'~45 yd',sp:'Channel + blue catfish, largemouth, spotted, smallmouth',note:'Near-double the Middle-TN catfish abundance; deep bluff pools hold big blues. Cut bait in the holes; gravel for smallmouth.'},
  {n:'Iron Bridge (Columbia / Duck)',cat:'L',city:'Columbia',cast:'iron-bridge',park:[35.6119,-87.0028],water:[35.61157,-87.00285],d:'~40 yd',sp:'Largemouth, spotted, catfish, some smallmouth',note:'Abandoned Columbia Dam site — deep slackwater, bluff edges, bridge pilings. Best all-around bank spot near town.'},
- {n:'Yanahli Park (Columbia / Duck)',cat:'L',city:'Columbia',park:[35.6090,-86.9993],water:[35.60935,-87.00132],d:'~170 yd',sp:'Largemouth, spotted, catfish, bluegill',note:'County park wrapped by the Duck on three sides — walk the trail and pick multiple bank angles.'},
+ {n:'Yanahli Park (Columbia / Duck)',cat:'L',city:'Columbia',park:[35.6090,-86.9993],water:[35.60973,-86.99786],d:'~170 yd',sp:'Largemouth, spotted, catfish, bluegill',note:'County park wrapped by the Duck on three sides — walk the trail and pick multiple bank angles.'},
  {n:'Riverwalk Park (Columbia / Duck)',cat:'L',city:'Columbia',park:[35.6190,-87.0244],water:[35.61823,-87.02482],d:'~100 yd',sp:'Largemouth, spotted, bluegill, catfish',note:'Downtown impounded reach — slow, lake-style. ☠️ Stay well clear of the downtown low-head dam.'},
  {n:'Riverside Drive Access (Columbia / Duck)',cat:'L',city:'Columbia',park:[35.6184,-87.0251],water:[35.61823,-87.02482],d:'~35 yd',sp:'Largemouth, spotted, smallmouth, catfish',note:'Below the dam where the river restarts — first current breaks hold smallmouth. ☠️ Never fish toward the dam face.'},
  {n:'Chickasaw Trace (Columbia / Duck)',cat:'M',city:'Columbia',cast:'chickasaw',park:[35.6628,-87.0932],water:[35.66260,-87.09369],d:'~55 yd',sp:'Smallmouth + largemouth, spotted, rock bass, catfish',note:'Knob Creek confluence + bends — gravel bars, seams, eddies. Tube/Ned in the seams, topwater low light.'},
@@ -132,17 +132,32 @@ function pin(color, glyph, water){
 }
 function gmaps(ll){return `https://www.google.com/maps/search/?api=1&query=${ll[0]},${ll[1]}`;}
 function gdir(ll){return `https://www.google.com/maps/dir/?api=1&destination=${ll[0]},${ll[1]}`;}
+// --- research-grounding (audit 2026-06-25) ---
+// Water pins verified against "Duck River - Columbia Bank Spots.md" (the 10 Columbia Duck spots).
+// Everything else has no scouted research coordinate — flagged unverified (satellite-placed).
+const GROUNDED = new Set([
+  'Iron Bridge (Columbia / Duck)','Yanahli Park (Columbia / Duck)','Riverwalk Park (Columbia / Duck)',
+  'Riverside Drive Access (Columbia / Duck)','Chickasaw Trace (Columbia / Duck)','Williamsport Bridge (Columbia / Duck)',
+  'Leftwich / Sowell Mill (Columbia / Duck)','Fountain Creek (Columbia / Duck)','Carpenter Bridge (Columbia / Duck)',
+  'Hardison Mill (Columbia / Duck)'
+]);
+// Cast maps with NO scouted source file — targets are satellite-placed, not field-scouted.
+const UNVERIFIED_CAST = new Set(['elk-tn50','vales-mill','leftwich','iron-bridge','three-forks','normandy']);
 const bounds = [];
 spots.forEach((s,i)=>{
   const col = CAT[s.cat].c; bounds.push(s.park, s.water);
   L.polyline([s.park,s.water],{color:col,weight:2,dashArray:'4,5',opacity:.7}).addTo(map);
-  const castBtn = s.cast ? `<a class="btn cast" href="sat.html?id=${s.cast}" target="_blank" rel="noopener">🎯 Cast map</a>` : '';
+  const castUV = s.cast && UNVERIFIED_CAST.has(s.cast);
+  const castBtn = s.cast ? `<a class="btn cast" href="sat.html?id=${s.cast}" target="_blank" rel="noopener">🎯 Cast map${castUV?' (unverified)':''}</a>` : '';
+  const pinUV = !GROUNDED.has(s.n);
+  const uvNote = pinUV ? `<p style="margin:6px 0;font-size:11px;color:#9a6a2a"><b>⚠️ Unverified pin</b> — satellite-placed, not field-scouted. Confirm on the water.</p>` : '';
   const html = `<div class="pop">
      <h3>${s.n}</h3>
      <span class="z" style="background:${col}">${CAT[s.cat].label}</span>
      <p>${s.note}</p>
      <p style="margin:6px 0"><b>🐟 Fish here:</b> ${s.sp}</p>
      <p class="co">📍 park ${s.park[0]}, ${s.park[1]}<br>🎣 water ${s.water[0]}, ${s.water[1]} &nbsp;·&nbsp; walk ${s.d}</p>
+     ${uvNote}
      <a class="btn park" href="${gmaps(s.park)}" target="_blank" rel="noopener">📍 Park pin</a>
      <a class="btn water" href="${gmaps(s.water)}" target="_blank" rel="noopener">🎣 Water pin</a>
      <a class="btn dir" href="${gdir(s.park)}" target="_blank" rel="noopener">🧭 Navigate</a>
