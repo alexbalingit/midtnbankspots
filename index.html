@@ -127,8 +127,8 @@
   .cluster{position:relative;display:flex;align-items:center;border-radius:999px;
            background:rgba(25,27,19,.94);font-family:var(--sans);
            border:2px solid var(--brassL);box-shadow:0 4px 12px rgba(15,16,11,.45)}
-  .cluster svg{height:calc(100% - 3px);aspect-ratio:1/1;flex:0 0 auto;margin-left:2px}
-  .cluster .n{color:var(--brassL);font-size:13.5px;font-weight:800;letter-spacing:.01em;padding:0 10px 0 0;margin-left:-3px}
+  .cluster svg{height:calc(100% - 5px);aspect-ratio:1/1;flex:0 0 auto;margin-left:3px}
+  .cluster .n{color:var(--brassL);font-size:13.5px;font-weight:800;letter-spacing:.01em;padding:0 12px 0 4px}
 
   /* ── spot card (shared by popup + sheet) ────────────────────────────────── */
   .card h3{margin:0 0 6px;font-family:var(--serif);font-weight:700;font-size:16.5px;line-height:1.25;color:var(--pine)}
@@ -421,7 +421,7 @@ function hookFor(n){ return n>=7?HOOKS.treble : n>=4?HOOKS.worm : HOOKS.octopus;
 const clusterGroup = L.markerClusterGroup({
   maxClusterRadius:isMobile()?60:44, disableClusteringAtZoom:11, showCoverageOnHover:false, spiderfyOnMaxZoom:true,
   spiderLegPolylineOptions:{weight:1.5,color:'#a8853e',opacity:.65,dashArray:'4,4'},
-  iconCreateFunction:c=>{const n=c.getChildCount(),hgt=isMobile()?32:36,w=hgt+String(n).length*9+15;return L.divIcon({className:'',html:`<div class="cluster" style="width:${w}px;height:${hgt}px" title="${n} spots here — click to zoom in">${hookFor(n)}<span class="n">${n}</span></div>`,iconSize:[w,hgt]});}
+  iconCreateFunction:c=>{const n=c.getChildCount(),hgt=isMobile()?32:36,w=hgt+String(n).length*9+21;return L.divIcon({className:'',html:`<div class="cluster" style="width:${w}px;height:${hgt}px" title="${n} spots here — click to zoom in">${hookFor(n)}<span class="n">${n}</span></div>`,iconSize:[w,hgt]});}
 });
 const bounds = [];
 const detailLayers = []; // water pins + connectors — shown at close zoom only (declutter)
