@@ -109,6 +109,14 @@
   .legend .key{margin-top:8px;font-size:10.5px;color:rgba(239,233,216,.45);line-height:1.5;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
   .legend .key .ico{width:13px;height:13px}
   .legend .lclose{display:none;position:absolute;top:8px;right:8px;border:none;background:none;color:var(--marsh);cursor:pointer;padding:4px}
+  .chint{position:absolute;left:50%;transform:translateX(-50%);z-index:1070;display:none;align-items:center;gap:9px;
+         background:rgba(25,27,19,.94);color:rgba(239,233,216,.9);border:1px solid rgba(200,165,90,.4);
+         border-radius:999px;padding:7px 8px 7px 14px;font-size:11.5px;font-weight:600;white-space:nowrap;
+         box-shadow:0 10px 26px rgba(15,16,11,.4);backdrop-filter:blur(6px);max-width:94vw}
+  .chint b{color:var(--brassL)}
+  .chint button{border:none;background:rgba(239,233,216,.12);border-radius:50%;width:20px;height:20px;display:flex;
+                align-items:center;justify-content:center;color:var(--marsh);cursor:pointer;flex:0 0 auto}
+  .chint button .ico{width:11px;height:11px}
   .lchip{display:none;position:absolute;right:12px;bottom:26px;z-index:1000;align-items:center;gap:7px;
          background:rgba(25,27,19,.94);color:var(--brassL);border:1px solid rgba(200,165,90,.35);border-radius:999px;
          padding:9px 14px;font-size:12px;font-weight:700;letter-spacing:.05em;cursor:pointer;
@@ -116,9 +124,13 @@
 
   /* ── pins & clusters ────────────────────────────────────────────────────── */
   .cpin{filter:drop-shadow(0 3px 4px rgba(15,16,11,.4))}
-  .cluster{display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;
-           background:rgba(25,27,19,.92);color:var(--field);font-weight:800;font-size:13px;font-family:var(--sans);
+  .cluster{position:relative;display:flex;align-items:center;justify-content:center;width:46px;height:46px;border-radius:50%;
+           background:rgba(25,27,19,.94);font-family:var(--sans);
            border:2px solid var(--brassL);box-shadow:0 4px 12px rgba(15,16,11,.45)}
+  .cluster svg{position:absolute;inset:5px}
+  .cluster .n{position:absolute;right:-4px;bottom:-4px;min-width:19px;height:19px;padding:0 4px;border-radius:999px;
+              background:var(--brassL);color:#15160f;font-size:11px;font-weight:800;
+              display:flex;align-items:center;justify-content:center;border:2px solid rgba(25,27,19,.95)}
 
   /* ── spot card (shared by popup + sheet) ────────────────────────────────── */
   .card h3{margin:0 0 6px;font-family:var(--serif);font-weight:700;font-size:16.5px;line-height:1.25;color:var(--pine)}
@@ -206,6 +218,9 @@
 </div>
 
 <div class="riv" id="riv"></div>
+<div class="chint" id="chint"><span><b>Numbered hooks</b> = grouped spots · more hooks, more spots · tap to zoom in</span>
+  <button id="chintx" aria-label="Dismiss"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+</div>
 <div class="scrim" id="scrim"></div>
 
 <div class="panel tex-light" id="panel">
@@ -238,6 +253,7 @@
     <svg class="ico" viewBox="0 0 24 24" fill="currentColor"><ellipse cx="9.5" cy="12" rx="7" ry="4.6"/><path d="M15.5 12l6.5-4.2v8.4Z"/></svg> walk to water ·
     <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.2"/><path d="M12 1.5V6M12 18v4.5M1.5 12H6M18 12h4.5"/></svg> cast map · tap a pin
   </div>
+  <div class="key" style="margin-top:4px">numbered hook = grouped spots · more hooks, more spots · tap to zoom</div>
 </div>
 
 <div class="sheet" id="sheet">
@@ -330,7 +346,7 @@ function pinIcon(color, water){
       iconSize:[22,22], iconAnchor:[11,11], popupAnchor:[0,-12]});
   }
   return L.divIcon({className:'cpin',
-    html:`<svg width="30" height="38" viewBox="0 0 30 38"><path d="M15 37C15 37 3 22.6 3 13a12 12 0 1 1 24 0c0 9.6-12 24-12 24Z" fill="${color}" stroke="#efe9d8" stroke-width="2"/><circle cx="15" cy="13" r="4.6" fill="#efe9d8"/><circle cx="15" cy="13" r="2.1" fill="${color}"/></svg>`,
+    html:`<svg width="30" height="38" viewBox="0 0 30 38"><path d="M15 37C15 37 3 22.6 3 13a12 12 0 1 1 24 0c0 9.6-12 24-12 24Z" fill="${color}" stroke="#efe9d8" stroke-width="2"/><g transform="translate(5 3.6) scale(.42)"><g stroke="#efe9d8" fill="none" stroke-width="4.6" stroke-linecap="round"><ellipse cx="25.6" cy="6.5" rx="2" ry="2.4" transform="rotate(-35 25.6 6.5)"/><path d="M25 8.6q-1 1.5.3 2.9C29 15 33 21 33.8 26.5c.5 4.5-1.8 9.5-6.3 12.5-4 2.2-9 .5-10.2-3.5"/></g><path fill="#efe9d8" stroke="#efe9d8" stroke-width="1.4" d="M15.7 36.2 C14.7 32.6 14.8 29.2 16.2 25.8 L17 25.9 C17.1 28.3 17.2 29.9 17.3 31.2 L20.4 33.2 L17.6 33.6 L17.9 36 C17.2 36.5 16.4 36.5 15.7 36.2 Z"/></g></svg>`,
     iconSize:[30,38], iconAnchor:[15,37], popupAnchor:[0,-34]});
 }
 function gmaps(ll){return `https://www.google.com/maps/search/?api=1&query=${ll[0]},${ll[1]}`;}
@@ -389,9 +405,22 @@ function showCard(s, marker){
 }
 
 // ── markers: clustered park pins + close-zoom water detail ───────────────────
+// hook system — Alex's real tackle, side-view silhouettes (locked 2026-07-02, render-verified
+// against Alex's reference photos): 2–3 spots = OCTOPUS/J bait hook · 4–6 = EWG BASS WORM hook
+// (eye top-right, S-kink, wide gap, point up-left) · 7+ = TREBLE (elongated eye, two mirrored
+// points rising; no quad tier — side view can't distinguish it, the count pip carries the number)
+// wire = stroked path (stops at the bend) · tip = FILLED tapered blade with barb cut in,
+// so points render needle-sharp instead of round-capped (Alex feedback 2026-07-02)
+const HOOKS = {
+  octopus:`<svg viewBox="0 0 48 48" aria-hidden="true"><g transform="translate(24 24) scale(.86) translate(-24 -24)"><g stroke="#efe9d8" fill="none" stroke-width="2.6" stroke-linecap="round"><ellipse cx="25.6" cy="6.5" rx="2" ry="2.4" transform="rotate(-35 25.6 6.5)"/><path d="M25 8.6q-1 1.5.3 2.9C29 15 33 21 33.8 26.5c.5 4.5-1.8 9.5-6.3 12.5-4 2.2-9 .5-10.2-3.5"/></g><path fill="#efe9d8" d="M15.7 36.2 C14.7 32.6 14.8 29.2 16.2 25.8 L17 25.9 C17.1 28.3 17.2 29.9 17.3 31.2 L20.4 33.2 L17.6 33.6 L17.9 36 C17.2 36.5 16.4 36.5 15.7 36.2 Z"/></g></svg>`,
+  worm:`<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#efe9d8" fill-rule="evenodd" d="M25.75 43.02C25.35 42.98 24.61 42.86 24.38 42.79C24.27 42.76 24.03 42.69 23.86 42.65C23.69 42.60 23.41 42.51 23.25 42.43C23.08 42.36 22.90 42.30 22.84 42.30C22.78 42.30 22.53 42.19 22.29 42.06C22.05 41.92 21.79 41.81 21.71 41.81C21.52 41.81 20.57 41.25 20.57 41.14C20.57 41.09 20.33 40.92 20.05 40.76C19.76 40.60 19.52 40.43 19.52 40.38C19.52 40.34 19.40 40.23 19.25 40.14C19.10 40.06 18.93 39.91 18.87 39.82C18.81 39.73 18.69 39.63 18.61 39.61C18.54 39.58 18.47 39.52 18.47 39.47C18.47 39.41 18.38 39.31 18.26 39.24C18.15 39.18 18.05 39.08 18.05 39.03C18.05 38.99 17.99 38.91 17.91 38.87C17.83 38.83 17.77 38.76 17.77 38.70C17.77 38.65 17.69 38.58 17.60 38.53C17.50 38.49 17.42 38.41 17.42 38.36C17.42 38.30 17.37 38.24 17.32 38.22C17.26 38.19 17.21 38.13 17.21 38.08C17.21 38.02 17.16 37.96 17.11 37.94C17.05 37.91 17.00 37.85 17.00 37.80C17.00 37.74 16.96 37.68 16.90 37.66C16.85 37.64 16.78 37.53 16.76 37.41C16.73 37.30 16.67 37.19 16.61 37.16C16.56 37.14 16.51 37.08 16.51 37.02C16.51 36.96 16.49 36.91 16.46 36.91C16.43 36.91 16.36 36.81 16.31 36.68C16.25 36.56 16.19 36.44 16.16 36.42C16.10 36.37 15.88 35.89 15.88 35.80C15.88 35.76 15.85 35.72 15.81 35.72C15.77 35.72 15.74 35.67 15.74 35.61C15.74 35.56 15.70 35.49 15.64 35.47C15.59 35.45 15.52 35.34 15.50 35.23C15.47 35.11 15.42 35.02 15.39 35.02C15.35 35.02 15.32 34.93 15.32 34.81C15.32 34.70 15.30 34.60 15.27 34.60C15.23 34.60 15.16 34.48 15.11 34.34C15.05 34.20 14.95 33.97 14.88 33.84C14.82 33.70 14.76 33.56 14.76 33.51C14.76 33.47 14.72 33.34 14.66 33.23C14.60 33.12 14.55 32.98 14.55 32.91C14.55 32.85 14.50 32.66 14.44 32.49C14.34 32.19 14.26 31.87 14.00 30.65C13.92 30.30 13.83 29.56 13.79 28.99C13.65 27.06 13.72 23.11 13.92 21.90C13.96 21.67 14.02 21.20 14.06 20.85C14.24 19.40 14.36 18.72 14.66 17.32C14.90 16.25 15.41 14.20 15.46 14.13C15.49 14.09 15.54 13.95 15.57 13.82C15.60 13.68 15.64 13.54 15.67 13.50C15.70 13.46 15.75 13.32 15.78 13.19C15.81 13.05 15.87 12.86 15.92 12.77C15.97 12.67 16.05 12.50 16.09 12.38C16.25 11.94 16.66 11.61 17.27 11.40C17.58 11.30 17.81 11.29 18.48 11.31C18.94 11.33 19.35 11.38 19.40 11.42C19.45 11.46 19.66 11.52 19.88 11.54C20.31 11.60 20.50 11.49 20.50 11.21C20.50 11.08 20.34 10.46 20.22 10.14C20.15 9.94 19.96 9.27 19.90 9.00C19.88 8.86 19.81 8.75 19.73 8.73C19.67 8.71 19.57 8.59 19.52 8.46C19.47 8.33 19.41 8.22 19.38 8.22C19.21 8.22 19.09 5.67 19.25 5.33C19.36 5.09 19.59 5.00 20.12 5.00C20.65 5.00 21.06 5.19 21.18 5.48C21.28 5.72 21.38 6.23 21.48 6.96C21.53 7.29 21.63 7.79 21.71 8.08C21.78 8.37 21.87 8.70 21.90 8.81C21.93 8.93 22.03 9.28 22.11 9.58C22.25 10.05 22.28 10.32 22.28 11.16L22.29 12.17L22.06 12.56C21.82 12.97 21.47 13.25 21.03 13.40C20.71 13.50 19.16 13.46 19.01 13.34C18.97 13.30 18.73 13.25 18.50 13.22C18.08 13.17 18.07 13.18 17.85 13.41C17.73 13.54 17.63 13.70 17.63 13.76C17.63 13.83 17.60 13.90 17.57 13.92C17.51 13.95 17.33 14.47 17.08 15.36C16.99 15.65 16.89 15.99 16.85 16.13C16.80 16.26 16.71 16.64 16.65 16.97C16.58 17.29 16.47 17.78 16.41 18.05C16.35 18.32 16.27 18.74 16.23 18.99C16.19 19.23 16.14 19.46 16.12 19.49C16.09 19.54 15.95 20.40 15.84 21.17C15.82 21.30 15.76 21.73 15.71 22.11C15.52 23.40 15.46 25.22 15.53 26.89C15.61 28.75 15.74 29.73 16.06 30.82C16.11 31.00 16.20 31.34 16.27 31.59C16.33 31.84 16.43 32.15 16.49 32.27C16.54 32.39 16.58 32.56 16.58 32.64C16.58 32.72 16.61 32.78 16.63 32.78C16.69 32.78 16.86 33.12 16.86 33.24C16.86 33.35 17.03 33.69 17.08 33.69C17.11 33.69 17.15 33.79 17.18 33.90C17.20 34.02 17.25 34.11 17.29 34.11C17.32 34.11 17.35 34.14 17.35 34.18C17.35 34.30 17.59 34.81 17.65 34.81C17.68 34.81 17.70 34.86 17.70 34.92C17.70 34.98 17.75 35.04 17.80 35.07C17.86 35.09 17.92 35.20 17.95 35.31C17.97 35.43 18.03 35.54 18.08 35.55C18.13 35.57 18.21 35.70 18.26 35.83C18.31 35.96 18.41 36.09 18.48 36.11C18.55 36.13 18.61 36.20 18.61 36.25C18.61 36.31 18.65 36.37 18.70 36.39C18.76 36.41 18.84 36.53 18.89 36.66C18.94 36.79 19.06 36.93 19.15 36.97C19.24 37.01 19.31 37.10 19.31 37.15C19.31 37.21 19.37 37.29 19.45 37.33C19.53 37.37 19.59 37.45 19.59 37.50C19.59 37.55 19.67 37.62 19.77 37.67C19.86 37.71 19.94 37.79 19.94 37.84C19.94 37.89 20.04 37.98 20.15 38.05C20.27 38.11 20.36 38.21 20.36 38.26C20.36 38.31 20.47 38.41 20.61 38.48C20.75 38.54 20.88 38.65 20.90 38.72C20.91 38.78 21.13 38.95 21.38 39.08C21.63 39.21 21.83 39.36 21.83 39.41C21.83 39.52 22.87 40.13 23.07 40.13C23.16 40.13 23.38 40.23 23.57 40.34C23.76 40.46 23.98 40.55 24.07 40.55C24.16 40.55 24.33 40.61 24.45 40.68C24.57 40.76 24.84 40.84 25.05 40.87C25.26 40.89 25.47 40.94 25.51 40.97C25.63 41.07 27.01 41.19 27.49 41.14C28.42 41.06 29.28 40.87 29.62 40.69C29.68 40.65 29.79 40.62 29.86 40.62C30.05 40.62 31.31 40.03 31.72 39.75C32.12 39.49 32.41 39.16 32.47 38.92C32.52 38.75 32.42 38.23 32.33 38.17C32.30 38.15 32.26 38.01 32.24 37.86C32.21 37.71 32.16 37.57 32.13 37.55C32.10 37.52 32.00 37.29 31.91 37.02C31.82 36.75 31.69 36.40 31.62 36.25C31.55 36.10 31.49 35.93 31.49 35.87C31.49 35.81 31.44 35.67 31.38 35.56C31.33 35.45 31.28 35.30 31.28 35.23C31.28 35.08 31.14 35.02 30.81 35.02L30.56 35.02L30.61 34.44C30.71 33.27 30.69 33.08 30.29 31.45C30.15 30.89 30.02 30.03 30.02 29.65L30.02 29.28L30.54 29.28L31.06 29.28L31.10 29.49C31.13 29.61 31.18 29.70 31.21 29.70C31.25 29.70 31.28 29.74 31.28 29.78C31.28 29.82 31.34 29.98 31.41 30.15C31.49 30.31 31.57 30.53 31.60 30.63C31.62 30.74 31.67 30.82 31.69 30.82C31.72 30.82 31.79 30.96 31.83 31.12C31.88 31.28 31.95 31.43 31.98 31.45C32.00 31.47 32.10 31.71 32.19 31.98C32.28 32.25 32.37 32.48 32.40 32.50C32.42 32.52 32.55 32.85 32.68 33.24C32.80 33.62 32.93 33.95 32.96 33.97C32.98 33.99 33.09 34.28 33.20 34.60C33.31 34.93 33.42 35.21 33.46 35.22C33.49 35.23 33.53 35.36 33.56 35.49C33.59 35.63 33.65 35.83 33.70 35.93C33.75 36.03 33.80 36.18 33.80 36.26C33.80 36.35 33.83 36.42 33.86 36.42C33.90 36.42 33.96 36.57 34.00 36.75C34.04 36.94 34.14 37.31 34.22 37.58C34.41 38.27 34.41 39.53 34.22 40.08C34.06 40.51 34.02 40.57 33.46 41.16C33.21 41.42 32.94 41.61 32.58 41.78C32.29 41.91 32.04 42.05 32.01 42.09C31.99 42.13 31.92 42.16 31.87 42.16C31.81 42.16 31.52 42.25 31.22 42.36C30.12 42.78 29.54 42.94 28.93 43.00C28.34 43.06 26.29 43.08 25.75 43.02Z"/></svg>`,
+  treble:`<svg viewBox="0 0 48 48" aria-hidden="true"><g stroke="#efe9d8" fill="none" stroke-width="2.5" stroke-linecap="round"><ellipse cx="24" cy="8" rx="2.5" ry="3.3"/><path d="M24 11.5V35"/><path d="M24 26a7 7 0 1 1-11-5.5"/><path d="M24 26a7 7 0 1 0 11-5.5"/></g><path fill="#efe9d8" d="M11.6 20.9 L12.2 13.8 L13.2 16.6 L15.5 17.6 L13.6 18.2 L14.3 20.2 Z"/><path fill="#efe9d8" d="M36.4 20.9 L35.8 13.8 L34.8 16.6 L32.5 17.6 L34.4 18.2 L33.7 20.2 Z"/></svg>`
+};
+function hookFor(n){ return n>=7?HOOKS.treble : n>=4?HOOKS.worm : HOOKS.octopus; }
 const clusterGroup = L.markerClusterGroup({
   maxClusterRadius:44, disableClusteringAtZoom:11, showCoverageOnHover:false, spiderfyOnMaxZoom:true,
-  iconCreateFunction:c=>L.divIcon({className:'',html:`<div class="cluster">${c.getChildCount()}</div>`,iconSize:[38,38]})
+  spiderLegPolylineOptions:{weight:1.5,color:'#a8853e',opacity:.65,dashArray:'4,4'},
+  iconCreateFunction:c=>L.divIcon({className:'',html:`<div class="cluster" title="${c.getChildCount()} spots here — click to zoom in">${hookFor(c.getChildCount())}<span class="n">${c.getChildCount()}</span></div>`,iconSize:[46,46]})
 });
 const bounds = [];
 const detailLayers = []; // water pins + connectors — shown at close zoom only (declutter)
@@ -412,6 +441,24 @@ function declutter(){ const show = map.getZoom()>=12;
 map.on('zoomend',declutter);
 map.fitBounds(bounds,{padding:[60,70]});
 declutter();
+
+// cluster hint chip — visible at ANY zoom where numbered hooks are on screen, until dismissed
+const chint=document.getElementById('chint');
+const HINT_KEY='caster_hint_ok';
+function updateHint(){
+  const show = !localStorage.getItem(HINT_KEY) && document.querySelector('.cluster');
+  chint.style.display = show ? 'flex' : 'none';
+  if(show){
+    const hh=document.getElementById('hdr').offsetHeight;
+    const b=document.getElementById('riv');
+    chint.style.top=(hh+(b.style.display==='flex'?b.offsetHeight:0)+10)+'px';
+  }
+}
+function dismissHint(){ localStorage.setItem(HINT_KEY,'1'); updateHint(); }
+document.getElementById('chintx').onclick=dismissHint;
+clusterGroup.on('clusterclick',dismissHint); // once they use it, they get it
+map.on('zoomend moveend',()=>setTimeout(updateHint,80));
+setTimeout(updateHint,300);
 
 // ── home base (30-min radius for friends & family) ───────────────────────────
 const HOME_KEY='caster_home';
