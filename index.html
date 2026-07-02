@@ -59,12 +59,22 @@
   .riv .g{background:#2e7d32}.riv .c{background:#c79a3b;color:#1f2421}.riv .s{background:#b5532a}
   .riv a{color:#7a5a2a;font-weight:700;text-decoration:none}
   .riv .tw{color:#777;font-size:11px}
+  /* premium pass */
+  .hdr h1{color:var(--gold);letter-spacing:.4px}
+  .homebtn{background:transparent;border:1.5px solid var(--gold);color:var(--gold);border-radius:999px;padding:5px 11px;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s}
+  .homebtn.set{background:var(--gold);color:#1f2421}
+  .leaflet-popup-content-wrapper{border-radius:14px;box-shadow:0 10px 30px rgba(31,36,33,.28)}
+  .pop a.btn{border-radius:9px}
+  .legend{border-radius:14px}
+  .nearmin{margin-left:auto;font-size:11px;color:#7a5a2a;font-weight:700;white-space:nowrap}
+  .city h3.home{background:#f3e7cd;color:#8a6114}
 </style>
 </head>
 <body>
 <div class="hdr">
   <button class="navbtn" id="navbtn">☰ Spots by city</button>
   <h1>🎣 Caster</h1>
+  <button class="homebtn" id="homebtn">🏠 Home</button>
   <span class="sub">Middle TN Honey Holes · 42 spots · <a href="logger.html">🐟 Log a catch →</a></span>
 </div>
 <div class="riv" id="riv"></div>
@@ -132,7 +142,7 @@ const spots = [
  {n:'Farris Creek Bridge (Elk R. tailwater)',cat:'T',city:'Fayetteville — Elk River',park:[35.1635,-86.3186],water:[35.16323,-86.31871],d:'~50 yd (creek mouth)',sp:'Stocked trout (rainbow/brown)',note:'~8.5 mi below the dam — gravel bars + creek mouth, end of the popular 9-mi float. ⚠️ Tims Ford generation hazard.'}
 ];
 const map = L.map('map',{zoomControl:true}).setView([35.62,-86.66],9);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19, attribution:'&copy; OpenStreetMap'}).addTo(map);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{maxZoom:19, attribution:'&copy; OpenStreetMap &copy; CARTO'}).addTo(map);
 function pin(color, glyph, water){
   return L.divIcon({className:'',
     html:`<div class="pin${water?' water':''}" style="background:${color}"><span>${glyph}</span></div>`,
@@ -178,33 +188,90 @@ spots.forEach((s,i)=>{
 });
 map.fitBounds(bounds,{padding:[55,55]});
 
+// ---- home base (30-min radius for friends & family) ----
+const HOME_KEY='caster_home';
+let homeLayer=null;
+function getHome(){ try{return JSON.parse(localStorage.getItem(HOME_KEY));}catch(e){return null;} }
+function kmBetween(a,b){ const R=6371,dLa=(b[0]-a[0])*Math.PI/180,dLn=(b[1]-a[1])*Math.PI/180;
+  const q=Math.sin(dLa/2)**2+Math.cos(a[0]*Math.PI/180)*Math.cos(b[0]*Math.PI/180)*Math.sin(dLn/2)**2;
+  return 2*R*Math.asin(Math.sqrt(q)); }
+function driveMin(km){ return Math.round(km*1.3/72*60); } // road factor 1.3 · ~45 mph avg
+const RADIUS_KM=28; // ≈ a 30-minute drive
+function drawHome(){
+  if(homeLayer){map.removeLayer(homeLayer);homeLayer=null;}
+  const h=getHome();
+  document.getElementById('homebtn').classList.toggle('set',!!h);
+  document.getElementById('homebtn').textContent = h ? '🏠 Home set' : '🏠 Home';
+  if(!h) return;
+  homeLayer=L.layerGroup([
+    L.circle(h,{radius:RADIUS_KM*1000,color:'#c79a3b',weight:1.5,dashArray:'6,6',fillColor:'#c79a3b',fillOpacity:.05}),
+    L.marker(h,{icon:L.divIcon({className:'',html:'<div style="font-size:22px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.4))">🏠</div>',iconSize:[24,24],iconAnchor:[12,12]})})
+      .bindPopup('<b>Home base</b><br>Gold circle ≈ a 30-minute drive.')
+  ]).addTo(map);
+}
+function setHomeFlow(){
+  const h=getHome();
+  if(h){ if(confirm('Remove your home base?')){localStorage.removeItem(HOME_KEY);drawHome();buildList();} return; }
+  const useGPS=confirm('Set your home base?\n\nOK — use my current location\nCancel — tap a point on the map');
+  if(useGPS && navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(p=>{
+      localStorage.setItem(HOME_KEY,JSON.stringify([p.coords.latitude,p.coords.longitude]));
+      drawHome();buildList();map.flyTo(getHome(),10);
+    },()=>alert('Could not get your location — tap the map instead (press 🏠 Home again, then Cancel).'));
+  } else {
+    alert('Tap the map where home is.');
+    map.once('click',e=>{
+      localStorage.setItem(HOME_KEY,JSON.stringify([e.latlng.lat,e.latlng.lng]));
+      drawHome();buildList();
+    });
+  }
+}
+document.getElementById('homebtn').onclick=setHomeFlow;
+
 // ---- city directory panel ----
 const panel=document.getElementById('panel'), cl=document.getElementById('citylist');
-let html='';
-CITY_ORDER.forEach(city=>{
-  const inCity = spots.filter(s=>s.city===city);
-  if(!inCity.length) return;
-  html += `<div class="city"><h3>${city} <span style="color:#aa9;font-weight:600">(${inCity.length})</span></h3>`;
-  inCity.forEach(s=>{
-    const idx = spots.indexOf(s);
-    const cast = s.cast ? `<a class="cast" href="sat.html?id=${s.cast}" target="_blank" rel="noopener" title="cast map">🎯</a>` : '';
-    html += `<div class="spot" data-idx="${idx}"><span class="dot" style="background:${CAT[s.cat].c}"></span><span class="nm">${s.n.replace(/ \(.*\)/,'')}</span>${cast}</div>`;
+function spotRow(s,extra){
+  const idx=spots.indexOf(s);
+  const cast=s.cast?`<a class="cast" href="sat.html?id=${s.cast}" target="_blank" rel="noopener" title="cast map">🎯</a>`:'';
+  return `<div class="spot" data-idx="${idx}"><span class="dot" style="background:${CAT[s.cat].c}"></span><span class="nm">${s.n.replace(/ \(.*\)/,'')}</span>${extra||''}${cast}</div>`;
+}
+function buildList(){
+  let html='';
+  const h=getHome();
+  if(h){
+    const near=spots.map(s=>({s,km:kmBetween(h,s.park)})).filter(x=>x.km<=RADIUS_KM).sort((a,b)=>a.km-b.km);
+    html+=`<div class="city"><h3 class="home">🏠 Near home — ~30 min <span style="color:#aa9;font-weight:600">(${near.length})</span></h3>`;
+    if(near.length) near.forEach(x=>{ html+=spotRow(x.s,`<span class="nearmin">~${driveMin(x.km)} min</span>`); });
+    else html+=`<div style="padding:10px 12px;font-size:12px;color:#777">No spots within ~30 min — zoom out and pick a day-trip water.</div>`;
+    html+=`</div>`;
+  }
+  CITY_ORDER.forEach(city=>{
+    const inCity=spots.filter(s=>s.city===city);
+    if(!inCity.length) return;
+    html+=`<div class="city"><h3>${city} <span style="color:#aa9;font-weight:600">(${inCity.length})</span></h3>`;
+    inCity.forEach(s=>{html+=spotRow(s);});
+    html+=`</div>`;
   });
-  html += `</div>`;
-});
-cl.innerHTML = html;
+  cl.innerHTML=html;
+  cl.querySelectorAll('.spot').forEach(el=>{
+    el.addEventListener('click',e=>{
+      if(e.target.classList.contains('cast')) return;
+      const s=spots[+el.dataset.idx];
+      setPanel(false);
+      map.flyTo(s.park,16,{duration:.8});
+      setTimeout(()=>s._m.openPopup(),850);
+    });
+  });
+}
 const legendEl=document.querySelector('.legend');
-function setPanel(open){ panel.classList.toggle('open',open); legendEl.style.display=(open && window.innerWidth<760)?'none':''; }
-window.addEventListener('resize',()=>{ if(window.innerWidth>=760) legendEl.style.display=''; });
-cl.querySelectorAll('.spot').forEach(el=>{
-  el.addEventListener('click',e=>{
-    if(e.target.classList.contains('cast')) return;
-    const s = spots[+el.dataset.idx];
-    setPanel(false);
-    map.flyTo(s.park, 16, {duration:.8});
-    setTimeout(()=>s._m.openPopup(), 850);
-  });
-});
+function fixTops(){ // keep the panel below the conditions banner so GO/CAUTION/SKIP stays visible
+  const b=document.getElementById('riv');
+  const t=38+(b&&b.style.display==='flex'?b.offsetHeight:0);
+  panel.style.top=t+'px';
+}
+function setPanel(open){ fixTops(); panel.classList.toggle('open',open); legendEl.style.display=(open && window.innerWidth<760)?'none':''; }
+window.addEventListener('resize',()=>{ fixTops(); if(window.innerWidth>=760) legendEl.style.display=''; });
+buildList(); drawHome();
 document.getElementById('navbtn').onclick=()=>setPanel(!panel.classList.contains('open'));
 document.getElementById('panelclose').onclick=()=>setPanel(false);
 
@@ -248,6 +315,7 @@ document.getElementById('panelclose').onclick=()=>setPanel(false);
       <a href="https://waterdata.usgs.gov/monitoring-location/03599500/" target="_blank" rel="noopener">gauge ↗</a>
       <span class="tw">Tailwaters (Normandy · Elk): check TVA releases first.</span>`;
     el.style.display='flex';
+    fixTops();
   }catch(e){/* offline / blocked — banner stays hidden */}
 })();
 </script>
