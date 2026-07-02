@@ -5,10 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
 <title>Caster — Middle TN Honey Holes</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{ --ink:#1f2421; --cream:#f6f1e7; --gold:#c79a3b; --green:#2e7d32; --rust:#b5532a; --steel:#3a6b7d; }
   *{box-sizing:border-box}
-  html,body{margin:0;height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink)}
+  html,body{margin:0;height:100%;font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink)}
   #map{position:absolute;inset:0;z-index:1}
   .hdr{position:absolute;top:0;left:0;right:0;z-index:1100;background:rgba(31,36,33,.93);color:var(--cream);
        padding:8px 12px;display:flex;align-items:center;gap:10px;backdrop-filter:blur(4px)}
@@ -32,9 +34,11 @@
   .spot .dot{width:10px;height:10px;border-radius:50%;flex:0 0 auto;border:1.5px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.25)}
   .spot .nm{flex:1;line-height:1.25}
   .spot .cast{flex:0 0 auto;font-size:14px;text-decoration:none}
-  .legend{position:absolute;right:10px;bottom:24px;z-index:1000;background:rgba(246,241,231,.96);
-          border-radius:10px;padding:10px 12px;font-size:12.5px;box-shadow:0 2px 10px rgba(0,0,0,.25);line-height:1.8}
-  .legend .ltitle{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;color:#555;font-weight:700}
+  .legend{position:absolute;right:10px;bottom:24px;z-index:1000;background:rgba(31,36,33,.92);color:rgba(246,241,231,.92);
+          border-radius:14px;padding:12px 14px;font-size:12.5px;box-shadow:0 10px 30px rgba(31,36,33,.35);line-height:1.9;backdrop-filter:blur(4px)}
+  .legend .ltitle{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:6px;color:var(--gold);font-weight:800}
+  .legend .row .d{color:rgba(246,241,231,.55)}
+  .legend .key{color:rgba(246,241,231,.5)}
   .dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:7px;vertical-align:middle;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.25)}
   .legend .row{white-space:nowrap;margin:2px 0}
   .legend .row b{font-weight:700}
@@ -52,13 +56,15 @@
   .pop a.btn{display:inline-block;margin:3px 4px 0 0;padding:6px 9px;border-radius:7px;font-size:12px;font-weight:600;text-decoration:none;color:#fff}
   .pop a.park{background:#374b43} .pop a.water{background:var(--gold);color:#1f2421} .pop a.dir{background:#2b6cb0} .pop a.cast{background:#7a2f12}
   .pop .co{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:#555}
-  /* river conditions banner */
-  .riv{position:absolute;top:38px;left:0;right:0;z-index:1080;display:none;align-items:center;gap:8px;flex-wrap:wrap;
-       padding:5px 12px;font-size:12px;background:rgba(246,241,231,.96);border-bottom:1px solid #d9d0bc;color:#333}
-  .riv .pill{display:inline-block;padding:2px 9px;border-radius:999px;font-weight:800;font-size:11px;color:#fff;letter-spacing:.4px}
+  /* river conditions — part of the dark masthead */
+  .riv{position:absolute;top:38px;left:0;right:0;z-index:1080;display:none;align-items:center;gap:9px;flex-wrap:wrap;
+       padding:6px 12px;font-size:12px;background:rgba(31,36,33,.93);color:rgba(246,241,231,.85);
+       border-bottom:1px solid rgba(199,154,59,.4);backdrop-filter:blur(4px)}
+  .riv b{color:var(--cream)}
+  .riv .pill{display:inline-block;padding:2px 10px;border-radius:999px;font-weight:800;font-size:11px;color:#fff;letter-spacing:.6px}
   .riv .g{background:#2e7d32}.riv .c{background:#c79a3b;color:#1f2421}.riv .s{background:#b5532a}
-  .riv a{color:#7a5a2a;font-weight:700;text-decoration:none}
-  .riv .tw{color:#777;font-size:11px}
+  .riv a{color:var(--gold);font-weight:700;text-decoration:none}
+  .riv .tw{color:rgba(246,241,231,.5);font-size:11px}
   /* premium pass */
   .hdr h1{color:var(--gold);letter-spacing:.4px}
   .homebtn{background:transparent;border:1.5px solid var(--gold);color:var(--gold);border-radius:999px;padding:5px 11px;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s}
@@ -108,9 +114,9 @@ const spots = [
  {n:'Tower Park (Brentwood)',cat:'S',city:'Brentwood',cast:'tower-park',park:[35.99758,-86.79178],water:[36.00424,-86.79665],d:'~0.4 mi greenway to the river',sp:'Smallmouth, rock bass, sunfish',note:'Little Harpeth bends, gravel bars, laydowns — by the historic WSM radio tower off Concord Rd; greenway walks to the river.'},
  {n:'Deerwood Arboretum (Brentwood)',cat:'S',city:'Brentwood',cast:'deerwood',park:[36.03621,-86.84245],water:[36.03660,-86.84290],d:'~60 yd',sp:'Smallmouth, sunfish',note:'Footbridge pilings + a wooded river’s-edge point (320 Deerwood Ln, off Johnson Chapel Rd W). Skip the two ponds (degraded).'},
  {n:'Edwin Warner — Little Harpeth (Nashville)',cat:'S',city:'Brentwood',cast:'edwin-warner',park:[36.05064,-86.90483],water:[36.05010,-86.90420],d:'~80 yd',sp:'Smallmouth, rock bass',note:'Warner Parks. Ledge tailouts, riffle seams, cut-bank laydowns; the Warner Rapid confluence is the best structure on the Little Harpeth.'},
- {n:'Narrows of the Harpeth (state park)',cat:'S',city:'Kingston Springs — Harpeth SP',park:[36.13612,-87.14573],water:[36.13631,-87.14941],d:'~90 yd',sp:'Smallmouth',note:'Rocky/gravel runs, current seams behind boulders, ledge pools. Smallmouth within a quarter-mile of the put-in.'},
- {n:"Newsom's Mill (state park)",cat:'S',city:'Kingston Springs — Harpeth SP',park:[36.08407,-87.04261],water:[36.08449,-87.04413],d:'~70 yd',sp:'Smallmouth',note:'Historic mill-ruin pool, log cover, wadeable runs.'},
- {n:'Hidden Lake (state park)',cat:'S',city:'Kingston Springs — Harpeth SP',park:[36.0920,-87.0730],water:[36.09222,-87.07899],d:'~120 yd',sp:'Smallmouth',note:'River-adjacent access + ledge pools (some trail closures).'},
+ {n:'Narrows of the Harpeth (state park)',cat:'S',city:'Kingston Springs — Harpeth SP',cast:'narrows',park:[36.13612,-87.14573],water:[36.13631,-87.14941],d:'~90 yd',sp:'Smallmouth',note:'Rocky/gravel runs, current seams behind boulders, ledge pools. Smallmouth within a quarter-mile of the put-in.'},
+ {n:"Newsom's Mill (state park)",cat:'S',city:'Kingston Springs — Harpeth SP',cast:'newsoms-mill',park:[36.08407,-87.04261],water:[36.08449,-87.04413],d:'~70 yd',sp:'Smallmouth',note:'Historic mill-ruin pool, log cover, wadeable runs.'},
+ {n:'Hidden Lake (state park)',cat:'S',city:'Kingston Springs — Harpeth SP',cast:'hidden-lake',park:[36.0920,-87.0730],water:[36.09222,-87.07899],d:'~120 yd',sp:'Smallmouth',note:'River-adjacent access + ledge pools (some trail closures).'},
  {n:'Williamsport Lakes (TWRA)',cat:'L',city:'Spring Hill / Williamsport',cast:'williamsport',park:[35.70254,-87.21891],water:[35.70411,-87.21567],d:'easy (piers + bank)',sp:'Trophy largemouth, crappie, redear, catfish, hybrid striper',note:'4 stocked lakes (Blue Cat 80ac + Shellcracker/Goldeneye/Whippoorwill), piers, bait + boat rental + license on site. Largemouth 20" min, 1/day — heavier line. Best stocked water for Spring Hill / Thompson’s Station / Columbia.'},
  {n:'Williamsport Bridge (Columbia / Duck)',cat:'M',city:'Spring Hill / Williamsport',cast:'williamsport-bridge',park:[35.6949,-87.2208],water:[35.69455,-87.22096],d:'~45 yd',sp:'Channel + blue catfish, largemouth, spotted, smallmouth',note:'Near-double the Middle-TN catfish abundance; deep bluff pools hold big blues. Cut bait in the holes; gravel for smallmouth.'},
  {n:'Iron Bridge (Columbia / Duck)',cat:'L',city:'Columbia',cast:'iron-bridge',park:[35.6119,-87.0028],water:[35.61157,-87.00285],d:'~40 yd',sp:'Largemouth, spotted, catfish, some smallmouth',note:'Abandoned Columbia Dam site — deep slackwater, bluff edges, bridge pilings. Best all-around bank spot near town.'},
@@ -127,19 +133,19 @@ const spots = [
  {n:'Henry Horton — Wilhoite Trail (Duck)',cat:'M',city:'Culleoka / Chapel Hill',cast:'henry-horton',park:[35.5935,-86.6959],water:[35.59170,-86.68898],d:'~0.7 mi trail to the dam',sp:'Smallmouth, largemouth, redeye, catfish',note:'Park NE of US-31A bridge, 0.7-mi trail to the 1846 mill-dam rock + pools. Mixed bag on the rock and in the pools.'},
  {n:'Henry Horton — campground ramp (Duck)',cat:'L',city:'Culleoka / Chapel Hill',cast:'henry-horton-ramp',park:[35.591768,-86.689200],water:[35.59140,-86.68870],d:'~30 yd (ramp)',sp:'Largemouth, spotted, catfish',note:'Gravel ramp at the Spring Creek confluence — long slow pools. Finesse worm/Senko; Jitterbug at dusk; cats below the park.'},
  {n:'New Lake Park (Lewisburg)',cat:'L',city:'Lewisburg',cast:'new-lake',park:[35.4033,-86.8391],water:[35.40290,-86.83840],d:'easy (shoreline + ramp)',sp:'Largemouth, bluegill, catfish',note:'~47-ac city reservoir — dam riprap (bass/bluegill), shoreline laydowns, ramp/dock (panfish/cat), upper creek-inflow flats.'},
- {n:'Mullins Mill Bridge (Bedford / Duck)',cat:'S',city:'Shelbyville',park:[35.4687,-86.3792],water:[35.46830,-86.37870],d:'~40 yd',sp:'Smallmouth, rock bass',note:'Streamside pull-off at the US-41A bridge — swift rocky Normandy-to-Hall’s-Mill character. Rock bass abundant.'},
- {n:'VFW Landing (Shelbyville / Duck)',cat:'M',city:'Shelbyville',park:[35.477357,-86.435945],water:[35.47700,-86.43540],d:'~30 yd (ramp)',sp:'Smallmouth, rock bass, channel cat',note:'TWRA concrete ramp behind the VFW post — bank-fish the ramp eddy and riffles.'},
- {n:"Fisherman's Park (Shelbyville / Duck)",cat:'M',city:'Shelbyville',park:[35.481642,-86.462026],water:[35.48130,-86.46150],d:'~50 yd',sp:'Smallmouth, rock bass, catfish',note:'Lot overlooking the spillway — bank-fish the oxygenated swift water below the drop. ⚠️ Low-head Shelbyville dam here — stay clear.'},
+ {n:'Mullins Mill Bridge (Bedford / Duck)',cat:'S',city:'Shelbyville',cast:'mullins-mill',park:[35.4687,-86.3792],water:[35.46830,-86.37870],d:'~40 yd',sp:'Smallmouth, rock bass',note:'Streamside pull-off at the US-41A bridge — swift rocky Normandy-to-Hall’s-Mill character. Rock bass abundant.'},
+ {n:'VFW Landing (Shelbyville / Duck)',cat:'M',city:'Shelbyville',cast:'vfw',park:[35.477357,-86.435945],water:[35.47700,-86.43540],d:'~30 yd (ramp)',sp:'Smallmouth, rock bass, channel cat',note:'TWRA concrete ramp behind the VFW post — bank-fish the ramp eddy and riffles.'},
+ {n:"Fisherman's Park (Shelbyville / Duck)",cat:'M',city:'Shelbyville',cast:'fishermans',park:[35.481642,-86.462026],water:[35.48130,-86.46150],d:'~50 yd',sp:'Smallmouth, rock bass, catfish',note:'Lot overlooking the spillway — bank-fish the oxygenated swift water below the drop. ⚠️ Low-head Shelbyville dam here — stay clear.'},
  {n:'Three Forks Bridge (Bedford / Duck)',cat:'S',city:'Shelbyville',cast:'three-forks',park:[35.4801,-86.3243],water:[35.47970,-86.32380],d:'~40 yd (steep steps)',sp:'Smallmouth, rock bass (+ winter trout)',note:'TWRA ramp + wade at the top of the swift rocky float. Live crayfish on a #1 hook around big rocks/undercuts. ⚠️ Parking closes at ≥400 cfs release.'},
- {n:'Dement Bridge (Bedford / Duck)',cat:'S',city:'Shelbyville',park:[35.46639,-86.29418],water:[35.46600,-86.29360],d:'~50 yd',sp:'Smallmouth, rock bass (+ winter trout)',note:'TWRA streamside, swift rocky tailwater. ⚠️ Parking legally closed at ≥400 cfs Normandy release.'},
- {n:'Old Stone Fort (Manchester / Duck)',cat:'S',city:'Manchester / Normandy',park:[35.48626,-86.10269],water:[35.48095,-86.11094],d:'~1.25 mi trail to Big Falls',sp:'Smallmouth (trophy), rock bass',note:'Trails ~1.25 mi to Big Falls — deep rocky pool holds 4-lb-class smallmouth. Bluff-limited: hike-and-spot-fish.'},
+ {n:'Dement Bridge (Bedford / Duck)',cat:'S',city:'Shelbyville',cast:'dement',park:[35.46639,-86.29418],water:[35.46600,-86.29360],d:'~50 yd',sp:'Smallmouth, rock bass (+ winter trout)',note:'TWRA streamside, swift rocky tailwater. ⚠️ Parking legally closed at ≥400 cfs Normandy release.'},
+ {n:'Old Stone Fort (Manchester / Duck)',cat:'S',city:'Manchester / Normandy',cast:'old-stone-fort',park:[35.48626,-86.10269],water:[35.48095,-86.11094],d:'~1.25 mi trail to Big Falls',sp:'Smallmouth (trophy), rock bass',note:'Trails ~1.25 mi to Big Falls — deep rocky pool holds 4-lb-class smallmouth. Bluff-limited: hike-and-spot-fish.'},
  {n:'Normandy Dam Tailwater (Duck)',cat:'T',city:'Manchester / Normandy',cast:'normandy',park:[35.46455,-86.24585],water:[35.46493,-86.24655],d:'~50 ft to the shoal',sp:'Stocked rainbow trout (Nov–Jun) + smallmouth',note:'TVA tailwater below the dam — park ~50 ft from a flat rocky shoal, wade in. Rooster Tails, nightcrawlers/Power Bait, wooly buggers. ☠️ Never wade on a generation release (USGS gage 03596500).'},
  {n:'Vales Mill Ramp ⚠️ (Pulaski / Richland Cr.)',cat:'M',city:'Pulaski',cast:'vales-mill',park:[35.1939,-87.0625],water:[35.19350,-87.06190],d:'bank only (NEVER wade the dam)',sp:'Smallmouth, largemouth, catfish',note:'⚠️ Below a LOW-HEAD DAM (a swimmer was swept here 6/23/2026 — bank only). Fish the tailrace eddies, seams, undercut outside bends.'},
- {n:'Old Dam Ford (Elk R.)',cat:'M',city:'Fayetteville — Elk River',park:[35.12406,-86.33227],water:[35.12370,-86.33170],d:'~50 yd',sp:'Smallmouth, largemouth (+ fall/spring trout)',note:'~14 mi below Tims Ford — trout-to-smallmouth transition zone. Shoals, riffles, rock. ⚠️ Tims Ford generation hazard.'},
- {n:'Stone Bridge Memorial Park (Fayetteville / Elk R.)',cat:'M',city:'Fayetteville — Elk River',park:[35.14472,-86.56833],water:[35.14430,-86.56770],d:'~60 yd',sp:'Smallmouth, largemouth',note:'Developed Fayetteville city park on the Elk — shoals, riffles/runs, rock. Warmwater smallmouth zone.'},
- {n:'Veto Rd Ramp (Prospect / Elk R.)',cat:'M',city:'Fayetteville — Elk River',park:[35.01306,-86.99528],water:[35.01270,-86.99470],d:'~30 yd (ramp)',sp:'Smallmouth, largemouth, catfish',note:'TWRA ramp + bank in Giles County — lower Elk warmwater. Shoals and rock.'},
+ {n:'Old Dam Ford (Elk R.)',cat:'M',city:'Fayetteville — Elk River',cast:'old-dam-ford',park:[35.12406,-86.33227],water:[35.12370,-86.33170],d:'~50 yd',sp:'Smallmouth, largemouth (+ fall/spring trout)',note:'~14 mi below Tims Ford — trout-to-smallmouth transition zone. Shoals, riffles, rock. ⚠️ Tims Ford generation hazard.'},
+ {n:'Stone Bridge Memorial Park (Fayetteville / Elk R.)',cat:'M',city:'Fayetteville — Elk River',cast:'stone-bridge',park:[35.14472,-86.56833],water:[35.14430,-86.56770],d:'~60 yd',sp:'Smallmouth, largemouth',note:'Developed Fayetteville city park on the Elk — shoals, riffles/runs, rock. Warmwater smallmouth zone.'},
+ {n:'Veto Rd Ramp (Prospect / Elk R.)',cat:'M',city:'Fayetteville — Elk River',cast:'veto-rd',park:[35.01306,-86.99528],water:[35.01270,-86.99470],d:'~30 yd (ramp)',sp:'Smallmouth, largemouth, catfish',note:'TWRA ramp + bank in Giles County — lower Elk warmwater. Shoals and rock.'},
  {n:'Elk River — TN-50 below-dam (tailwater)',cat:'T',city:'Fayetteville — Elk River',cast:'elk-tn50',park:[35.1919,-86.2800],water:[35.19150,-86.27940],d:'~60 yd (gravel bar)',sp:'Stocked rainbow + brown trout',note:'Densest stocked trout water, immediate below Tims Ford (~38k rainbows + 20k browns/yr). Nymphs/midges in pools, streamers for browns. ⚠️ Highest surge exposure — check TVA.'},
- {n:'Farris Creek Bridge (Elk R. tailwater)',cat:'T',city:'Fayetteville — Elk River',park:[35.1635,-86.3186],water:[35.16323,-86.31871],d:'~50 yd (creek mouth)',sp:'Stocked trout (rainbow/brown)',note:'~8.5 mi below the dam — gravel bars + creek mouth, end of the popular 9-mi float. ⚠️ Tims Ford generation hazard.'}
+ {n:'Farris Creek Bridge (Elk R. tailwater)',cat:'T',city:'Fayetteville — Elk River',cast:'farris-creek',park:[35.1635,-86.3186],water:[35.16323,-86.31871],d:'~50 yd (creek mouth)',sp:'Stocked trout (rainbow/brown)',note:'~8.5 mi below the dam — gravel bars + creek mouth, end of the popular 9-mi float. ⚠️ Tims Ford generation hazard.'}
 ];
 const map = L.map('map',{zoomControl:true}).setView([35.62,-86.66],9);
 L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{maxZoom:19, attribution:'&copy; OpenStreetMap &copy; CARTO'}).addTo(map);
@@ -161,11 +167,12 @@ const GROUNDED = new Set([
 ]);
 // Cast maps not yet FIELD-verified. All targets NHD-gate-checked 2026-07-01 (see
 // "Cast Map Evidence Audit - 2026-07-01.md"); vales-mill, leftwich, chickasaw passed clean.
-const UNVERIFIED_CAST = new Set(['elk-tn50','iron-bridge','three-forks','normandy','howard-bridge','henry-horton','williamsport','pinkerton','harlinsdale','wc-rec','ladd','jim-warren','river-park','tower-park','deerwood','edwin-warner','williamsport-bridge','yanahli','riverwalk','riverside','fountain-creek','carpenter-bridge','hardison-mill','milltown','henry-horton-ramp','new-lake']);
+const UNVERIFIED_CAST = new Set(['elk-tn50','iron-bridge','three-forks','normandy','howard-bridge','henry-horton','williamsport','pinkerton','harlinsdale','wc-rec','ladd','jim-warren','river-park','tower-park','deerwood','edwin-warner','williamsport-bridge','yanahli','riverwalk','riverside','fountain-creek','carpenter-bridge','hardison-mill','milltown','henry-horton-ramp','new-lake','narrows','newsoms-mill','hidden-lake','mullins-mill','vfw','fishermans','dement','old-stone-fort','old-dam-ford','stone-bridge','veto-rd','farris-creek']);
 const bounds = [];
+const detailLayers = []; // water pins + connectors — shown at close zoom only (declutter)
 spots.forEach((s,i)=>{
   const col = CAT[s.cat].c; bounds.push(s.park, s.water);
-  L.polyline([s.park,s.water],{color:col,weight:2,dashArray:'4,5',opacity:.7}).addTo(map);
+  detailLayers.push(L.polyline([s.park,s.water],{color:col,weight:2,dashArray:'4,5',opacity:.7}));
   const castUV = s.cast && UNVERIFIED_CAST.has(s.cast);
   const castBtn = s.cast ? `<a class="btn cast" href="sat.html?id=${s.cast}" target="_blank" rel="noopener">🎯 Cast map${castUV?' (unverified)':''}</a>` : '';
   const pinUV = !GROUNDED.has(s.n);
@@ -183,10 +190,14 @@ spots.forEach((s,i)=>{
      ${castBtn}
    </div>`;
   const m = L.marker(s.park,{icon:pin(col,'📍',false)}).addTo(map).bindPopup(html,{maxWidth:262});
-  L.marker(s.water,{icon:pin(col,'🎣',true)}).addTo(map).bindPopup(html,{maxWidth:262});
+  detailLayers.push(L.marker(s.water,{icon:pin(col,'🎣',true)}).bindPopup(html,{maxWidth:262}));
   s._m = m;
 });
+function declutter(){ const show = map.getZoom()>=12;
+  detailLayers.forEach(l=>{ if(show){ if(!map.hasLayer(l)) l.addTo(map); } else if(map.hasLayer(l)) map.removeLayer(l); }); }
+map.on('zoomend',declutter);
 map.fitBounds(bounds,{padding:[55,55]});
+declutter();
 
 // ---- home base (30-min radius for friends & family) ----
 const HOME_KEY='caster_home';
