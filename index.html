@@ -52,6 +52,13 @@
   .pop a.btn{display:inline-block;margin:3px 4px 0 0;padding:6px 9px;border-radius:7px;font-size:12px;font-weight:600;text-decoration:none;color:#fff}
   .pop a.park{background:#374b43} .pop a.water{background:var(--gold);color:#1f2421} .pop a.dir{background:#2b6cb0} .pop a.cast{background:#7a2f12}
   .pop .co{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:#555}
+  /* river conditions banner */
+  .riv{position:absolute;top:38px;left:0;right:0;z-index:1080;display:none;align-items:center;gap:8px;flex-wrap:wrap;
+       padding:5px 12px;font-size:12px;background:rgba(246,241,231,.96);border-bottom:1px solid #d9d0bc;color:#333}
+  .riv .pill{display:inline-block;padding:2px 9px;border-radius:999px;font-weight:800;font-size:11px;color:#fff;letter-spacing:.4px}
+  .riv .g{background:#2e7d32}.riv .c{background:#c79a3b;color:#1f2421}.riv .s{background:#b5532a}
+  .riv a{color:#7a5a2a;font-weight:700;text-decoration:none}
+  .riv .tw{color:#777;font-size:11px}
 </style>
 </head>
 <body>
@@ -60,6 +67,7 @@
   <h1>🎣 Caster</h1>
   <span class="sub">Middle TN Honey Holes · 42 spots · <a href="logger.html">🐟 Log a catch →</a></span>
 </div>
+<div class="riv" id="riv"></div>
 <div class="panel" id="panel"><div class="ph"><b>Spots by city</b><button class="cl" id="panelclose">✕</button></div><div id="citylist"></div></div>
 <div id="map"></div>
 <div class="legend">
@@ -141,8 +149,9 @@ const GROUNDED = new Set([
   'Leftwich / Sowell Mill (Columbia / Duck)','Fountain Creek (Columbia / Duck)','Carpenter Bridge (Columbia / Duck)',
   'Hardison Mill (Columbia / Duck)'
 ]);
-// Cast maps with NO scouted source file — targets are satellite-placed, not field-scouted.
-const UNVERIFIED_CAST = new Set(['elk-tn50','vales-mill','leftwich','iron-bridge','three-forks','normandy']);
+// Cast maps not yet FIELD-verified. All targets NHD-gate-checked 2026-07-01 (see
+// "Cast Map Evidence Audit - 2026-07-01.md"); vales-mill, leftwich, chickasaw passed clean.
+const UNVERIFIED_CAST = new Set(['elk-tn50','iron-bridge','three-forks','normandy','howard-bridge','henry-horton','williamsport']);
 const bounds = [];
 spots.forEach((s,i)=>{
   const col = CAT[s.cat].c; bounds.push(s.park, s.water);
@@ -198,6 +207,49 @@ cl.querySelectorAll('.spot').forEach(el=>{
 });
 document.getElementById('navbtn').onclick=()=>setPanel(!panel.classList.contains('open'));
 document.getElementById('panelclose').onclick=()=>setPanel(false);
+
+// ---- River conditions banner (USGS live gauges) ----
+// Doctrine (Duck River - Columbia Bank Spots.md, seasonal flow read):
+// fishes best on STABLE or FALLING, clearing water. Summer base ~130-500 cfs at Columbia.
+// GO <=600 cfs & not rising · CAUTION 600-1000 falling/steady or <=600 rising · SKIP >1000 or fast-rising.
+// Gauges: 03599500 Duck @ Columbia (Zones B/C) · 03599350 Duck nr Hardison Mill (Zone A wading).
+// Tailwaters (Normandy 03596500 / Elk below Tims Ford) are TVA-release-driven — banner doesn't cover them.
+(async function(){
+  try{
+    const u='https://waterservices.usgs.gov/nwis/iv/?sites=03599500,03599350&parameterCd=00060&period=P1D&format=json';
+    const r=await fetch(u); if(!r.ok) return;
+    const j=await r.json();
+    const S={};
+    (j.value.timeSeries||[]).forEach(ts=>{
+      const site=ts.sourceInfo.siteCode[0].value, vals=(ts.values[0]||{}).value||[];
+      if(!vals.length) return;
+      const last=vals[vals.length-1], lastV=+last.value;
+      const lastT=new Date(last.dateTime).getTime();
+      let refV=+vals[0].value;                       // ~24h ago fallback
+      for(let i=vals.length-1;i>=0;i--){             // find value ~6h before latest
+        if(lastT-new Date(vals[i].dateTime).getTime()>=6*3600e3){refV=+vals[i].value;break;}
+      }
+      const chg=refV>0?(lastV-refV)/refV:0;
+      S[site]={cfs:lastV,trend:chg>0.10?'rising':(chg<-0.10?'falling':'steady')};
+    });
+    const col=S['03599500']; if(!col) return;
+    const arrow=t=>t==='rising'?'↗':(t==='falling'?'↘':'→');
+    let cls,klass;
+    if(col.cfs>1000||(col.trend==='rising'&&col.cfs>600)){cls='SKIP';klass='s';}
+    else if(col.cfs>600||col.trend==='rising'){cls='CAUTION';klass='c';}
+    else {cls='GO';klass='g';}
+    const hard=S['03599350'];
+    const wade=(cls==='GO'&&(!hard||hard.trend!=='rising'))?'wade Zone A OK':'no wading — bank Zone B/C only';
+    const el=document.getElementById('riv');
+    el.innerHTML=`<span class="pill ${klass}">${cls}</span>
+      <b>Duck @ Columbia:</b> ${Math.round(col.cfs).toLocaleString()} cfs ${arrow(col.trend)} ${col.trend}
+      ${hard?`· <b>upper Duck (Hardison):</b> ${Math.round(hard.cfs).toLocaleString()} cfs ${arrow(hard.trend)}`:''}
+      · ${wade}
+      <a href="https://waterdata.usgs.gov/monitoring-location/03599500/" target="_blank" rel="noopener">gauge ↗</a>
+      <span class="tw">Tailwaters (Normandy · Elk): check TVA releases first.</span>`;
+    el.style.display='flex';
+  }catch(e){/* offline / blocked — banner stays hidden */}
+})();
 </script>
 </body>
 </html>
