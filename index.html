@@ -61,11 +61,11 @@
   a.hbtn{text-decoration:none}
 
   /* ── conditions strip ───────────────────────────────────────────────────── */
-  .riv{position:absolute;left:0;right:0;z-index:1080;display:none;align-items:center;gap:10px;
-       padding:7px 14px;font-size:12px;background:rgba(38,43,29,.95);color:rgba(239,233,216,.82);
-       border-bottom:1px solid rgba(200,165,90,.25);backdrop-filter:blur(6px);
-       overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none}
-  .riv::-webkit-scrollbar{display:none}
+  .riv{position:absolute;left:0;right:0;z-index:1080;display:none;align-items:flex-start;gap:8px;
+       padding:7px 14px;font-size:12px;line-height:1.55;background:rgba(38,43,29,.95);color:rgba(239,233,216,.82);
+       border-bottom:1px solid rgba(200,165,90,.25);backdrop-filter:blur(6px)}
+  .riv>span{white-space:normal}
+  .riv .pill{margin-top:1px}
   .riv b{color:var(--field);font-weight:700}
   .riv .pill{flex:0 0 auto;display:inline-block;padding:2px 11px;border-radius:999px;font-weight:800;font-size:10.5px;letter-spacing:.12em;color:#fff}
   .riv .g{background:var(--fern)}.riv .c{background:var(--brass);color:#15160f}.riv .s{background:var(--blaze)}
@@ -194,6 +194,7 @@
     .panel{width:86vw}
     .chint{white-space:normal;text-align:left;font-size:11px;line-height:1.45;padding:7px 8px 7px 13px;width:calc(100vw - 20px);max-width:360px}
     .riv .tw{display:none}
+    .riv{font-size:11.5px;padding:6px 10px}
   }
 </style>
 </head>
@@ -644,19 +645,21 @@ async function updateRiver(){
     }
     else if(upRising) warn='upstream rising';
     else if(someRain) warn=`upstream rain ${rain.toFixed(1)}" /24h — expect stain`;
-    const ageMin=Math.max(0,Math.round((Date.now()-col.t)/60000));
-    if(ageMin>180) warn=(warn?warn+' · ':'')+'gauge data 3h+ old — verify before trusting';
-    const wade=(cls==='GO'&&(!hard||hard.trend!=='rising'))?'wade Zone A OK':'no wading — bank Zone B/C only';
+    const ageOf=g=>Math.max(0,Math.round((Date.now()-g.t)/60000)); // per-gauge USGS publish lag
+    const fmtAge=m=>m>=120?`${(m/60).toFixed(1)}h`:`${m}m`;
+    const ageMin=ageOf(col);
+    if(ageMin>180) warn=(warn?warn+' · ':'')+'Columbia gauge data 3h+ old — verify before trusting';
+    const wade=hard?((cls==='GO'&&hard.trend!=='rising')?'wade Zone A OK':'no wading — bank Zone B/C only')
+                   :'Zone A gauge (Hardison) offline — judge wading on sight';
     const el=document.getElementById('riv');
     el.innerHTML=`<span class="pill ${klass}">${cls}</span>
-      <span><b>Duck @ Columbia:</b> ${Math.round(col.cfs).toLocaleString()} cfs ${arrow(col.trend)} ${col.trend}
-      ${shel?`· <b>upstream (Shelbyville):</b> ${Math.round(shel.cfs).toLocaleString()} cfs ${arrow(shel.trend)}`:''}
-      ${hard?`· <b>Hardison:</b> ${Math.round(hard.cfs).toLocaleString()} cfs ${arrow(hard.trend)}`:''}
+      <span><b>Duck @ Columbia:</b> ${Math.round(col.cfs).toLocaleString()} cfs ${arrow(col.trend)} ${col.trend} <span class="age">(${fmtAge(ageMin)} ago)</span>
+      ${shel?`· <b>upstream (Shelbyville):</b> ${Math.round(shel.cfs).toLocaleString()} cfs ${arrow(shel.trend)} <span class="age">(${fmtAge(ageOf(shel))} ago)</span>`:''}
+      ${hard?`· <b>Hardison:</b> ${Math.round(hard.cfs).toLocaleString()} cfs ${arrow(hard.trend)} <span class="age">(${fmtAge(ageOf(hard))} ago)</span>`:''}
       ${warn?`· <span class="wr">⚠ ${warn}</span>`:''}
       · ${wade}
       <a href="https://waterdata.usgs.gov/monitoring-location/03599500/" target="_blank" rel="noopener">gauge ↗</a>
-      <span class="age">reading ${ageMin}m old · refreshes every 15 min</span>
-      <span class="tw">Tailwaters (Normandy · Elk): check TVA releases first.</span></span>`;
+      <span class="tw">· ages = USGS publish lag · auto-refreshes every 15 min · Tailwaters (Normandy · Elk): check TVA releases first.</span></span>`;
     el.style.display='flex';
     fixTops();
   }catch(e){/* offline / blocked — keep last render */}
