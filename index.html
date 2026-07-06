@@ -736,7 +736,8 @@ function windScore(dir,mph){
 const BW={light:35,pressure:25,wind:20,water:20};
 function biteScore(f){
   let s=Math.round(BW.light*f.light+BW.pressure*f.pressure+BW.wind*f.wind+BW.water*f.water);
-  if(f.water===0) s=Math.min(s,28); // blown-out water gate: caps the day red
+  if(f.water===0) s=Math.min(s,28); // blown-out water (SKIP flow) gate: caps the day red
+  if(f.muddy) s=Math.min(s,39);     // muddy water = low odds (doctrine) → SLOW ceiling, no matter how good light/wind are
   if(f.light<=0.25) s=Math.min(s,55); // wrong-time soft gate: bright midday never reads PRIME (time of day = biggest lever)
   return s;
 }
@@ -785,14 +786,15 @@ function computeBite(){
   const wxAge=wx?Math.round((Date.now()-wx.t)/60000):null, wxStale=wx?wxAge>STALE_MIN:true;
   if(!wx||wxStale) return {paused:true,wx,wxAge,water,sun,nowMin};
   const waterF=water?water.waterF:0.65;
-  const f={light:lightScore(nowMin,sun,wx.cloud),pressure:pressureScore(wx.trend,wx.inHg),wind:windScore(wx.windDir,wx.windMph),water:waterF};
+  const f={light:lightScore(nowMin,sun,wx.cloud),pressure:pressureScore(wx.trend,wx.inHg),wind:windScore(wx.windDir,wx.windMph),water:waterF,muddy:!!(water&&water.muddy)};
   const s=biteScore(f), v=biteVerdict(s), peak=biteScore(Object.assign({},f,{light:1.0})), ng=nextGolden(nowMin,sun);
   return {paused:false,s,v,f,peak,ng,sun,nowMin,wx,wxAge,water};
 }
 function fxChip(l,v,sc){ return `<div class="fxc"><span class="dt" style="background:${dotCol(sc)}"></span><div><div class="l">${l}</div><div class="v">${v}</div></div></div>`; }
-function verdictLine(v,ng,peak){
+function verdictLine(v,ng,peak,muddy){
   const win=ng.state==='in'?'this window':(ng.win[0]<720?'the morning bite':'the evening bite');
-  if(v.w==='PRIME') return 'Strong window right now — get on the water.';
+  if(muddy) return `Muddy water — low odds today. Let it clear, or work ${win} slow and tight to cover. Peaks at ${peak}.`;
+  if(v.w==='PRIME') return ng.state==='in'?'Strong window right now — get on the water.':`Right conditions, wrong hour — ${win} is the window. Peaks at ${peak}.`;
   if(v.w==='FAIR') return `Fair right now — ${win} is the play. Peaks at ${peak}.`;
   return `Tough conditions — best odds are ${win}. Peaks at ${peak}.`;
 }
@@ -839,7 +841,7 @@ function renderBiteCard(b){
   return `<div class="bcard">
     <div class="bhead">
       <div class="ring ${v.k}"><span class="n">${s}</span><span class="d">/100</span></div>
-      <div><span class="vpill ${v.k}">${v.w}</span><p class="vtxt">${verdictLine(v,ng,peak)}</p></div>
+      <div><span class="vpill ${v.k}">${v.w}</span><p class="vtxt">${verdictLine(v,ng,peak,f&&f.muddy)}</p></div>
     </div>
     <div class="fx">
       ${fxChip('Water',waterVal,f.water)}
@@ -904,7 +906,15 @@ async function updateRiver(){
   // ── stash live inputs for the Bite Score card, compute the strip pill ──
   let wx=await fetchWx(); if(!wx) wx=cachedWx();
   window.__wx=wx||null;
-  window.__water=col?{klass,cls,cfs:col.cfs,ageMin,waterF:(klass==='g'?1:klass==='c'?0.5:0)}:null;
+  // water factor is driven by CLARITY first (the truest read), flow class as fallback
+  const wqLabel=wq?wq.label:null;
+  let waterF;
+  if(klass==='s') waterF=0;                    // blown-out flow (SKIP) = gate to red
+  else if(wqLabel==='MUDDY') waterF=0.15;       // muddy = low odds (also triggers the SLOW gate below)
+  else if(wqLabel==='STAINED') waterF=0.5;      // stain can still fish — moderate drag, not a veto
+  else if(wqLabel==='CLEAR') waterF=1.0;
+  else waterF=(klass==='g'?1:klass==='c'?0.4:0); // no clarity read → judge on flow class
+  window.__water=col?{klass,cls,cfs:col.cfs,ageMin,waterF,muddy:(wqLabel==='MUDDY')}:null;
   const b=computeBite();
   const pill=b.paused
     ? `<button class="bbtn stale" onclick="openBite()" title="Bite Score — tap for the read">BITE&nbsp;?</button>`
