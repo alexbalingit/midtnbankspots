@@ -120,6 +120,27 @@
   .bcard .note{margin:9px 2px 0;color:var(--marsh);font-size:10.5px;line-height:1.4}
   .bcard .fresh{margin-top:11px;font-size:11px;color:var(--marsh)}
   .bcard .fresh.warn{color:var(--blaze);font-weight:800}
+  /* ── 7-day outlook (inside the Bite Score card) ─────────────────────────── */
+  .bcard .olk{margin-top:14px;background:#fff;border:1px solid var(--hair);border-radius:14px;padding:13px 14px}
+  .bcard .olk .oh{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px}
+  .bcard .olk .ot{color:var(--moss);font-size:12px;font-weight:800;letter-spacing:.08em}
+  .bcard .olk .od2{color:var(--marsh);font-size:11px}
+  .bcard .orow{display:grid;grid-template-columns:56px 42px 64px 1fr 56px 58px;align-items:center;gap:6px;
+               padding:6.5px 6px;border-radius:9px;font-size:12px}
+  .bcard .orow:nth-child(even){background:rgba(25,27,19,.035)}
+  .bcard .orow.best{background:rgba(168,133,62,.14);box-shadow:inset 0 0 0 1px rgba(168,133,62,.45)}
+  .bcard .orow .od b{display:block;font-weight:700;color:var(--ink);font-size:12px}
+  .bcard .orow .od s{text-decoration:none;color:var(--marsh);font-size:10px}
+  .bcard .orow .ov{font-family:var(--serif);font-weight:700;font-size:15px;text-align:center;border-radius:8px;padding:2px 0;color:#fff}
+  .bcard .orow .ov.g{background:var(--fern)}.bcard .orow .ov.c{background:var(--brass);color:#15160f}.bcard .orow .ov.s{background:var(--blaze)}
+  .bcard .orow .ow{font-weight:800;font-size:10.5px;letter-spacing:.04em}
+  .bcard .orow .ow.CLEAR{color:var(--fern)}.bcard .orow .ow.STAINED{color:#7a5a1e}.bcard .orow .ow.MUDDY{color:var(--blaze)}
+  .bcard .orow .orn,.bcard .orow .owd{color:var(--pine);font-size:11px}
+  .bcard .orow .oc{font-size:9.5px;font-weight:800;letter-spacing:.06em;text-align:center;border-radius:999px;padding:2.5px 0}
+  .bcard .orow .oc.t2{background:rgba(62,107,64,.15);color:var(--fern)}
+  .bcard .orow .oc.t1{background:rgba(168,133,62,.16);color:#7a5a1e}
+  .bcard .orow .oc.t0{background:rgba(25,27,19,.08);color:var(--marsh)}
+  @media (max-width:640px){ .bcard .orow{grid-template-columns:50px 38px 58px 1fr 54px} .bcard .orow .owd{display:none} }
 
   /* ── drawer (spots by city) ─────────────────────────────────────────────── */
   .scrim{position:absolute;inset:0;z-index:1085;background:rgba(15,16,11,.45);opacity:0;pointer-events:none;transition:opacity .22s}
@@ -786,6 +807,86 @@ async function fetchWx(){ // Open-Meteo: pressure(+3h trend), wind, cloud. null 
 }
 function cachedWx(){ try{ return JSON.parse(localStorage.getItem('casterBite_v1')); }catch(e){ return null; } }
 
+// ── 7-Day Outlook (plan-ahead) ────────────────────────────────────────────────
+// Confidence doctrine (Alex, 2026-07-06): "90% confidence" lives only where physics beats prediction.
+// The first ~48h of the water read runs on rain ALREADY fallen + river lag/recession → FIRM (~85-90%).
+// Beyond that, forecast skill decays: d2-3 LIKELY, d4-6 WATCH (directional only). A day is downgraded
+// one tier when its rain probability sits in the 35-65% coin-flip band. The best-day call only ever
+// picks from FIRM/LIKELY days. All of it is a forecast — labeled as such, never as fact.
+async function fetchOutlook(){ // loc0 = HOME (wind/pressure/cloud) · loc1 = Shelbyville (upstream rain)
+  try{
+    const u='https://api.open-meteo.com/v1/forecast?latitude=35.615,35.48&longitude=-87.035,-86.50&daily=precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_direction_10m_dominant,cloud_cover_mean,surface_pressure_mean&forecast_days=7&precipitation_unit=inch&wind_speed_unit=mph&timezone=auto';
+    const r=await fetch(u); if(!r.ok) return null;
+    const j=await r.json(); const L=Array.isArray(j)?j:[j];
+    const home=(L[0]||{}).daily, up=((L[1]||L[0])||{}).daily;
+    if(!home||!home.time||!home.time.length) return null;
+    const o={t:Date.now(),days:home.time.map((d,i)=>({date:d,
+      rainIn:up.precipitation_sum?(+up.precipitation_sum[i]||0):0,
+      rainP:up.precipitation_probability_max?(+up.precipitation_probability_max[i]||0):0,
+      windMph:home.wind_speed_10m_max?+home.wind_speed_10m_max[i]:null,
+      windDir:home.wind_direction_10m_dominant?+home.wind_direction_10m_dominant[i]:null,
+      cloud:home.cloud_cover_mean?+home.cloud_cover_mean[i]:null,
+      press:home.surface_pressure_mean?+home.surface_pressure_mean[i]:null}))};
+    try{ localStorage.setItem('casterOutlook_v1',JSON.stringify(o)); }catch(e){}
+    return o;
+  }catch(e){ return null; }
+}
+function cachedOutlook(){ try{ return JSON.parse(localStorage.getItem('casterOutlook_v1')); }catch(e){ return null; } }
+function computeOutlook(olk,water){
+  if(!olk||!olk.days||!olk.days.length) return null;
+  const BASE=[1800,2000,2400,1800,800,350,300,250,250,300,800,1500]; // ~monthly base cfs @ Columbia (seasonal flow doctrine)
+  let cfs=(water&&water.cfs!=null)?water.cfs:null;
+  let prevRain=0; // today's arriving slug ≈ yesterday's upstream rain (12-24h Shelbyville→Columbia lag)
+  const rows=[];
+  olk.days.forEach((d,i)=>{
+    const base=BASE[new Date(d.date+'T12:00').getMonth()];
+    if(cfs!=null&&i>0) cfs=base+(cfs-base)*0.65+prevRain*90;   // recession ~35%/day toward base + arriving rain (est., ~90 cfs/inch)
+    const R=cfs!=null?cfs/base:1;
+    let wLab,muddy=false,waterF;
+    if(prevRain>=1.5||R>=3){wLab='MUDDY';muddy=true;waterF=0.15;}
+    else if(prevRain>=0.4||R>=1.6){wLab='STAINED';waterF=0.5;}
+    else {wLab='CLEAR';waterF=1.0;}
+    if(i===0&&water&&water.wq){wLab=water.wq;muddy=(wLab==='MUDDY');waterF=muddy?0.15:(wLab==='STAINED'?0.5:1.0);} // today = live read
+    const pPrev=i>0?olk.days[i-1].press:null;
+    const dP=(d.press!=null&&pPrev!=null)?d.press-pPrev:0;
+    const pf=dP<=-1.5?1.0:(dP>=1.5?0.45:0.8);                  // day-over-day frontal signal
+    const wf=windScore(d.windDir,d.windMph);
+    const s=biteScore({light:1.0,pressure:pf,wind:wf,water:waterF,muddy}); // light=1: plan assumes golden windows
+    let tier=i<=1?2:(i<=3?1:0);                                 // 2 FIRM · 1 LIKELY · 0 WATCH
+    if(d.rainP>=35&&d.rainP<=65&&tier>0) tier--;                // coin-flip rain day = one tier down
+    rows.push({date:d.date,s,v:biteVerdict(s),wLab,muddy,rainP:d.rainP,rainIn:d.rainIn,
+      windTxt:`${dirName(d.windDir)} ${d.windMph!=null?Math.round(d.windMph):'—'}`,tier});
+    prevRain=d.rainIn;
+  });
+  let best=-1;
+  rows.forEach((r,i)=>{ if(r.tier>=1&&(best<0||r.s>rows[best].s)) best=i; });
+  return {rows,best,t:olk.t};
+}
+function outlookBlock(water){
+  const olk=window.__olk||cachedOutlook();
+  const o=olk?computeOutlook(olk,water):null;
+  if(!o) return `<div class="olk"><div class="oh"><span class="ot">7-DAY OUTLOOK</span></div><p class="note">Forecast unreachable — refresh when you have signal.</p></div>`;
+  const TIER=['WATCH','LIKELY','FIRM'];
+  const dn=d=>new Date(d+'T12:00').toLocaleDateString('en-US',{weekday:'short'});
+  const md=d=>new Date(d+'T12:00').toLocaleDateString('en-US',{month:'numeric',day:'numeric'});
+  const rows=o.rows.map((r,i)=>`<div class="orow${i===o.best?' best':''}">
+    <span class="od"><b>${i===0?'Today':dn(r.date)}</b><s>${md(r.date)}</s></span>
+    <span class="ov ${r.v.k}">${r.s}</span>
+    <span class="ow ${r.wLab}">${r.wLab}</span>
+    <span class="orn">${r.rainP>=20?`rain ${r.rainP}%${r.rainIn>=0.1?' · '+r.rainIn.toFixed(1)+'"':''}`:'dry'}</span>
+    <span class="owd">${r.windTxt} mph</span>
+    <span class="oc t${r.tier}">${TIER[r.tier]}</span></div>`).join('');
+  const age=Math.round((Date.now()-o.t)/60000);
+  const bestTxt=o.best>=0
+    ?`Best day to plan: <b>${o.best===0?'today':dn(o.rows[o.best].date)+' '+md(o.rows[o.best].date)}</b> — fish the dawn/dusk windows.`
+    :'No FIRM/LIKELY day stands out yet — re-check tomorrow as the forecast firms up.';
+  return `<div class="olk">
+    <div class="oh"><span class="ot">7-DAY OUTLOOK · PLAN AHEAD</span><span class="od2">forecast · updated ${fmtAgeM(age)} ago</span></div>
+    ${rows}
+    <p class="note">${bestTxt} FIRM ≈ 90% — driven by rain already on the ground and river physics. LIKELY = solid signal. WATCH = directional only; never plan a drive on it. Scores assume you fish the golden windows; water projection is an estimate.</p>
+  </div>`;
+}
+
 // ── Bite Score card (opens in the shared bottom sheet on pill tap) ───────────
 function fmtAgeM(m){ return m>=120?`${(m/60).toFixed(1)}h`:`${m}m`; }
 function dotCol(x){ return x>=0.7?'var(--fern)':x>=0.4?'var(--brass)':'var(--blaze)'; }
@@ -845,6 +946,7 @@ function renderBiteCard(b){
       <div><span class="vpill" style="background:var(--moss)">SCORE PAUSED</span>
       <p class="vtxt">Live weather is unavailable, so the score is paused rather than shown off stale data.${b.wxAge!=null?` Last good read ${fmtAgeM(b.wxAge)} ago.`:''} Golden hours below are computed on-device and stay current.</p></div></div>
       ${goldBlock(b.sun,b.nowMin,null)}
+      ${outlookBlock(b.water)}
       <div class="fresh warn">Weather source unreachable — refresh when you have signal.</div></div>`;
   }
   const {s,v,f,peak,ng,sun,nowMin,wx,water,wxAge}=b;
@@ -871,6 +973,7 @@ function renderBiteCard(b){
       ${fxChip('Wind',windVal,f.wind)}
     </div>
     ${goldBlock(sun,nowMin,peak)}
+    ${outlookBlock(water)}
     <div class="fresh ${freshCls}">${freshTxt}</div>
   </div>`;
 }
@@ -927,6 +1030,7 @@ async function updateRiver(){
   // ── stash live inputs for the Bite Score card, compute the strip pill ──
   let wx=await fetchWx(); if(!wx) wx=cachedWx();
   window.__wx=wx||null;
+  window.__olk=(await fetchOutlook())||cachedOutlook()||null;
   // water factor is driven by CLARITY first (the truest read), flow class as fallback
   const wqLabel=wq?wq.label:null;
   let waterF;
@@ -935,7 +1039,7 @@ async function updateRiver(){
   else if(wqLabel==='STAINED') waterF=0.5;      // stain can still fish — moderate drag, not a veto
   else if(wqLabel==='CLEAR') waterF=1.0;
   else waterF=(klass==='g'?1:klass==='c'?0.4:0); // no clarity read → judge on flow class
-  window.__water=col?{klass,cls,cfs:col.cfs,ageMin,waterF,muddy:(wqLabel==='MUDDY')}:null;
+  window.__water=col?{klass,cls,cfs:col.cfs,ageMin,waterF,muddy:(wqLabel==='MUDDY'),wq:wqLabel}:null;
   const b=computeBite();
   const pill=b.paused
     ? `<button class="bbtn stale" onclick="openBite()" title="Bite Score — tap for the read">Bite Score · <span class="sc">—</span></button>`
