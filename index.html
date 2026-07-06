@@ -71,6 +71,8 @@
   .riv .g{background:var(--fern)}.riv .c{background:var(--brass);color:#15160f}.riv .s{background:var(--blaze)}
   .riv a{color:var(--brassL);font-weight:700;text-decoration:none}
   .riv .tw{color:var(--marsh);font-size:11px}
+  .riv .wr{color:var(--blaze);font-weight:800}
+  .riv .age{color:var(--marsh);font-size:11px}
 
   /* ── drawer (spots by city) ─────────────────────────────────────────────── */
   .scrim{position:absolute;inset:0;z-index:1085;background:rgba(15,16,11,.45);opacity:0;pointer-events:none;transition:opacity .22s}
@@ -577,49 +579,91 @@ function setLegend(open){ legendEl.classList.toggle('open',open); lchip.style.di
 lchip.onclick=()=>setLegend(true);
 document.getElementById('lclose').onclick=()=>setLegend(false);
 
-// ── River conditions strip (USGS live gauges) ────────────────────────────────
+// ── River conditions strip v2 (USGS gauges + upstream early warning + rain) ──
 // Doctrine (Duck River - Columbia Bank Spots.md, seasonal flow read):
 // fishes best on STABLE or FALLING, clearing water. Summer base ~130-500 cfs at Columbia.
 // GO <=600 cfs & not rising · CAUTION 600-1000 falling/steady or <=600 rising · SKIP >1000 or fast-rising.
-// Gauges: 03599500 Duck @ Columbia (Zones B/C) · 03599350 Duck nr Hardison Mill (Zone A wading).
+// Gauges: 03599500 Columbia (Zones B/C) · 03599350 Hardison Mill (Zone A wading)
+//         · 03598000 Shelbyville (UPSTREAM early warning — a rise here hits Columbia hours later).
+// v2 (2026-07-06, after the 306-then-mud morning): auto-refresh every 15 min + on tab wake ·
+// reading-age stamp · upstream-rising downgrades GO→CAUTION · 12h upstream rain via Open-Meteo
+// (rain chip silently skips if API unreachable). USGS publishes ~45-75 min behind real time.
 // Tailwaters (Normandy 03596500 / Elk below Tims Ford) are TVA-release-driven — strip doesn't cover them.
-(async function(){
+function rivRead(vals){ // latest value + trend. 6h ref @>10%, PLUS 2h ref @>5% to catch the front edge of a rise
+  const last=vals[vals.length-1], lastV=+last.value, lastT=new Date(last.dateTime).getTime();
+  const at=h=>{for(let i=vals.length-1;i>=0;i--){if(lastT-new Date(vals[i].dateTime).getTime()>=h*3600e3)return +vals[i].value;}return +vals[0].value;};
+  const c6=at(6), c2=at(2);
+  const p6=c6>0?(lastV-c6)/c6:0, p2=c2>0?(lastV-c2)/c2:0;
+  const trend=(p6>0.10||p2>0.05)?'rising':(p6<-0.10?'falling':'steady');
+  return {cfs:lastV,trend,t:lastT};
+}
+async function rivRain(){ // max 24h precip across the upper watershed (Shelbyville + Normandy areas); null = unavailable
+  // 24h window because a rain slug takes ~12-24h to travel Shelbyville -> Columbia (proven 2026-07-05: 5.3" at 11am, mud hit Columbia next morning)
   try{
-    const u='https://waterservices.usgs.gov/nwis/iv/?sites=03599500,03599350&parameterCd=00060&period=P1D&format=json';
-    const r=await fetch(u); if(!r.ok) return;
+    const u='https://api.open-meteo.com/v1/forecast?latitude=35.48,35.45&longitude=-86.50,-86.25&hourly=precipitation&past_days=1&forecast_days=1&precipitation_unit=inch&timezone=auto';
+    const r=await fetch(u); if(!r.ok) return null;
+    const j=await r.json(); const locs=Array.isArray(j)?j:[j];
+    let mx=0;
+    locs.forEach(L=>{
+      const t=(L.hourly||{}).time||[], p=(L.hourly||{}).precipitation||[], now=Date.now();
+      let s=0;
+      for(let i=0;i<t.length;i++){
+        const ti=new Date(t[i]).getTime();
+        if(ti<=now && now-ti<=24*3600e3) s+=(+p[i]||0);
+      }
+      mx=Math.max(mx,s);
+    });
+    return mx;
+  }catch(e){return null;}
+}
+async function updateRiver(){
+  try{
+    const u='https://waterservices.usgs.gov/nwis/iv/?sites=03599500,03599350,03598000&parameterCd=00060&period=P1D&format=json';
+    const r=await fetch(u,{cache:'no-store'}); if(!r.ok) return;
     const j=await r.json();
     const S={};
     (j.value.timeSeries||[]).forEach(ts=>{
       const site=ts.sourceInfo.siteCode[0].value, vals=(ts.values[0]||{}).value||[];
-      if(!vals.length) return;
-      const last=vals[vals.length-1], lastV=+last.value;
-      const lastT=new Date(last.dateTime).getTime();
-      let refV=+vals[0].value;                       // ~24h ago fallback
-      for(let i=vals.length-1;i>=0;i--){             // find value ~6h before latest
-        if(lastT-new Date(vals[i].dateTime).getTime()>=6*3600e3){refV=+vals[i].value;break;}
-      }
-      const chg=refV>0?(lastV-refV)/refV:0;
-      S[site]={cfs:lastV,trend:chg>0.10?'rising':(chg<-0.10?'falling':'steady')};
+      if(vals.length) S[site]=rivRead(vals);
     });
     const col=S['03599500']; if(!col) return;
+    const hard=S['03599350'], shel=S['03598000'];
+    const rain=await rivRain();
     const arrow=t=>t==='rising'?'↗':(t==='falling'?'↘':'→');
     let cls,klass;
     if(col.cfs>1000||(col.trend==='rising'&&col.cfs>600)){cls='SKIP';klass='s';}
     else if(col.cfs>600||col.trend==='rising'){cls='CAUTION';klass='c';}
     else {cls='GO';klass='g';}
-    const hard=S['03599350'];
+    // upstream early warning — rain/rise upstream reaches Columbia hours after the gauge still reads fine
+    const upRising=(shel&&shel.trend==='rising')||(hard&&hard.trend==='rising');
+    const heavyRain=rain!=null&&rain>=1.0, someRain=rain!=null&&rain>=0.3;
+    let warn='';
+    if(cls==='GO'&&(upRising||heavyRain)){
+      cls='CAUTION';klass='c';
+      warn=upRising?'upstream rising — rise/mud headed downriver':`upstream rain ${rain.toFixed(1)}" /24h — expect a rise`;
+    }
+    else if(upRising) warn='upstream rising';
+    else if(someRain) warn=`upstream rain ${rain.toFixed(1)}" /24h — expect stain`;
+    const ageMin=Math.max(0,Math.round((Date.now()-col.t)/60000));
+    if(ageMin>180) warn=(warn?warn+' · ':'')+'gauge data 3h+ old — verify before trusting';
     const wade=(cls==='GO'&&(!hard||hard.trend!=='rising'))?'wade Zone A OK':'no wading — bank Zone B/C only';
     const el=document.getElementById('riv');
     el.innerHTML=`<span class="pill ${klass}">${cls}</span>
       <span><b>Duck @ Columbia:</b> ${Math.round(col.cfs).toLocaleString()} cfs ${arrow(col.trend)} ${col.trend}
-      ${hard?`· <b>upper Duck (Hardison):</b> ${Math.round(hard.cfs).toLocaleString()} cfs ${arrow(hard.trend)}`:''}
+      ${shel?`· <b>upstream (Shelbyville):</b> ${Math.round(shel.cfs).toLocaleString()} cfs ${arrow(shel.trend)}`:''}
+      ${hard?`· <b>Hardison:</b> ${Math.round(hard.cfs).toLocaleString()} cfs ${arrow(hard.trend)}`:''}
+      ${warn?`· <span class="wr">⚠ ${warn}</span>`:''}
       · ${wade}
       <a href="https://waterdata.usgs.gov/monitoring-location/03599500/" target="_blank" rel="noopener">gauge ↗</a>
+      <span class="age">reading ${ageMin}m old · refreshes every 15 min</span>
       <span class="tw">Tailwaters (Normandy · Elk): check TVA releases first.</span></span>`;
     el.style.display='flex';
     fixTops();
-  }catch(e){/* offline / blocked — strip stays hidden */}
-})();
+  }catch(e){/* offline / blocked — keep last render */}
+}
+updateRiver();
+setInterval(updateRiver,15*60*1000);                                          // auto-refresh every 15 min
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)updateRiver();}); // refresh on tab wake (the stale-phone-tab fix)
 </script>
 </body>
 </html>
