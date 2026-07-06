@@ -881,7 +881,9 @@ function computeOutlook(olk,water){
       s=Math.min(s,cap);
     }
     let tier=i<=1?2:(i<=3?1:0);                                 // 2 FIRM · 1 LIKELY · 0 WATCH
-    if(d.rainP>=35&&d.rainP<=65&&tier>0) tier--;                // coin-flip rain day = one tier down
+    // coin-flip rain day = one tier down — EXCEPT day 0 with a live gauge read: today's water is
+    // MEASURED, not projected; intra-day storm risk is already priced into the score + rain column
+    if(!(i===0&&water&&water.wq)&&d.rainP>=35&&d.rainP<=65&&tier>0) tier--;
     rows.push({date:d.date,s,v:biteVerdict(s),wLab,split,muddy,rainP:d.rainP,rainIn:d.rainIn,rainMax:rmax,
       windTxt:`${dirName(d.windDir)} ${d.windMph!=null?Math.round(d.windMph):'—'}`,tier});
     prevEff=rmax*(Math.min(Math.max(d.rainP,0),100)/100);
