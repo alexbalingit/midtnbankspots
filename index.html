@@ -73,6 +73,22 @@
   .riv .tw{color:var(--marsh);font-size:11px}
   .riv .wr{color:var(--blaze);font-weight:800}
   .riv .age{color:var(--marsh);font-size:11px}
+  .riv .wq{font-weight:800}
+  .riv .wq.CLEAR{color:#8fbf92}.riv .wq.STAINED{color:var(--brassL)}.riv .wq.MUDDY{color:#d9764a}
+  /* ── bite score (pressure+wind+light+water → one R/Y/G verdict) ─────────── */
+  .riv .bpill{flex:0 0 auto;display:inline-flex;align-items:baseline;gap:6px;padding:3px 12px;border-radius:999px;
+              font-weight:800;font-size:11px;letter-spacing:.1em;color:#fff;margin-top:0}
+  .riv .bpill .sc{font-family:var(--serif);font-size:15px;font-weight:700;letter-spacing:0}
+  .riv .bpill.g{background:var(--fern)}.riv .bpill.c{background:var(--brass);color:#15160f}.riv .bpill.s{background:var(--blaze)}
+  .riv .bpill.stale{background:var(--moss);color:rgba(239,233,216,.75)}
+  .riv .gh{flex:0 0 auto;display:inline-flex;align-items:center;gap:8px;margin-top:1px}
+  .riv .ghbar{position:relative;width:132px;height:12px;border-radius:4px;background:rgba(25,27,19,.55);overflow:hidden;flex:0 0 auto}
+  .riv .ghbar i{position:absolute;top:0;bottom:0;background:var(--brass);opacity:.9}
+  .riv .ghbar .now{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--field)}
+  .riv .ghtxt b{color:var(--brassL)}
+  .riv .wx{color:rgba(239,233,216,.82)}
+  .riv .fresh{color:var(--marsh);font-size:11px}
+  .riv .fresh.warn{color:var(--blaze);font-weight:800}
 
   /* ── drawer (spots by city) ─────────────────────────────────────────────── */
   .scrim{position:absolute;inset:0;z-index:1085;background:rgba(15,16,11,.45);opacity:0;pointer-events:none;transition:opacity .22s}
@@ -596,73 +612,227 @@ function rivRead(vals){ // latest value + trend. 6h ref @>10%, PLUS 2h ref @>5% 
   const c6=at(6), c2=at(2);
   const p6=c6>0?(lastV-c6)/c6:0, p2=c2>0?(lastV-c2)/c2:0;
   const trend=(p6>0.10||p2>0.05)?'rising':(p6<-0.10?'falling':'steady');
-  return {cfs:lastV,trend,t:lastT};
+  let peakV=-1,peakT=0,minV=Infinity;                                // spike shape over the fetched window (P3D)
+  vals.forEach(v=>{const x=+v.value;if(x>peakV){peakV=x;peakT=new Date(v.dateTime).getTime();}if(x<minV)minV=x;});
+  return {cfs:lastV,trend,t:lastT,peakV,peakT,minV};
 }
-async function rivRain(){ // max 24h precip across the upper watershed (Shelbyville + Normandy areas); null = unavailable
-  // 24h window because a rain slug takes ~12-24h to travel Shelbyville -> Columbia (proven 2026-07-05: 5.3" at 11am, mud hit Columbia next morning)
+// Explicit water-clarity read — two tiers.
+// Tier 1 (meter): Shelbyville turbidity sensor 63680 when it reports. FNU bands: <10 CLEAR · 10-40 STAINED · >=40 MUDDY.
+// Tier 2 (est.): inference from flow-vs-seasonal-base ratio + upstream rain + spike recency. Always labeled "(est.)" —
+// estimates stay distinct from measured values, never presented as fact.
+function rivClarity(col,fnu,rain){
+  if(fnu!=null){
+    return {label:fnu>=40?'MUDDY':(fnu>=10?'STAINED':'CLEAR'),est:false,fnu};
+  }
+  if(!col) return null;
+  const BASE=[1800,2000,2400,1800,800,350,300,250,250,300,800,1500]; // ~monthly base cfs @ Columbia (doctrine: seasonal flow read)
+  const base=BASE[new Date().getMonth()];
+  const R=col.cfs/base;
+  const r24=rain?rain.r24:0, r48=rain?rain.r48:0;
+  const spike=col.peakV>=2*Math.max(col.minV,1);                     // window saw a >=2x surge
+  const spikeFresh=spike&&(Date.now()-col.peakT)<24*3600e3;
+  let label,note='';
+  if(r48>=1.5||(col.trend==='rising'&&r24>=0.5)||R>=3||spikeFresh) label='MUDDY';
+  else if(r48>=0.4||R>=1.6||spike){label='STAINED';if(col.trend==='falling'&&r24<0.1)note='clearing';}
+  else label='CLEAR';
+  return {label,est:true,note};
+}
+async function rivRain(){ // upper-watershed precip (Shelbyville + Normandy areas): {r24,r48} max across points; null = unavailable
+  // 24-48h windows because a rain slug takes ~12-24h to travel Shelbyville -> Columbia (proven 2026-07-05: 5.3" at 11am, mud hit Columbia next morning)
   try{
-    const u='https://api.open-meteo.com/v1/forecast?latitude=35.48,35.45&longitude=-86.50,-86.25&hourly=precipitation&past_days=1&forecast_days=1&precipitation_unit=inch&timezone=auto';
+    const u='https://api.open-meteo.com/v1/forecast?latitude=35.48,35.45&longitude=-86.50,-86.25&hourly=precipitation&past_days=2&forecast_days=1&precipitation_unit=inch&timezone=auto';
     const r=await fetch(u); if(!r.ok) return null;
     const j=await r.json(); const locs=Array.isArray(j)?j:[j];
-    let mx=0;
+    let r24=0,r48=0;
     locs.forEach(L=>{
       const t=(L.hourly||{}).time||[], p=(L.hourly||{}).precipitation||[], now=Date.now();
-      let s=0;
+      let s24=0,s48=0;
       for(let i=0;i<t.length;i++){
-        const ti=new Date(t[i]).getTime();
-        if(ti<=now && now-ti<=24*3600e3) s+=(+p[i]||0);
+        const age=now-new Date(t[i]).getTime();
+        if(age<0) continue;
+        if(age<=48*3600e3){s48+=(+p[i]||0); if(age<=24*3600e3)s24+=(+p[i]||0);}
       }
-      mx=Math.max(mx,s);
+      r24=Math.max(r24,s24); r48=Math.max(r48,s48);
     });
-    return mx;
+    return {r24,r48};
   }catch(e){return null;}
 }
-async function updateRiver(){
+// ── Bite Score engine (light + pressure + wind + water → one 0-100 R/Y/G) ────
+// Anti-stale doctrine (2026-07-06): the score is only as fresh as its OLDEST live
+// input. Light/golden-hours are computed on-device (never fail, never stale); water
+// = USGS; pressure/wind/cloud = Open-Meteo. Every source is timestamped; the strip
+// shows the age of the weakest link; past 3h the score GRAYS + warns rather than
+// showing a confident number off dead data. Weather fetch failure => last-good cache
+// (with its true age) or a paused score — never a fake-fresh read.
+const HOME=[35.615,-87.035]; // Columbia/Culleoka home-waters centroid (sun + weather)
+const STALE_MIN=180;         // 3h — matches the water strip's stale threshold
+function sunTimes(lat,lon,date,tzOffMin){ // NOAA sunrise eqn → local minutes-after-midnight
+  const rad=Math.PI/180, deg=180/Math.PI;
+  const N=Math.floor((Date.UTC(date.getFullYear(),date.getMonth(),date.getDate())-Date.UTC(date.getFullYear(),0,0))/864e5);
+  function ev(isRise,zen){
+    const lngH=lon/15, t=N+((isRise?6:18)-lngH)/24;
+    const M=0.9856*t-3.289;
+    let L=M+1.916*Math.sin(M*rad)+0.020*Math.sin(2*M*rad)+282.634; L=(L%360+360)%360;
+    let RA=deg*Math.atan(0.91764*Math.tan(L*rad)); RA=(RA%360+360)%360;
+    RA+=(Math.floor(L/90)*90-Math.floor(RA/90)*90); RA/=15;
+    const sinDec=0.39782*Math.sin(L*rad), cosDec=Math.cos(Math.asin(sinDec));
+    const cosH=(Math.cos(zen*rad)-sinDec*Math.sin(lat*rad))/(cosDec*Math.cos(lat*rad));
+    if(cosH>1||cosH<-1) return null;
+    let H=isRise?360-deg*Math.acos(cosH):deg*Math.acos(cosH); H/=15;
+    const T=H+RA-0.06571*t-6.622;
+    let UT=(T-lngH)%24; UT=(UT+24)%24;
+    return Math.round(((UT*60+tzOffMin)%1440+1440)%1440);
+  }
+  return {dawn:ev(true,96),sunrise:ev(true,90.833),sunset:ev(false,90.833),dusk:ev(false,96)};
+}
+function goldenWins(sun){ return [[sun.dawn,sun.sunrise+120],[sun.sunset-90,sun.dusk]]; } // morning / evening
+function lightScore(now,sun,cloud){
+  const [mW,eW]=goldenWins(sun);
+  const inW=(m,w)=>m>=w[0]&&m<=w[1];
+  if(inW(now,mW)||inW(now,eW)) return 1.0;
+  const near=Math.min(Math.abs(now-mW[0]),Math.abs(now-mW[1]),Math.abs(now-eW[0]),Math.abs(now-eW[1]));
+  if(near<=45) return 0.75;
+  const day=now>sun.sunrise&&now<sun.sunset;
+  if(day){ if(cloud!=null&&cloud>=70) return 0.6; if(cloud!=null&&cloud>=40) return 0.4; return 0.2; }
+  return 0.5; // full dark — fishable but not prime
+}
+function pressureScore(trend,inHg){
+  let s=trend==='falling'?1.0:trend==='steady'?0.8:0.45;
+  if(inHg!=null&&inHg>30.20) s-=0.2; // very high + stable = tough
+  return Math.max(0,Math.min(1,s));
+}
+function dirName(d){ if(d==null) return '—'; return ['N','NE','E','SE','S','SW','W','NW'][Math.round((((d%360)+360)%360)/45)%8]; }
+function windScore(dir,mph){
+  if(mph!=null&&mph<3) return 0.6; // calm = neutral
+  const nm=dirName(dir);
+  let s=(nm==='W'||nm==='SW'||nm==='S')?1.0:(nm==='E'||nm==='NE'||nm==='N')?0.35:0.65;
+  if(mph!=null&&mph>22) s*=0.7; // blown out
+  return s;
+}
+const BW={light:35,pressure:25,wind:20,water:20};
+function biteScore(f){
+  let s=Math.round(BW.light*f.light+BW.pressure*f.pressure+BW.wind*f.wind+BW.water*f.water);
+  if(f.water===0) s=Math.min(s,28); // blown-out water gate: caps the day red
+  if(f.light<=0.25) s=Math.min(s,55); // wrong-time soft gate: bright midday never reads PRIME (time of day = biggest lever)
+  return s;
+}
+function biteVerdict(s){ return s>=70?{k:'g',w:'PRIME'}:s>=40?{k:'c',w:'FAIR'}:{k:'s',w:'SLOW'}; }
+function nextGolden(now,sun){
+  const wins=goldenWins(sun);
+  for(const w of wins){ if(now<=w[1]) return now>=w[0]?{state:'in',win:w}:{state:'before',win:w}; }
+  return {state:'after',win:wins[0]}; // after dusk → tomorrow's morning window
+}
+function fmtClock(m){ m=((m%1440)+1440)%1440; const h=Math.floor(m/60),mn=m%60,ap=h<12?'a':'p',h12=h%12||12; return `${h12}:${String(mn).padStart(2,'0')}${ap}`; }
+async function fetchWx(){ // Open-Meteo: pressure(+3h trend), wind, cloud. null = unreachable
   try{
-    const u='https://waterservices.usgs.gov/nwis/iv/?sites=03599500,03599350,03598000&parameterCd=00060&period=P1D&format=json';
-    const r=await fetch(u,{cache:'no-store'}); if(!r.ok) return;
+    const u='https://api.open-meteo.com/v1/forecast?latitude=35.615&longitude=-87.035&current=surface_pressure,wind_speed_10m,wind_direction_10m,cloud_cover&hourly=surface_pressure&past_hours=4&forecast_hours=1&wind_speed_unit=mph&timezone=auto';
+    const r=await fetch(u); if(!r.ok) return null;
     const j=await r.json();
-    const S={};
-    (j.value.timeSeries||[]).forEach(ts=>{
-      const site=ts.sourceInfo.siteCode[0].value, vals=(ts.values[0]||{}).value||[];
-      if(vals.length) S[site]=rivRead(vals);
-    });
-    const col=S['03599500']; if(!col) return;
-    const hard=S['03599350'], shel=S['03598000'];
-    const rain=await rivRain();
-    const arrow=t=>t==='rising'?'↗':(t==='falling'?'↘':'→');
-    let cls,klass;
-    if(col.cfs>1000||(col.trend==='rising'&&col.cfs>600)){cls='SKIP';klass='s';}
-    else if(col.cfs>600||col.trend==='rising'){cls='CAUTION';klass='c';}
-    else {cls='GO';klass='g';}
-    // upstream early warning — rain/rise upstream reaches Columbia hours after the gauge still reads fine
-    const upRising=(shel&&shel.trend==='rising')||(hard&&hard.trend==='rising');
-    const heavyRain=rain!=null&&rain>=1.0, someRain=rain!=null&&rain>=0.3;
-    let warn='';
-    if(cls==='GO'&&(upRising||heavyRain)){
-      cls='CAUTION';klass='c';
-      warn=upRising?'upstream rising — rise/mud headed downriver':`upstream rain ${rain.toFixed(1)}" /24h — expect a rise`;
+    const cur=j.current||{}, hp=(j.hourly||{}).surface_pressure||[], ht=(j.hourly||{}).time||[];
+    const pNow=cur.surface_pressure, now=Date.now();
+    let p3=null;
+    for(let i=0;i<ht.length;i++){ const dt=now-new Date(ht[i]).getTime(); if(dt>=3*3600e3&&dt<4.5*3600e3&&hp[i]!=null) p3=hp[i]; }
+    if(p3==null){ for(let i=0;i<hp.length;i++){ if(hp[i]!=null){ p3=hp[i]; break; } } }
+    const dP=(pNow!=null&&p3!=null)?pNow-p3:0;
+    const trend=dP>1.0?'rising':dP<-1.0?'falling':'steady';
+    const o={inHg:pNow!=null?pNow/33.8639:null,trend,windDir:cur.wind_direction_10m,windMph:cur.wind_speed_10m,cloud:cur.cloud_cover,t:now};
+    try{ localStorage.setItem('casterBite_v1',JSON.stringify(o)); }catch(e){}
+    return o;
+  }catch(e){ return null; }
+}
+function cachedWx(){ try{ return JSON.parse(localStorage.getItem('casterBite_v1')); }catch(e){ return null; } }
+
+async function updateRiver(){
+  const el=document.getElementById('riv'); if(!el) return;
+  const fmtAge=m=>m>=120?`${(m/60).toFixed(1)}h`:`${m}m`;
+  const arrow=t=>t==='rising'?'↗':(t==='falling'?'↘':'→');
+  // ── water (USGS) — no early-return so the bite score still shows if a gauge is down ──
+  let col=null,hard=null,shel=null,rain=null,cls=null,klass=null,warn='',wade='',ageMin=null,fnu=null,wq=null;
+  try{
+    const u='https://waterservices.usgs.gov/nwis/iv/?sites=03599500,03599350,03598000&parameterCd=00060,63680&period=P3D&format=json';
+    const r=await fetch(u,{cache:'no-store'});
+    if(r.ok){
+      const j=await r.json(), S={};
+      (j.value.timeSeries||[]).forEach(ts=>{
+        const site=ts.sourceInfo.siteCode[0].value, param=ts.variable.variableCode[0].value, vals=(ts.values[0]||{}).value||[];
+        if(!vals.length) return;
+        if(param==='00060') S[site]=rivRead(vals);
+        else if(param==='63680'){ // Shelbyville turbidity meter — trust only a fresh reading (<6h old)
+          const last=vals[vals.length-1];
+          if(Date.now()-new Date(last.dateTime).getTime()<6*3600e3) fnu=+last.value;
+        }
+      });
+      col=S['03599500']||null; hard=S['03599350']||null; shel=S['03598000']||null;
+      if(col){
+        rain=await rivRain();
+        wq=rivClarity(col,fnu,rain);
+        if(col.cfs>1000||(col.trend==='rising'&&col.cfs>600)){cls='SKIP';klass='s';}
+        else if(col.cfs>600||col.trend==='rising'){cls='CAUTION';klass='c';}
+        else {cls='GO';klass='g';}
+        const upRising=(shel&&shel.trend==='rising')||(hard&&hard.trend==='rising');
+        const r24=rain?rain.r24:0;
+        const heavyRain=r24>=1.0, someRain=r24>=0.3;
+        if(cls==='GO'&&(upRising||heavyRain||(wq&&wq.label==='MUDDY'))){ cls='CAUTION';klass='c';
+          warn=upRising?'upstream rising — rise/mud headed downriver':(heavyRain?`upstream rain ${r24.toFixed(1)}" /24h — expect a rise`:'muddy water — doctrine says low odds'); }
+        else if(upRising) warn='upstream rising';
+        else if(someRain) warn=`upstream rain ${r24.toFixed(1)}" /24h — expect stain`;
+        ageMin=Math.max(0,Math.round((Date.now()-col.t)/60000));
+        if(ageMin>STALE_MIN) warn=(warn?warn+' · ':'')+'Columbia gauge data 3h+ old — verify before trusting';
+        wade=hard?((cls==='GO'&&hard.trend!=='rising')?'wade Zone A OK':'no wading — bank Zone B/C only')
+                 :'Zone A gauge (Hardison) offline — judge wading on sight';
+      }
     }
-    else if(upRising) warn='upstream rising';
-    else if(someRain) warn=`upstream rain ${rain.toFixed(1)}" /24h — expect stain`;
-    const ageOf=g=>Math.max(0,Math.round((Date.now()-g.t)/60000)); // per-gauge USGS publish lag
-    const fmtAge=m=>m>=120?`${(m/60).toFixed(1)}h`:`${m}m`;
-    const ageMin=ageOf(col);
-    if(ageMin>180) warn=(warn?warn+' · ':'')+'Columbia gauge data 3h+ old — verify before trusting';
-    const wade=hard?((cls==='GO'&&hard.trend!=='rising')?'wade Zone A OK':'no wading — bank Zone B/C only')
-                   :'Zone A gauge (Hardison) offline — judge wading on sight';
-    const el=document.getElementById('riv');
-    el.innerHTML=`<span class="pill ${klass}">${cls}</span>
+  }catch(e){/* keep water null — bite score still renders */}
+  const ageOf=g=>Math.max(0,Math.round((Date.now()-g.t)/60000));
+
+  // ── bite score (light + pressure + wind + water) ──
+  let wx=await fetchWx(); const wxLive=!!wx; if(!wx) wx=cachedWx();
+  const nowD=new Date(), nowMin=nowD.getHours()*60+nowD.getMinutes();
+  const sun=sunTimes(HOME[0],HOME[1],nowD,-nowD.getTimezoneOffset());
+  const waterF=klass==='g'?1:klass==='c'?0.5:klass==='s'?0:0.65; // no gauge => neutral, not a gate
+  const wxAge=wx?Math.round((Date.now()-wx.t)/60000):null, wxStale=wx?wxAge>STALE_MIN:true;
+  let biteHTML;
+  if(wx&&!wxStale){
+    const f={light:lightScore(nowMin,sun,wx.cloud),pressure:pressureScore(wx.trend,wx.inHg),wind:windScore(wx.windDir,wx.windMph),water:waterF};
+    const s=biteScore(f), v=biteVerdict(s), peak=biteScore(Object.assign({},f,{light:1.0}));
+    const [mb,eb]=goldenWins(sun), span=1080, pct=m=>Math.max(0,Math.min(100,(m-240)/span*100));
+    const bar=`<span class="ghbar"><i style="left:${pct(mb[0]).toFixed(1)}%;width:${(pct(mb[1])-pct(mb[0])).toFixed(1)}%"></i>`+
+              `<i style="left:${pct(eb[0]).toFixed(1)}%;width:${(pct(eb[1])-pct(eb[0])).toFixed(1)}%"></i>`+
+              `<span class="now" style="left:${pct(nowMin).toFixed(1)}%"></span></span>`;
+    const ng=nextGolden(nowMin,sun); let ght;
+    if(ng.state==='in') ght=`<b>prime bite now</b> · til ${fmtClock(ng.win[1])}`;
+    else{ const mins=((ng.win[0]-nowMin)%1440+1440)%1440, h=Math.floor(mins/60), mn=mins%60;
+      ght=`prime bite in <b>${h?h+'h ':''}${mn}m</b> · ${fmtClock(ng.win[0])}–${fmtClock(ng.win[1])}`; }
+    const stale=wxLive?'':` <span class="fresh warn">⚠ live weather down — last good ${fmtAge(wxAge)} ago</span>`;
+    biteHTML=`<span class="bpill ${v.k}" title="light+pressure+wind+water">${v.w} · <span class="sc">${s}</span></span>`+
+      `<span class="gh">${bar}<span class="ghtxt">${ght} · peaks <b>${peak}</b></span></span>`+
+      `<span class="wx">· ${wx.inHg!=null?wx.inHg.toFixed(2)+'"':'—'} ${arrow(wx.trend)} ${wx.trend} · wind ${dirName(wx.windDir)} ${wx.windMph!=null?Math.round(wx.windMph):'—'} mph</span>${stale}`;
+  } else {
+    biteHTML=`<span class="bpill stale">BITE&nbsp;?</span> <span class="fresh warn">⚠ live weather unavailable — score paused, don't trust a stale read</span>`;
+  }
+
+  // ── combined freshness stamp = OLDEST live source (sun is always fresh) ──
+  const ages=[]; if(ageMin!=null) ages.push(ageMin); if(wxAge!=null) ages.push(wxAge);
+  const oldest=ages.length?Math.max.apply(null,ages):null;
+  const freshHTML=oldest==null?`<span class="fresh warn">⚠ no live data — showing nothing current</span>`
+    :`<span class="fresh ${oldest>STALE_MIN?'warn':''}">updated ${fmtAge(oldest)} ago${oldest>STALE_MIN?' · REFRESH — 3h+ old':''}</span>`;
+
+  const waterHTML=col?`<span class="pill ${klass}">${cls}</span>
       <span><b>Duck @ Columbia:</b> ${Math.round(col.cfs).toLocaleString()} cfs ${arrow(col.trend)} ${col.trend} <span class="age">(${fmtAge(ageMin)} ago)</span>
       ${shel?`· <b>upstream (Shelbyville):</b> ${Math.round(shel.cfs).toLocaleString()} cfs ${arrow(shel.trend)} <span class="age">(${fmtAge(ageOf(shel))} ago)</span>`:''}
       ${hard?`· <b>Hardison:</b> ${Math.round(hard.cfs).toLocaleString()} cfs ${arrow(hard.trend)} <span class="age">(${fmtAge(ageOf(hard))} ago)</span>`:''}
-      ${warn?`· <span class="wr">⚠ ${warn}</span>`:''}
-      · ${wade}
-      <a href="https://waterdata.usgs.gov/monitoring-location/03599500/" target="_blank" rel="noopener">gauge ↗</a>
-      <span class="tw">· ages = USGS publish lag · auto-refreshes every 15 min · Tailwaters (Normandy · Elk): check TVA releases first.</span></span>`;
-    el.style.display='flex';
-    fixTops();
-  }catch(e){/* offline / blocked — keep last render */}
+      ${wq?`· water: <span class="wq ${wq.label}">${wq.label}${wq.note?' → clearing':''}</span> <span class="age">${wq.est?'(est. — flow + rain model)':`(meter · ${Math.round(wq.fnu)} FNU)`}</span>`:''}
+      ${warn?`· <span class="wr">⚠ ${warn}</span>`:''} · ${wade}
+      <a href="https://waterdata.usgs.gov/monitoring-location/03599500/" target="_blank" rel="noopener">gauge ↗</a></span>`
+    :`<span class="wr">⚠ USGS gauge offline — water read unavailable</span>`;
+
+  el.innerHTML=`${biteHTML} <span class="tw">·</span> ${waterHTML}
+      <span class="tw">· ${freshHTML} · gold band = golden hours (computed on-device) · auto-refresh 15 min · Tailwaters (Normandy · Elk): check TVA first.</span>`;
+  el.style.display='flex';
+  fixTops();
+  // spotty-cell hardening: if the water read failed, retry sooner than the 15-min tick (max 5 tries)
+  if(!col&&(window._rivRetry=(window._rivRetry||0)+1)<=5) setTimeout(updateRiver,45e3);
+  if(col) window._rivRetry=0;
 }
 updateRiver();
 setInterval(updateRiver,15*60*1000);                                          // auto-refresh every 15 min
