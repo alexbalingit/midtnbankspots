@@ -401,9 +401,15 @@ map.on('click dragstart', closeSheet);
   sheet.addEventListener('touchmove',e=>{ if(y0!==null && e.touches[0].clientY-y0>70){ closeSheet(); y0=null; } },{passive:true});
   sheet.addEventListener('touchend',()=>{ y0=null; });
 })();
+// ONE shared popup, never marker.bindPopup() — binding inside a click handler registers
+// Leaflet's own popup-toggle click listener, which then closes the popup on every
+// subsequent click of that marker (bug: spots worked once, then went dead; fixed 2026-07-05)
+const spotPopup = L.popup({maxWidth:290,autoPanPadding:[50,80]});
 function showCard(s, marker){
-  if(isMobile()) openSheet(s);
-  else marker.bindPopup(renderCard(s),{maxWidth:290,autoPanPadding:[50,80]}).openPopup();
+  if(isMobile()){ openSheet(s); return; }
+  const anchor=(marker.options.icon&&marker.options.icon.options.popupAnchor)||[0,-12];
+  spotPopup.options.offset=L.point(anchor[0],anchor[1]);
+  spotPopup.setLatLng(marker.getLatLng()).setContent(renderCard(s)).openOn(map);
 }
 
 // ── markers: clustered park pins + close-zoom water detail ───────────────────

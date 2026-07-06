@@ -96,6 +96,27 @@
   .note{font-size:11.5px;color:var(--marsh);margin-top:12px;line-height:1.55}
   .note b{color:var(--moss)}
 
+  /* ── photo attach + catch card ── */
+  .photoRow{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .photoBtn{cursor:pointer}
+  .photoPrev{position:relative;width:66px;height:66px;border-radius:10px;overflow:hidden;border:1.5px solid var(--brass);flex:0 0 auto}
+  .photoPrev img{width:100%;height:100%;object-fit:cover;display:block}
+  .pRemove{position:absolute;top:2px;right:2px;width:20px;height:20px;border:none;border-radius:50%;background:rgba(25,27,19,.82);
+           color:var(--field);font-size:11px;font-weight:700;cursor:pointer;line-height:1;padding:0}
+  .photoHint{font-size:11px;color:var(--marsh)}
+  td img.thumb{width:46px;height:36px;object-fit:cover;border-radius:6px;border:1px solid var(--hair);display:block;cursor:pointer}
+  td .nopic{color:var(--marsh)}
+  td .addPic{display:flex;align-items:center;justify-content:center;width:46px;height:36px;border-radius:6px;cursor:pointer;
+             border:1.5px dashed rgba(25,27,19,.3);background:transparent;color:var(--moss);transition:border-color .15s,color .15s}
+  td .addPic:hover{border-color:var(--brass);color:var(--brass)}
+  .cardModal{position:fixed;inset:0;background:rgba(15,16,11,.88);z-index:60;display:flex;align-items:center;justify-content:center;
+             padding:18px;padding-bottom:calc(18px + env(safe-area-inset-bottom))}
+  .cardModal[hidden]{display:none}
+  .cardBox{max-width:min(420px,94vw);width:100%;text-align:center}
+  .cardBox img{width:100%;height:auto;border-radius:14px;box-shadow:0 24px 60px rgba(0,0,0,.5);display:block}
+  .cardModal .btn.ghost{color:var(--field);border-color:rgba(239,233,216,.4)}
+  .cardModal .btn.ghost:hover{border-color:var(--brassL);color:var(--brassL)}
+
   .toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom));transform:translateX(-50%);
          background:rgba(25,27,19,.96);color:var(--field);border:1px solid rgba(200,165,90,.45);
          padding:11px 18px;border-radius:999px;font-size:13px;font-weight:600;opacity:0;transition:.25s;pointer-events:none;z-index:50;
@@ -144,6 +165,17 @@
       <div><label>Water temp (°F)</label><input type="number" id="f_temp" inputmode="numeric" placeholder="72"></div>
       <div><label>Flow / level</label><select id="f_flow"></select></div>
       <div class="full"><label>Notes (cover, bite feel, etc.)</label><textarea id="f_notes" placeholder="Tube through the cross-vane seam, thumped on the fall"></textarea></div>
+      <div class="full"><label>Photo (optional)</label>
+        <div class="photoRow">
+          <label class="btn sm ghost photoBtn" for="f_photo">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7.7 6.2H4a2 2 0 0 0-2 2V18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8.2a2 2 0 0 0-2-2h-3.7L14.5 4Z"/><circle cx="12" cy="13" r="3.4"/></svg>
+            Add photo
+          </label>
+          <input type="file" id="f_photo" accept="image/*" hidden>
+          <div id="photoPrev" class="photoPrev" hidden><img id="photoPrevImg" alt="Catch photo preview"><button class="pRemove" onclick="clearPendingPhoto()" aria-label="Remove photo">✕</button></div>
+          <span class="photoHint">Stored on this device · share as a Catch Card after logging</span>
+        </div>
+      </div>
     </div>
     <button class="btn add" onclick="addCatch()">
       <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="14" cy="5" r="1.8"/><path d="M14 6.8v8.5a5.4 5.4 0 1 1-9.4-3.6"/><path d="M4.6 13.4l2 .9"/></svg>
@@ -160,7 +192,7 @@
     <h2>Catches</h2>
     <div class="tbl">
       <table id="tbl"><thead><tr>
-        <th>Date</th><th>Time</th><th>Spot</th><th>Species</th><th>Size</th><th>Bait</th><th>Rig</th><th>Hook</th><th>Color</th><th>Line</th><th>Retrieve</th><th>Conditions</th><th>Notes</th><th></th>
+        <th>Date</th><th>Time</th><th>Spot</th><th>Species</th><th>Size</th><th>Bait</th><th>Rig</th><th>Hook</th><th>Color</th><th>Line</th><th>Retrieve</th><th>Conditions</th><th>Notes</th><th>Photo</th><th></th>
       </tr></thead><tbody id="tbody"></tbody></table>
     </div>
     <div id="emptyMsg" class="empty">Tap “Add catch” above to start your log.</div>
@@ -178,6 +210,19 @@
     <p class="note">Data is stored only in this browser. To keep a permanent, cross-device record, hit <b>Copy as Markdown</b> and paste into <b>00 - Catch Log.md</b> in your vault.</p>
   </div>
 
+</div>
+<div class="cardModal" id="cardModal" hidden onclick="if(event.target===this)closeCard()">
+  <div class="cardBox">
+    <img id="cardImg" alt="Caster Catch Card">
+    <div class="row" style="justify-content:center;margin-top:14px">
+      <button class="btn sm add" style="width:auto;margin-top:0" onclick="shareCurrentCard()">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="M8.3 10.8l7.4-4.3M8.3 13.2l7.4 4.3"/></svg>
+        Share
+      </button>
+      <button class="btn sm ghost" onclick="saveCurrentCard()">Save image</button>
+      <button class="btn sm ghost" onclick="closeCard()">Close</button>
+    </div>
+  </div>
 </div>
 <div class="toast" id="toast"></div>
 <script>
@@ -225,6 +270,8 @@ function nowDefaults(){
   document.getElementById('f_line').value='Braid + fluoro leader';
 }
 let data=load();
+function uid(){return 'c'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+(function migrate(){let m=false;data.forEach(c=>{if(!c.id){c.id=uid();m=true;}});if(m)save();})();
 function load(){try{return JSON.parse(localStorage.getItem(KEY))||[];}catch(e){return [];}}
 function save(){localStorage.setItem(KEY,JSON.stringify(data));}
 function val(id){return document.getElementById(id).value;}
@@ -233,16 +280,20 @@ function sizeStr(len,wt){const a=[];if(len)a.push(len+'"');if(wt)a.push(wt+'lb')
 function condStr(c){return [c.clar,c.sky,(c.temp?c.temp+'°':''),c.flow].filter(Boolean).join(' · ');}
 
 function addCatch(){
-  const c={date:val('f_date'),time:val('f_time'),spot:val('f_spot'),species:val('f_species'),
+  const c={id:uid(),date:val('f_date'),time:val('f_time'),spot:val('f_spot'),species:val('f_species'),
     len:val('f_len'),wt:val('f_wt'),bait:val('f_bait'),color:val('f_color'),rig:val('f_rig'),
     hook:val('f_hook'),line:val('f_line'),retr:val('f_retr'),clar:val('f_clar'),sky:val('f_sky'),
     temp:val('f_temp'),flow:val('f_flow'),notes:val('f_notes').replace(/\|/g,'/').replace(/\n/g,' ')};
+  const pb=pendingPhoto;
+  if(pb)c.photo=1;
   data.unshift(c);save();render();
   document.getElementById('f_len').value='';document.getElementById('f_wt').value='';document.getElementById('f_notes').value='';
+  clearPendingPhoto();
   toast('Logged: '+c.species+' on '+c.bait);
+  if(pb){pPut(c.id,pb).then(()=>{render();openCard(c.id);}).catch(()=>toast('Photo could not be saved'));}
 }
-function del(i){data.splice(i,1);save();render();}
-function clearAll(){if(confirm('Delete ALL '+data.length+' logged catches on this device? Export first if you want to keep them.')){data=[];save();render();}}
+function del(i){const c=data[i];if(c&&c.photo&&c.id)pDel(c.id).catch(()=>{});data.splice(i,1);save();render();}
+function clearAll(){if(confirm('Delete ALL '+data.length+' logged catches on this device? Export first if you want to keep them.')){data=[];save();pClear().catch(()=>{});render();}}
 
 function topOf(field){
   const m={};data.forEach(c=>{const k=c[field];if(k)m[k]=(m[k]||0)+1;});
@@ -257,6 +308,17 @@ function render(){
     const tr=document.createElement('tr');tr.className='z'+(ZONE[c.spot]||'');
     const cells=[c.date,c.time,c.spot,c.species,sizeStr(c.len,c.wt),c.bait,c.rig,c.hook,c.color,c.line,c.retr,condStr(c),c.notes||''];
     cells.forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.appendChild(td);});
+    const tdP=document.createElement('td');
+    if(c.photo&&c.id){
+      const im=document.createElement('img');im.className='thumb';im.alt='Catch photo — tap to share';
+      im.onclick=()=>openCard(c.id);tdP.appendChild(im);
+      pGet(c.id).then(b=>{if(b)im.src=URL.createObjectURL(b);else tdP.innerHTML='<span class="nopic">—</span>';}).catch(()=>{});
+    }else{
+      const ab=document.createElement('button');ab.className='addPic';ab.title='Add photo to this catch';
+      ab.innerHTML='<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7.7 6.2H4a2 2 0 0 0-2 2V18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8.2a2 2 0 0 0-2-2h-3.7L14.5 4Z"/><circle cx="12" cy="13" r="3.4"/></svg>';
+      ab.onclick=()=>addPhotoTo(c.id);tdP.appendChild(ab);
+    }
+    tr.appendChild(tdP);
     const td=document.createElement('td');const b=document.createElement('button');b.className='del';b.textContent='✕';b.onclick=()=>del(i);td.appendChild(b);tr.appendChild(td);
     tb.appendChild(tr);
   });
@@ -289,6 +351,135 @@ function downloadCSV(){
   toast('CSV downloaded');
 }
 let tT;function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),2200);}
+
+/* ── photos: IndexedDB blob store (localStorage can't hold images) ── */
+const PDB='casterCatchPhotos_v1';
+function idb(){return new Promise((res,rej)=>{const r=indexedDB.open(PDB,1);
+  r.onupgradeneeded=()=>r.result.createObjectStore('photos');
+  r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});}
+async function pPut(id,blob){const d=await idb();return new Promise((res,rej)=>{const t=d.transaction('photos','readwrite');
+  t.objectStore('photos').put(blob,id);t.oncomplete=()=>res();t.onerror=()=>rej(t.error);});}
+async function pGet(id){const d=await idb();return new Promise((res,rej)=>{const q=d.transaction('photos').objectStore('photos').get(id);
+  q.onsuccess=()=>res(q.result||null);q.onerror=()=>rej(q.error);});}
+async function pDel(id){const d=await idb();return new Promise((res,rej)=>{const t=d.transaction('photos','readwrite');
+  t.objectStore('photos').delete(id);t.oncomplete=()=>res();t.onerror=()=>rej(t.error);});}
+async function pClear(){const d=await idb();return new Promise((res,rej)=>{const t=d.transaction('photos','readwrite');
+  t.objectStore('photos').clear();t.oncomplete=()=>res();t.onerror=()=>rej(t.error);});}
+
+async function blobToImage(b){
+  if(window.createImageBitmap){try{return await createImageBitmap(b);}catch(e){}}
+  return new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=URL.createObjectURL(b);});
+}
+async function compressPhoto(file){
+  const img=await blobToImage(file);
+  const M=1600,s=Math.min(1,M/Math.max(img.width,img.height));
+  const w=Math.round(img.width*s),h=Math.round(img.height*s);
+  const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+  cv.getContext('2d').drawImage(img,0,0,w,h);
+  return new Promise(res=>cv.toBlob(res,'image/jpeg',.82));
+}
+
+let pendingPhoto=null;
+document.getElementById('f_photo').addEventListener('change',async e=>{
+  const f=e.target.files[0];if(!f)return;
+  try{pendingPhoto=await compressPhoto(f);
+    document.getElementById('photoPrevImg').src=URL.createObjectURL(pendingPhoto);
+    document.getElementById('photoPrev').hidden=false;
+  }catch(err){pendingPhoto=null;toast('Could not read that photo');}
+  e.target.value='';
+});
+function clearPendingPhoto(){pendingPhoto=null;document.getElementById('photoPrev').hidden=true;document.getElementById('photoPrevImg').removeAttribute('src');}
+
+/* add a photo to an already-logged catch */
+let retroTarget=null;
+const retroInput=document.createElement('input');
+retroInput.type='file';retroInput.accept='image/*';retroInput.hidden=true;
+document.body.appendChild(retroInput);
+retroInput.addEventListener('change',async e=>{
+  const f=e.target.files[0];e.target.value='';
+  if(!f||!retroTarget)return;
+  const id=retroTarget;retroTarget=null;
+  try{
+    const blob=await compressPhoto(f);
+    await pPut(id,blob);
+    const c=data.find(r=>r.id===id);
+    if(c){c.photo=1;save();render();openCard(id);}
+  }catch(err){toast('Could not attach that photo');}
+});
+function addPhotoTo(id){retroTarget=id;retroInput.click();}
+
+/* ── Catch Card: branded share image (species/size/date only — spot never leaves the log) ── */
+function fmtDate(d){if(!d)return '';const t=new Date(d+'T12:00:00');
+  return isNaN(t)?d:t.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
+function drawContours(x){
+  const p1=new Path2D('M70 40c45-20 105-8 130 24s12 72-20 96-82 28-114 6-38-64-18-94 22-32 22-32Z');
+  const p2=new Path2D('M320 260c50-22 114-5 134 32s3 84-37 106-95 20-126-9-22-86 4-112 25-17 25-17Z');
+  x.save();x.strokeStyle='rgba(200,165,90,.10)';x.lineWidth=1.4;
+  x.translate(-60,940);x.scale(1.7,1.7);x.stroke(p1);x.stroke(p2);
+  x.restore();
+}
+async function buildCard(c,blob){
+  try{await Promise.all([
+    document.fonts.load('700 78px "Libre Caslon Text"'),
+    document.fonts.load('700 26px "Inter"'),
+    document.fonts.load('600 34px "Inter"')]);}catch(e){}
+  const img=await blobToImage(blob);
+  const W=1080,H=1350,cv=document.createElement('canvas');cv.width=W;cv.height=H;
+  const x=cv.getContext('2d');
+  x.fillStyle='#191b13';x.fillRect(0,0,W,H);
+  drawContours(x);
+  const px=54,py=54,pw=W-108,ph=930;
+  const sc=Math.max(pw/img.width,ph/img.height),dw=img.width*sc,dh=img.height*sc;
+  x.save();x.beginPath();x.rect(px,py,pw,ph);x.clip();
+  x.drawImage(img,px+(pw-dw)/2,py+(ph-dh)/2,dw,dh);x.restore();
+  x.strokeStyle='rgba(200,165,90,.65)';x.lineWidth=3;x.strokeRect(px+1.5,py+1.5,pw-3,ph-3);
+  x.textAlign='center';
+  x.fillStyle='#8b8163';x.font='700 26px Inter,sans-serif';
+  x.fillText('C A T C H   O F   T H E   D A Y',W/2,1066);
+  x.fillStyle='#efe9d8';x.font='700 78px "Libre Caslon Text",Georgia,serif';
+  x.fillText(c.species||'Catch',W/2,1160);
+  const bits=[];if(c.len)bits.push(c.len+'"');if(c.wt)bits.push(c.wt+' lb');
+  const line=[bits.join(' / '),fmtDate(c.date)].filter(Boolean).join('   ·   ');
+  x.fillStyle='#c8a55a';x.font='600 34px Inter,sans-serif';
+  if(line)x.fillText(line,W/2,1218);
+  x.strokeStyle='rgba(200,165,90,.5)';x.lineWidth=2;
+  x.beginPath();x.moveTo(W/2-110,1252);x.lineTo(W/2+110,1252);x.stroke();
+  x.fillStyle='#efe9d8';x.font='700 34px "Libre Caslon Text",Georgia,serif';
+  x.fillText('C A S T E R',W/2,1312);
+  return cv;
+}
+
+let currentCard=null;
+async function openCard(id){
+  const c=data.find(r=>r.id===id);if(!c)return;
+  const blob=await pGet(id).catch(()=>null);
+  if(!blob){toast('No photo saved for this catch');return;}
+  toast('Building Catch Card…');
+  const cv=await buildCard(c,blob);
+  cv.toBlob(b=>{
+    if(!b){toast('Card render failed');return;}
+    currentCard={c,blob:b};
+    const im=document.getElementById('cardImg');
+    im.src=URL.createObjectURL(b);
+    document.getElementById('cardModal').hidden=false;
+  },'image/jpeg',.9);
+}
+function closeCard(){document.getElementById('cardModal').hidden=true;currentCard=null;}
+function cardFile(){return new File([currentCard.blob],'caster-catch-'+(currentCard.c.date||'card')+'.jpg',{type:'image/jpeg'});}
+async function shareCurrentCard(){
+  if(!currentCard)return;
+  const f=cardFile();
+  if(navigator.canShare&&navigator.canShare({files:[f]})){
+    try{await navigator.share({files:[f],title:'Catch of the Day'});}catch(e){/* user cancelled */}
+  }else{saveCurrentCard();toast('Sharing not supported here — image saved instead');}
+}
+function saveCurrentCard(){
+  if(!currentCard)return;
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(currentCard.blob);
+  a.download='caster-catch-'+(currentCard.c.date||'card')+'.jpg';a.click();
+  toast('Catch Card saved');
+}
 
 nowDefaults();render();
 </script>
