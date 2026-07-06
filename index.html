@@ -241,7 +241,9 @@
     .panel{width:86vw}
     .chint{white-space:normal;text-align:left;font-size:11px;line-height:1.45;padding:7px 8px 7px 13px;width:calc(100vw - 20px);max-width:360px}
     .riv .tw{display:none}
-    .riv{font-size:11.5px;padding:6px 10px}
+    .riv .d2{display:none}
+    .riv .age{display:none}
+    .riv{font-size:11.5px;line-height:1.4;padding:6px 10px;gap:6px;max-height:34vh;overflow-y:auto}
     .bcard .fx{grid-template-columns:1fr 1fr}
   }
   /* ── desktop: float the Bite Score sheet as a centered card (spot cards use popups) ── */
@@ -940,12 +942,12 @@ async function updateRiver(){
     : `<button class="bbtn ${b.v.k}" onclick="openBite()" title="Bite Score — tap for the read">Bite Score · <span class="sc">${b.s}</span></button>`;
 
   const waterHTML=col?`<span class="pill ${klass}">${cls}</span>
-      <span><b>Duck @ Columbia:</b> ${Math.round(col.cfs).toLocaleString()} cfs ${arrow(col.trend)} ${col.trend} <span class="age">(${fmtAge(ageMin)} ago)</span>
+      <span><b>Duck @ Columbia:</b> ${Math.round(col.cfs).toLocaleString()} cfs ${arrow(col.trend)} ${col.trend} <span class="age">(${fmtAge(ageMin)} ago)</span><span class="d2">
       ${shel?`· <b>upstream (Shelbyville):</b> ${Math.round(shel.cfs).toLocaleString()} cfs ${arrow(shel.trend)} <span class="age">(${fmtAge(ageOf(shel))} ago)</span>`:''}
-      ${hard?`· <b>Hardison:</b> ${Math.round(hard.cfs).toLocaleString()} cfs ${arrow(hard.trend)} <span class="age">(${fmtAge(ageOf(hard))} ago)</span>`:''}
-      ${wq?`· water: <span class="wq ${wq.label}">${wq.label}${wq.note?' → clearing':''}</span> <span class="age">${wq.est?'(est. — flow + rain model)':`(meter · ${Math.round(wq.fnu)} FNU)`}</span>`:''}
-      ${warn?`· <span class="wr">⚠ ${warn}</span>`:''} · ${wade}
-      <a href="https://waterdata.usgs.gov/monitoring-location/03599500/" target="_blank" rel="noopener">gauge ↗</a>
+      ${hard?`· <b>Hardison:</b> ${Math.round(hard.cfs).toLocaleString()} cfs ${arrow(hard.trend)} <span class="age">(${fmtAge(ageOf(hard))} ago)</span>`:''}</span>
+      ${wq?`· water: <span class="wq ${wq.label}">${wq.label}${wq.note?' → clearing':''}</span> <span class="age d2">${wq.est?'(est. — flow + rain model)':`(meter · ${Math.round(wq.fnu)} FNU)`}</span>`:''}
+      ${warn?`· <span class="wr">⚠ ${warn}</span>`:''}<span class="d2"> · ${wade}
+      <a href="https://waterdata.usgs.gov/monitoring-location/03599500/" target="_blank" rel="noopener">gauge ↗</a></span>
       <span class="tw">· ages = USGS publish lag · auto-refresh 15 min · Bite Score = tap the pill · Tailwaters (Normandy · Elk): check TVA first.</span></span>`
     :`<span class="wr">⚠ USGS gauge offline — water read unavailable</span> <span class="tw">· tap the Bite Score for timing + weather</span>`;
 
