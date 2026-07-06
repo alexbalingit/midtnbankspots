@@ -701,10 +701,10 @@ function rivClarity(col,fnu,rain){
   else label='CLEAR';
   return {label,est:true,note};
 }
-async function rivRain(){ // upper-watershed precip (Shelbyville + Normandy areas): {r24,r48} max across points; null = unavailable
+async function rivRain(){ // watershed precip (Shelbyville · Normandy · Lewisburg/Fountain Ck · Columbia local): {r24,r48} max across points; null = unavailable
   // 24-48h windows because a rain slug takes ~12-24h to travel Shelbyville -> Columbia (proven 2026-07-05: 5.3" at 11am, mud hit Columbia next morning)
   try{
-    const u='https://api.open-meteo.com/v1/forecast?latitude=35.48,35.45&longitude=-86.50,-86.25&hourly=precipitation&past_days=2&forecast_days=1&precipitation_unit=inch&timezone=auto';
+    const u='https://api.open-meteo.com/v1/forecast?latitude=35.48,35.45,35.45,35.62&longitude=-86.50,-86.25,-86.79,-87.03&hourly=precipitation&past_days=2&forecast_days=1&precipitation_unit=inch&timezone=auto';
     const r=await fetch(u); if(!r.ok) return null;
     const j=await r.json(); const locs=Array.isArray(j)?j:[j];
     let r24=0,r48=0;
@@ -817,23 +817,26 @@ async function fetchOutlook(){ // loc0 = HOME (wind/pressure/cloud) · loc1 = Sh
   // Rain risk-case: single-model rain lowballs July convective storms (proven 2026-07-06: GFS said ~0" all
   // week while ECMWF saw 1.1" Saturday and Alex's weather app agreed). rainMax = wettest of GFS/ICON/ECMWF.
   try{
-    const u='https://api.open-meteo.com/v1/forecast?latitude=35.615,35.48&longitude=-87.035,-86.50&daily=precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_direction_10m_dominant,cloud_cover_mean,surface_pressure_mean&forecast_days=7&precipitation_unit=inch&wind_speed_unit=mph&timezone=auto';
-    const u2='https://api.open-meteo.com/v1/forecast?latitude=35.48&longitude=-86.50&daily=precipitation_sum&models=gfs_seamless,icon_seamless,ecmwf_ifs025&forecast_days=7&precipitation_unit=inch&timezone=auto';
+    const u='https://api.open-meteo.com/v1/forecast?latitude=35.615,35.48,35.45&longitude=-87.035,-86.50,-86.79&daily=precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_direction_10m_dominant,cloud_cover_mean,surface_pressure_mean&forecast_days=7&precipitation_unit=inch&wind_speed_unit=mph&timezone=auto';
+    const u2='https://api.open-meteo.com/v1/forecast?latitude=35.48,35.45&longitude=-86.50,-86.79&daily=precipitation_sum&models=gfs_seamless,icon_seamless,ecmwf_ifs025&forecast_days=7&precipitation_unit=inch&timezone=auto';
     const [r,r2]=await Promise.all([fetch(u),fetch(u2).catch(()=>null)]);
     if(!r.ok) return null;
     const j=await r.json(); const L=Array.isArray(j)?j:[j];
-    const home=(L[0]||{}).daily, up=((L[1]||L[0])||{}).daily;
+    const home=(L[0]||{}).daily;
     if(!home||!home.time||!home.time.length) return null;
-    let mm=null;
-    if(r2&&r2.ok){ try{ mm=(await r2.json()).daily; }catch(e){} }
+    const dailies=L.map(x=>(x||{}).daily).filter(Boolean);           // rain risk = max across all watershed points
+    let mmL=[];
+    if(r2&&r2.ok){ try{ const j2=await r2.json(); mmL=(Array.isArray(j2)?j2:[j2]).map(x=>(x||{}).daily).filter(Boolean); }catch(e){} }
+    const MM=['precipitation_sum_gfs_seamless','precipitation_sum_icon_seamless','precipitation_sum_ecmwf_ifs025'];
     const o={t:Date.now(),days:home.time.map((d,i)=>{
-      const base=up.precipitation_sum?(+up.precipitation_sum[i]||0):0;
-      const rainMax=mm?Math.max(base,
-        +((mm.precipitation_sum_gfs_seamless||[])[i])||0,
-        +((mm.precipitation_sum_icon_seamless||[])[i])||0,
-        +((mm.precipitation_sum_ecmwf_ifs025||[])[i])||0):base;
-      return {date:d,rainIn:base,rainMax,
-      rainP:up.precipitation_probability_max?(+up.precipitation_probability_max[i]||0):0,
+      let rainIn=0,rainP=0;
+      dailies.forEach(D=>{
+        if(D.precipitation_sum) rainIn=Math.max(rainIn,+D.precipitation_sum[i]||0);
+        if(D.precipitation_probability_max) rainP=Math.max(rainP,+D.precipitation_probability_max[i]||0);
+      });
+      let rainMax=rainIn;
+      mmL.forEach(D=>MM.forEach(k=>{ if(D[k]) rainMax=Math.max(rainMax,+D[k][i]||0); }));
+      return {date:d,rainIn,rainMax,rainP,
       windMph:home.wind_speed_10m_max?+home.wind_speed_10m_max[i]:null,
       windDir:home.wind_direction_10m_dominant?+home.wind_direction_10m_dominant[i]:null,
       cloud:home.cloud_cover_mean?+home.cloud_cover_mean[i]:null,
@@ -847,30 +850,42 @@ function computeOutlook(olk,water){
   if(!olk||!olk.days||!olk.days.length) return null;
   const BASE=[1800,2000,2400,1800,800,350,300,250,250,300,800,1500]; // ~monthly base cfs @ Columbia (seasonal flow doctrine)
   let cfs=(water&&water.cfs!=null)?water.cfs:null;
-  let prevEff=0; // today's arriving slug ≈ yesterday's PROBABILITY-WEIGHTED risk rain (12-24h Shelbyville→Columbia lag)
+  let prevEff=0,prevMax=0,prevP=0; // today's arriving slug ≈ yesterday's PROBABILITY-WEIGHTED risk rain (12-24h Shelbyville→Columbia lag)
+  const clsFor=(arr,R)=>(arr>=1.0||R>=3)?'MUDDY':((arr>=0.3||R>=1.6)?'STAINED':'CLEAR');
   const rows=[];
   olk.days.forEach((d,i)=>{
     const base=BASE[new Date(d.date+'T12:00').getMonth()];
+    const cfsPrev=cfs;
     if(cfs!=null&&i>0) cfs=base+(cfs-base)*0.65+prevEff*90;    // recession ~35%/day toward base + arriving rain (est., ~90 cfs/inch)
     const R=cfs!=null?cfs/base:1;
-    let wLab,muddy=false,waterF;
-    if(prevEff>=1.0||R>=3){wLab='MUDDY';muddy=true;waterF=0.15;}
-    else if(prevEff>=0.3||R>=1.6){wLab='STAINED';waterF=0.5;}
-    else {wLab='CLEAR';waterF=1.0;}
-    if(i===0&&water&&water.wq){wLab=water.wq;muddy=(wLab==='MUDDY');waterF=muddy?0.15:(wLab==='STAINED'?0.5:1.0);} // today = live read
+    let wLab=clsFor(prevEff,R),split=null;
+    // coin-flip honesty: if yesterday's storm was a 35-65% call with real rain in it, the median label lies —
+    // show BOTH branches (storm missed ∕ storm hit) instead of an average of futures
+    if(i>0&&prevP>=35&&prevP<=65&&prevMax>=0.3&&cfsPrev!=null){
+      const Rdry=(base+(cfsPrev-base)*0.65)/base, Rwet=(base+(cfsPrev-base)*0.65+prevMax*90)/base;
+      const dl=clsFor(0,Rdry), wl=clsFor(prevMax,Rwet);
+      if(dl!==wl) split=[dl,wl];
+    }
+    let muddy=(wLab==='MUDDY'),waterF=muddy?0.15:(wLab==='STAINED'?0.5:1.0);
+    if(i===0&&water&&water.wq){wLab=water.wq;split=null;muddy=(wLab==='MUDDY');waterF=muddy?0.15:(wLab==='STAINED'?0.5:1.0);} // today = live read
     const pPrev=i>0?olk.days[i-1].press:null;
     const dP=(d.press!=null&&pPrev!=null)?d.press-pPrev:0;
     const pf=dP<=-1.5?1.0:(dP>=1.5?0.45:0.8);                  // day-over-day frontal signal
     const wf=windScore(d.windDir,d.windMph);
     let s=biteScore({light:1.0,pressure:pf,wind:wf,water:waterF,muddy}); // light=1: plan assumes golden windows
     const rmax=d.rainMax!=null?d.rainMax:d.rainIn;
-    if(d.rainP>=60||(d.rainP>=50&&rmax>=0.75)) s=Math.min(s,55); // storms likely (or heavy rain at real odds) → FAIR ceiling
-    else if(d.rainP>=40) s=Math.min(s,75);                       // storm risk drags the number, not just the badge
+    if(d.rainP>=35){                                            // smooth storm-risk ramp (no 39-vs-40 cliffs):
+      const t=Math.min(1,(d.rainP-35)/30);                      // 35% → cap 95 · 65%+ → cap 55, linear between
+      let cap=Math.round(95-40*t);
+      if(d.rainP>=50&&rmax>=0.75) cap=Math.min(cap,55);         // heavy potential rain at real odds → FAIR ceiling
+      s=Math.min(s,cap);
+    }
     let tier=i<=1?2:(i<=3?1:0);                                 // 2 FIRM · 1 LIKELY · 0 WATCH
     if(d.rainP>=35&&d.rainP<=65&&tier>0) tier--;                // coin-flip rain day = one tier down
-    rows.push({date:d.date,s,v:biteVerdict(s),wLab,muddy,rainP:d.rainP,rainIn:d.rainIn,rainMax:rmax,
+    rows.push({date:d.date,s,v:biteVerdict(s),wLab,split,muddy,rainP:d.rainP,rainIn:d.rainIn,rainMax:rmax,
       windTxt:`${dirName(d.windDir)} ${d.windMph!=null?Math.round(d.windMph):'—'}`,tier});
-    prevEff=(d.rainMax!=null?d.rainMax:d.rainIn)*(Math.min(Math.max(d.rainP,0),100)/100);
+    prevEff=rmax*(Math.min(Math.max(d.rainP,0),100)/100);
+    prevMax=rmax; prevP=d.rainP;
   });
   let best=-1;
   rows.forEach((r,i)=>{ if(r.tier>=1&&(best<0||r.s>rows[best].s)) best=i; });
@@ -886,7 +901,7 @@ function outlookBlock(water){
   const rows=o.rows.map((r,i)=>`<div class="orow${i===o.best?' best':''}">
     <span class="od"><b>${i===0?'Today':dn(r.date)}</b><s>${md(r.date)}</s></span>
     <span class="ov ${r.v.k}">${r.s}</span>
-    <span class="ow ${r.wLab}">${r.wLab}</span>
+    <span class="ow ${r.split?r.split[1]:r.wLab}">${r.split?`${r.split[0].slice(0,3)}∕${r.split[1].slice(0,3)}`:r.wLab}</span>
     <span class="orn">${r.rainP>=20?`rain ${r.rainP}%${r.rainMax>=0.1?' · up to '+r.rainMax.toFixed(1)+'"':''}`:'dry'}</span>
     <span class="owd">${r.windTxt} mph</span>
     <span class="oc t${r.tier}">${TIER[r.tier]}</span></div>`).join('');
@@ -897,7 +912,7 @@ function outlookBlock(water){
   return `<div class="olk">
     <div class="oh"><span class="ot">7-DAY OUTLOOK · PLAN AHEAD</span><span class="od2">forecast · updated ${fmtAgeM(age)} ago</span></div>
     ${rows}
-    <p class="note">${bestTxt} FIRM ≈ 90% — driven by rain already on the ground and river physics. LIKELY = solid signal. WATCH = directional only; never plan a drive on it. "Up to" rain = wettest of 3 forecast models (GFS/ICON/ECMWF); storm odds cap the score. Scores assume you fish the golden windows; water projection is an estimate.</p>
+    <p class="note">${bestTxt} FIRM ≈ 90% — driven by rain already on the ground and river physics. LIKELY = solid signal. WATCH = directional only; never plan a drive on it. "Up to" rain = wettest of 3 forecast models (GFS/ICON/ECMWF); storm odds cap the score on a sliding scale. "CLE∕MUD" = coin-flip water — hinges on whether the prior day's storm hits; plan both ways. Scores assume you fish the golden windows; water projection is an estimate.</p>
   </div>`;
 }
 
@@ -1003,9 +1018,9 @@ async function updateRiver(){
   const fmtAge=m=>m>=120?`${(m/60).toFixed(1)}h`:`${m}m`;
   const arrow=t=>t==='rising'?'↗':(t==='falling'?'↘':'→');
   // ── water (USGS) — no early-return so the bite score still shows if a gauge is down ──
-  let col=null,hard=null,shel=null,rain=null,cls=null,klass=null,warn='',wade='',ageMin=null,fnu=null,wq=null;
+  let col=null,hard=null,shel=null,manch=null,rain=null,cls=null,klass=null,warn='',wade='',ageMin=null,fnu=null,wq=null;
   try{
-    const u='https://waterservices.usgs.gov/nwis/iv/?sites=03599500,03599350,03598000&parameterCd=00060,63680&period=P3D&format=json';
+    const u='https://waterservices.usgs.gov/nwis/iv/?sites=03599500,03599350,03598000,03596000&parameterCd=00060,63680&period=P3D&format=json';
     const r=await fetch(u,{cache:'no-store'});
     if(r.ok){
       const j=await r.json(), S={};
@@ -1018,24 +1033,36 @@ async function updateRiver(){
           if(Date.now()-new Date(last.dateTime).getTime()<6*3600e3) fnu=+last.value;
         }
       });
-      col=S['03599500']||null; hard=S['03599350']||null; shel=S['03598000']||null;
+      col=S['03599500']||null; hard=S['03599350']||null; shel=S['03598000']||null; manch=S['03596000']||null;
       if(col){
         rain=await rivRain();
         wq=rivClarity(col,fnu,rain);
         if(col.cfs>1000||(col.trend==='rising'&&col.cfs>600)){cls='SKIP';klass='s';}
         else if(col.cfs>600||col.trend==='rising'){cls='CAUTION';klass='c';}
         else {cls='GO';klass='g';}
-        const upRising=(shel&&shel.trend==='rising')||(hard&&hard.trend==='rising');
+        const upRising=(shel&&shel.trend==='rising')||(manch&&manch.trend==='rising')||(hard&&hard.trend==='rising');
         const r24=rain?rain.r24:0;
         const heavyRain=r24>=1.0, someRain=r24>=0.3;
         if(cls==='GO'&&(upRising||heavyRain||(wq&&wq.label==='MUDDY'))){ cls='CAUTION';klass='c';
           warn=upRising?'upstream rising — rise/mud headed downriver':(heavyRain?`upstream rain ${r24.toFixed(1)}" /24h — expect a rise`:'muddy water — doctrine says low odds'); }
         else if(upRising) warn='upstream rising';
         else if(someRain) warn=`upstream rain ${r24.toFixed(1)}" /24h — expect stain`;
+        if(!shel&&!manch) warn=(warn?warn+' · ':'')+'upstream gauges dark — early warning degraded, trust rain + eyes';
         ageMin=Math.max(0,Math.round((Date.now()-col.t)/60000));
         if(ageMin>STALE_MIN) warn=(warn?warn+' · ':'')+'Columbia gauge data 3h+ old — verify before trusting';
         wade=hard?((cls==='GO'&&hard.trend!=='rising')?'wade Zone A OK':'no wading — bank Zone B/C only')
                  :'Zone A gauge (Hardison) offline — judge wading on sight';
+        // ── calibration ledger (fix 5): one snapshot per day → storm-response pairs for re-fitting
+        // the recession + cfs-per-inch constants (see vault: Duck River - Storm Response Ledger.md)
+        try{
+          const day=new Date().toISOString().slice(0,10);
+          const Lg=JSON.parse(localStorage.getItem('casterStormLedger_v1')||'{}');
+          Lg[day]={cfs:Math.round(col.cfs),trend:col.trend,shel:shel?Math.round(shel.cfs):null,
+                   manch:manch?Math.round(manch.cfs):null,r24:rain?+rain.r24.toFixed(2):null,r48:rain?+rain.r48.toFixed(2):null,
+                   wq:wq?wq.label:null};
+          const ks=Object.keys(Lg).sort(); while(ks.length>90) delete Lg[ks.shift()];
+          localStorage.setItem('casterStormLedger_v1',JSON.stringify(Lg));
+        }catch(e){}
       }
     }
   }catch(e){/* keep water null — bite score still renders */}
@@ -1061,7 +1088,7 @@ async function updateRiver(){
 
   const waterHTML=col?`<span class="pill ${klass}">${cls}</span>
       <span><b>Duck @ Columbia:</b> ${Math.round(col.cfs).toLocaleString()} cfs ${arrow(col.trend)} ${col.trend} <span class="age">(${fmtAge(ageMin)} ago)</span><span class="d2">
-      ${shel?`· <b>upstream (Shelbyville):</b> ${Math.round(shel.cfs).toLocaleString()} cfs ${arrow(shel.trend)} <span class="age">(${fmtAge(ageOf(shel))} ago)</span>`:''}
+      ${(shel||manch)?`· <b>upstream (${shel?'Shelbyville':'Manchester'}):</b> ${Math.round((shel||manch).cfs).toLocaleString()} cfs ${arrow((shel||manch).trend)} <span class="age">(${fmtAge(ageOf(shel||manch))} ago)</span>`:''}
       ${hard?`· <b>Hardison:</b> ${Math.round(hard.cfs).toLocaleString()} cfs ${arrow(hard.trend)} <span class="age">(${fmtAge(ageOf(hard))} ago)</span>`:''}</span>
       ${wq?`· water: <span class="wq ${wq.label}">${wq.label}${wq.note?' → clearing':''}</span> <span class="age d2">${wq.est?'(est. — flow + rain model)':`(meter · ${Math.round(wq.fnu)} FNU)`}</span>`:''}
       ${warn?`· <span class="wr">⚠ ${warn}</span>`:''}<span class="d2"> · ${wade}
