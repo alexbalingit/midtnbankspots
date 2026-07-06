@@ -75,20 +75,44 @@
   .riv .age{color:var(--marsh);font-size:11px}
   .riv .wq{font-weight:800}
   .riv .wq.CLEAR{color:#8fbf92}.riv .wq.STAINED{color:var(--brassL)}.riv .wq.MUDDY{color:#d9764a}
-  /* ── bite score (pressure+wind+light+water → one R/Y/G verdict) ─────────── */
-  .riv .bpill{flex:0 0 auto;display:inline-flex;align-items:baseline;gap:6px;padding:3px 12px;border-radius:999px;
-              font-weight:800;font-size:11px;letter-spacing:.1em;color:#fff;margin-top:0}
-  .riv .bpill .sc{font-family:var(--serif);font-size:15px;font-weight:700;letter-spacing:0}
-  .riv .bpill.g{background:var(--fern)}.riv .bpill.c{background:var(--brass);color:#15160f}.riv .bpill.s{background:var(--blaze)}
-  .riv .bpill.stale{background:var(--moss);color:rgba(239,233,216,.75)}
-  .riv .gh{flex:0 0 auto;display:inline-flex;align-items:center;gap:8px;margin-top:1px}
-  .riv .ghbar{position:relative;width:132px;height:12px;border-radius:4px;background:rgba(25,27,19,.55);overflow:hidden;flex:0 0 auto}
-  .riv .ghbar i{position:absolute;top:0;bottom:0;background:var(--brass);opacity:.9}
-  .riv .ghbar .now{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--field)}
-  .riv .ghtxt b{color:var(--brassL)}
-  .riv .wx{color:rgba(239,233,216,.82)}
-  .riv .fresh{color:var(--marsh);font-size:11px}
-  .riv .fresh.warn{color:var(--blaze);font-weight:800}
+  /* ── Bite Score pill button on the strip (tap → full card in the sheet) ─── */
+  .riv .bbtn{flex:0 0 auto;cursor:pointer;border:none;font-family:var(--sans);display:inline-flex;align-items:baseline;gap:6px;
+             padding:3px 12px;border-radius:999px;font-weight:800;font-size:11px;letter-spacing:.1em;color:#fff}
+  .riv .bbtn .sc{font-family:var(--serif);font-size:15px;font-weight:700;letter-spacing:0}
+  .riv .bbtn.g{background:var(--fern)}.riv .bbtn.c{background:var(--brass);color:#15160f}.riv .bbtn.s{background:var(--blaze)}
+  .riv .bbtn.stale{background:var(--moss);color:rgba(239,233,216,.82)}
+  .riv .bbtn:hover{filter:brightness(1.08)}
+  /* ── Bite Score card (rendered inside the shared bottom sheet) ──────────── */
+  .bcard .bhead{display:flex;align-items:center;gap:14px;margin:2px 0 14px}
+  .bcard .ring{width:88px;height:88px;border-radius:50%;border:6px solid var(--brass);display:flex;flex-direction:column;
+               align-items:center;justify-content:center;flex:0 0 auto}
+  .bcard .ring.g{border-color:var(--fern)}.bcard .ring.c{border-color:var(--brass)}.bcard .ring.s{border-color:var(--blaze)}
+  .bcard .ring .n{font-family:var(--serif);font-size:32px;color:var(--ink);line-height:1}
+  .bcard .ring .d{font-size:10px;color:var(--moss)}
+  .bcard .vpill{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.08em;padding:3px 12px;border-radius:999px;color:#fff}
+  .bcard .vpill.g{background:var(--fern)}.bcard .vpill.c{background:var(--brass);color:#15160f}.bcard .vpill.s{background:var(--blaze)}
+  .bcard .vtxt{margin:8px 0 0;font-size:14px;line-height:1.4;color:var(--pine)}
+  .bcard .fx{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:2px}
+  .bcard .fxc{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--hair);border-radius:10px;padding:8px 10px}
+  .bcard .fxc .dt{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  .bcard .fxc .l{font-size:10px;color:var(--marsh)}
+  .bcard .fxc .v{font-size:13px;color:var(--ink);font-weight:600}
+  .bcard .gold{margin-top:14px;background:var(--pine);border-radius:14px;padding:13px 14px}
+  .bcard .gold .gh{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+  .bcard .gold .gt{color:var(--brassL);font-size:12px;font-weight:800;letter-spacing:.08em}
+  .bcard .gold .gd{color:var(--marsh);font-size:11px}
+  .bcard .ghbar{position:relative;height:16px;border-radius:5px;background:#191b13;overflow:hidden}
+  .bcard .ghbar i{position:absolute;top:0;bottom:0;background:var(--brass);opacity:.92}
+  .bcard .ghbar .now{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--field)}
+  .bcard .glabs{display:flex;justify-content:space-between;margin-top:5px;color:var(--marsh);font-size:10px}
+  .bcard .cdn{display:flex;align-items:center;gap:9px;margin-top:10px;background:#191b13;border-radius:10px;padding:9px 11px}
+  .bcard .cdn .ct{flex:1}
+  .bcard .cdn .ct b{color:var(--field);font-size:13px;font-weight:600;display:block}
+  .bcard .cdn .ct s{color:var(--marsh);font-size:11px;text-decoration:none}
+  .bcard .cdn .sp{flex:0 0 auto;background:var(--fern);color:var(--field);font-size:11px;font-weight:600;padding:3px 9px;border-radius:14px}
+  .bcard .note{margin:9px 2px 0;color:var(--marsh);font-size:10.5px;line-height:1.4}
+  .bcard .fresh{margin-top:11px;font-size:11px;color:var(--marsh)}
+  .bcard .fresh.warn{color:var(--blaze);font-weight:800}
 
   /* ── drawer (spots by city) ─────────────────────────────────────────────── */
   .scrim{position:absolute;inset:0;z-index:1085;background:rgba(15,16,11,.45);opacity:0;pointer-events:none;transition:opacity .22s}
@@ -742,6 +766,98 @@ async function fetchWx(){ // Open-Meteo: pressure(+3h trend), wind, cloud. null 
 }
 function cachedWx(){ try{ return JSON.parse(localStorage.getItem('casterBite_v1')); }catch(e){ return null; } }
 
+// ── Bite Score card (opens in the shared bottom sheet on pill tap) ───────────
+function fmtAgeM(m){ return m>=120?`${(m/60).toFixed(1)}h`:`${m}m`; }
+function dotCol(x){ return x>=0.7?'var(--fern)':x>=0.4?'var(--brass)':'var(--blaze)'; }
+function lightLabel(now,sun,cloud){
+  const [mW,eW]=goldenWins(sun), inW=(m,w)=>m>=w[0]&&m<=w[1];
+  if(inW(now,mW)||inW(now,eW)) return 'Golden hour';
+  const near=Math.min(Math.abs(now-mW[0]),Math.abs(now-mW[1]),Math.abs(now-eW[0]),Math.abs(now-eW[1]));
+  if(near<=45) return 'Near golden';
+  const day=now>sun.sunrise&&now<sun.sunset;
+  if(day) return (cloud!=null&&cloud>=70)?'Overcast':(cloud!=null&&cloud>=40)?'Partly cloudy':'Midday sun';
+  return 'After dark';
+}
+function computeBite(){
+  const wx=window.__wx, water=window.__water;
+  const now=new Date(), nowMin=now.getHours()*60+now.getMinutes();
+  const sun=sunTimes(HOME[0],HOME[1],now,-now.getTimezoneOffset());
+  const wxAge=wx?Math.round((Date.now()-wx.t)/60000):null, wxStale=wx?wxAge>STALE_MIN:true;
+  if(!wx||wxStale) return {paused:true,wx,wxAge,water,sun,nowMin};
+  const waterF=water?water.waterF:0.65;
+  const f={light:lightScore(nowMin,sun,wx.cloud),pressure:pressureScore(wx.trend,wx.inHg),wind:windScore(wx.windDir,wx.windMph),water:waterF};
+  const s=biteScore(f), v=biteVerdict(s), peak=biteScore(Object.assign({},f,{light:1.0})), ng=nextGolden(nowMin,sun);
+  return {paused:false,s,v,f,peak,ng,sun,nowMin,wx,wxAge,water};
+}
+function fxChip(l,v,sc){ return `<div class="fxc"><span class="dt" style="background:${dotCol(sc)}"></span><div><div class="l">${l}</div><div class="v">${v}</div></div></div>`; }
+function verdictLine(v,ng,peak){
+  const win=ng.state==='in'?'this window':(ng.win[0]<720?'the morning bite':'the evening bite');
+  if(v.w==='PRIME') return 'Strong window right now — get on the water.';
+  if(v.w==='FAIR') return `Fair right now — ${win} is the play. Peaks at ${peak}.`;
+  return `Tough conditions — best odds are ${win}. Peaks at ${peak}.`;
+}
+function goldBlock(sun,nowMin,peak){
+  const [mb,eb]=goldenWins(sun), span=1080, pct=m=>Math.max(0,Math.min(100,(m-240)/span*100));
+  const bar=`<div class="ghbar"><i style="left:${pct(mb[0]).toFixed(1)}%;width:${(pct(mb[1])-pct(mb[0])).toFixed(1)}%"></i>`+
+            `<i style="left:${pct(eb[0]).toFixed(1)}%;width:${(pct(eb[1])-pct(eb[0])).toFixed(1)}%"></i>`+
+            `<div class="now" style="left:${pct(nowMin).toFixed(1)}%"></div></div>`;
+  const ng=nextGolden(nowMin,sun); let main,sub;
+  if(ng.state==='in'){ main='Prime bite — now'; sub=`Ends ${fmtClock(ng.win[1])}`; }
+  else{ const mins=((ng.win[0]-nowMin)%1440+1440)%1440,h=Math.floor(mins/60),mn=mins%60;
+    main=`Prime bite in ${h?h+'h ':''}${mn}m`; sub=`${ng.state==='after'?'Tomorrow · ':''}${fmtClock(ng.win[0])} – ${fmtClock(ng.win[1])}`; }
+  const day=new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+  return `<div class="gold">
+    <div class="gh"><span class="gt">GOLDEN HOURS · TODAY</span><span class="gd">${day}</span></div>
+    ${bar}
+    <div class="glabs"><span>4a</span><span>noon</span><span>10p</span></div>
+    <div class="cdn"><span style="color:var(--brassL);font-size:16px">◷</span>
+      <div class="ct"><b>${main}</b><s>${sub}</s></div>
+      ${peak!=null?`<span class="sp">Peaks ${peak}</span>`:''}</div>
+    <p class="note">Morning window ${fmtClock(mb[0])}–${fmtClock(mb[1])}. Midday slump: fish deep or wait for the evening.</p>
+  </div>`;
+}
+function renderBiteCard(b){
+  if(b.paused){
+    return `<div class="bcard">
+      <div class="bhead"><div class="ring" style="border-color:var(--moss)"><span class="n" style="font-size:22px">?</span><span class="d">/100</span></div>
+      <div><span class="vpill" style="background:var(--moss)">SCORE PAUSED</span>
+      <p class="vtxt">Live weather is unavailable, so the score is paused rather than shown off stale data.${b.wxAge!=null?` Last good read ${fmtAgeM(b.wxAge)} ago.`:''} Golden hours below are computed on-device and stay current.</p></div></div>
+      ${goldBlock(b.sun,b.nowMin,null)}
+      <div class="fresh warn">Weather source unreachable — refresh when you have signal.</div></div>`;
+  }
+  const {s,v,f,peak,ng,sun,nowMin,wx,water,wxAge}=b;
+  const arw=t=>t==='rising'?'↗':t==='falling'?'↘':'→';
+  const waterVal=water?`${water.cls}${water.cfs!=null?' · '+Math.round(water.cfs).toLocaleString()+' cfs':''}`:'gauge offline';
+  const pressVal=`${wx.trend.charAt(0).toUpperCase()+wx.trend.slice(1)} ${arw(wx.trend)}${wx.inHg!=null?' · '+wx.inHg.toFixed(2)+'"':''}`;
+  const windVal=`${dirName(wx.windDir)} ${wx.windMph!=null?Math.round(wx.windMph):'—'} mph`;
+  const lightVal=lightLabel(nowMin,sun,wx.cloud);
+  const ages=[]; if(water&&water.ageMin!=null) ages.push(water.ageMin); if(wxAge!=null) ages.push(wxAge);
+  const oldest=ages.length?Math.max.apply(null,ages):null;
+  const freshCls=(oldest!=null&&oldest>STALE_MIN)?'warn':'';
+  const freshTxt=oldest==null?'No live data — showing nothing current'
+    :`Updated ${fmtAgeM(oldest)} ago · water ${water&&water.ageMin!=null?fmtAgeM(water.ageMin):'—'} · weather ${wxAge!=null?fmtAgeM(wxAge):'—'}${oldest>STALE_MIN?' · REFRESH — 3h+ old':''}`;
+  return `<div class="bcard">
+    <div class="bhead">
+      <div class="ring ${v.k}"><span class="n">${s}</span><span class="d">/100</span></div>
+      <div><span class="vpill ${v.k}">${v.w}</span><p class="vtxt">${verdictLine(v,ng,peak)}</p></div>
+    </div>
+    <div class="fx">
+      ${fxChip('Water',waterVal,f.water)}
+      ${fxChip('Light',lightVal,f.light)}
+      ${fxChip('Pressure',pressVal,f.pressure)}
+      ${fxChip('Wind',windVal,f.wind)}
+    </div>
+    ${goldBlock(sun,nowMin,peak)}
+    <div class="fresh ${freshCls}">${freshTxt}</div>
+  </div>`;
+}
+function openBite(){
+  const b=computeBite();
+  const sb=document.getElementById('sheetbody'); if(sb) sb.innerHTML=renderBiteCard(b);
+  const sh=document.getElementById('sheet'); if(sh) sh.classList.add('open');
+  if(typeof setLegend==='function') setLegend(false);
+}
+
 async function updateRiver(){
   const el=document.getElementById('riv'); if(!el) return;
   const fmtAge=m=>m>=120?`${(m/60).toFixed(1)}h`:`${m}m`;
@@ -785,37 +901,14 @@ async function updateRiver(){
   }catch(e){/* keep water null — bite score still renders */}
   const ageOf=g=>Math.max(0,Math.round((Date.now()-g.t)/60000));
 
-  // ── bite score (light + pressure + wind + water) ──
-  let wx=await fetchWx(); const wxLive=!!wx; if(!wx) wx=cachedWx();
-  const nowD=new Date(), nowMin=nowD.getHours()*60+nowD.getMinutes();
-  const sun=sunTimes(HOME[0],HOME[1],nowD,-nowD.getTimezoneOffset());
-  const waterF=klass==='g'?1:klass==='c'?0.5:klass==='s'?0:0.65; // no gauge => neutral, not a gate
-  const wxAge=wx?Math.round((Date.now()-wx.t)/60000):null, wxStale=wx?wxAge>STALE_MIN:true;
-  let biteHTML;
-  if(wx&&!wxStale){
-    const f={light:lightScore(nowMin,sun,wx.cloud),pressure:pressureScore(wx.trend,wx.inHg),wind:windScore(wx.windDir,wx.windMph),water:waterF};
-    const s=biteScore(f), v=biteVerdict(s), peak=biteScore(Object.assign({},f,{light:1.0}));
-    const [mb,eb]=goldenWins(sun), span=1080, pct=m=>Math.max(0,Math.min(100,(m-240)/span*100));
-    const bar=`<span class="ghbar"><i style="left:${pct(mb[0]).toFixed(1)}%;width:${(pct(mb[1])-pct(mb[0])).toFixed(1)}%"></i>`+
-              `<i style="left:${pct(eb[0]).toFixed(1)}%;width:${(pct(eb[1])-pct(eb[0])).toFixed(1)}%"></i>`+
-              `<span class="now" style="left:${pct(nowMin).toFixed(1)}%"></span></span>`;
-    const ng=nextGolden(nowMin,sun); let ght;
-    if(ng.state==='in') ght=`<b>prime bite now</b> · til ${fmtClock(ng.win[1])}`;
-    else{ const mins=((ng.win[0]-nowMin)%1440+1440)%1440, h=Math.floor(mins/60), mn=mins%60;
-      ght=`prime bite in <b>${h?h+'h ':''}${mn}m</b> · ${fmtClock(ng.win[0])}–${fmtClock(ng.win[1])}`; }
-    const stale=wxLive?'':` <span class="fresh warn">⚠ live weather down — last good ${fmtAge(wxAge)} ago</span>`;
-    biteHTML=`<span class="bpill ${v.k}" title="light+pressure+wind+water">${v.w} · <span class="sc">${s}</span></span>`+
-      `<span class="gh">${bar}<span class="ghtxt">${ght} · peaks <b>${peak}</b></span></span>`+
-      `<span class="wx">· ${wx.inHg!=null?wx.inHg.toFixed(2)+'"':'—'} ${arrow(wx.trend)} ${wx.trend} · wind ${dirName(wx.windDir)} ${wx.windMph!=null?Math.round(wx.windMph):'—'} mph</span>${stale}`;
-  } else {
-    biteHTML=`<span class="bpill stale">BITE&nbsp;?</span> <span class="fresh warn">⚠ live weather unavailable — score paused, don't trust a stale read</span>`;
-  }
-
-  // ── combined freshness stamp = OLDEST live source (sun is always fresh) ──
-  const ages=[]; if(ageMin!=null) ages.push(ageMin); if(wxAge!=null) ages.push(wxAge);
-  const oldest=ages.length?Math.max.apply(null,ages):null;
-  const freshHTML=oldest==null?`<span class="fresh warn">⚠ no live data — showing nothing current</span>`
-    :`<span class="fresh ${oldest>STALE_MIN?'warn':''}">updated ${fmtAge(oldest)} ago${oldest>STALE_MIN?' · REFRESH — 3h+ old':''}</span>`;
+  // ── stash live inputs for the Bite Score card, compute the strip pill ──
+  let wx=await fetchWx(); if(!wx) wx=cachedWx();
+  window.__wx=wx||null;
+  window.__water=col?{klass,cls,cfs:col.cfs,ageMin,waterF:(klass==='g'?1:klass==='c'?0.5:0)}:null;
+  const b=computeBite();
+  const pill=b.paused
+    ? `<button class="bbtn stale" onclick="openBite()" title="Bite Score — tap for the read">BITE&nbsp;?</button>`
+    : `<button class="bbtn ${b.v.k}" onclick="openBite()" title="Bite Score — tap for the read">${b.v.w} · <span class="sc">${b.s}</span></button>`;
 
   const waterHTML=col?`<span class="pill ${klass}">${cls}</span>
       <span><b>Duck @ Columbia:</b> ${Math.round(col.cfs).toLocaleString()} cfs ${arrow(col.trend)} ${col.trend} <span class="age">(${fmtAge(ageMin)} ago)</span>
@@ -823,13 +916,16 @@ async function updateRiver(){
       ${hard?`· <b>Hardison:</b> ${Math.round(hard.cfs).toLocaleString()} cfs ${arrow(hard.trend)} <span class="age">(${fmtAge(ageOf(hard))} ago)</span>`:''}
       ${wq?`· water: <span class="wq ${wq.label}">${wq.label}${wq.note?' → clearing':''}</span> <span class="age">${wq.est?'(est. — flow + rain model)':`(meter · ${Math.round(wq.fnu)} FNU)`}</span>`:''}
       ${warn?`· <span class="wr">⚠ ${warn}</span>`:''} · ${wade}
-      <a href="https://waterdata.usgs.gov/monitoring-location/03599500/" target="_blank" rel="noopener">gauge ↗</a></span>`
-    :`<span class="wr">⚠ USGS gauge offline — water read unavailable</span>`;
+      <a href="https://waterdata.usgs.gov/monitoring-location/03599500/" target="_blank" rel="noopener">gauge ↗</a>
+      <span class="tw">· ages = USGS publish lag · auto-refresh 15 min · Bite Score = tap the pill · Tailwaters (Normandy · Elk): check TVA first.</span></span>`
+    :`<span class="wr">⚠ USGS gauge offline — water read unavailable</span> <span class="tw">· tap the Bite Score for timing + weather</span>`;
 
-  el.innerHTML=`${biteHTML} <span class="tw">·</span> ${waterHTML}
-      <span class="tw">· ${freshHTML} · gold band = golden hours (computed on-device) · auto-refresh 15 min · Tailwaters (Normandy · Elk): check TVA first.</span>`;
+  el.innerHTML=`${pill} <span class="tw">·</span> ${waterHTML}`;
   el.style.display='flex';
   fixTops();
+  // keep the open Bite Score card live if it's showing while a refresh lands
+  const sh=document.getElementById('sheet'), sb=document.getElementById('sheetbody');
+  if(sh&&sh.classList.contains('open')&&sb&&sb.querySelector('.bcard')) sb.innerHTML=renderBiteCard(computeBite());
   // spotty-cell hardening: if the water read failed, retry sooner than the 15-min tick (max 5 tries)
   if(!col&&(window._rivRetry=(window._rivRetry||0)+1)<=5) setTimeout(updateRiver,45e3);
   if(col) window._rivRetry=0;
