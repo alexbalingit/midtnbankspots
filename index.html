@@ -83,17 +83,21 @@
   .riv .bbtn.stale{background:var(--moss);color:rgba(239,233,216,.82)}
   .riv .bbtn:hover{filter:brightness(1.08)}
   /* ── Bite Score card (rendered inside the shared bottom sheet) ──────────── */
-  .bcard .bhead{display:flex;align-items:center;gap:14px;margin:2px 0 14px}
-  .bcard .ring{width:88px;height:88px;border-radius:50%;border:6px solid var(--brass);display:flex;flex-direction:column;
-               align-items:center;justify-content:center;flex:0 0 auto}
-  .bcard .ring.g{border-color:var(--fern)}.bcard .ring.c{border-color:var(--brass)}.bcard .ring.s{border-color:var(--blaze)}
-  .bcard .ring .n{font-family:var(--serif);font-size:32px;color:var(--ink);line-height:1}
-  .bcard .ring .d{font-size:10px;color:var(--moss)}
+  .bcard .btitle{display:flex;align-items:baseline;gap:8px;font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--moss);margin:2px 0 12px}
+  .bcard .btitle span{color:var(--marsh);font-weight:600;letter-spacing:.03em;text-transform:none;font-size:11px}
+  .bcard .bhead{display:flex;align-items:center;gap:14px;margin:0 0 14px}
+  .bcard .ring{width:92px;height:92px;border-radius:50%;flex:0 0 auto;position:relative;display:flex;flex-direction:column;
+               align-items:center;justify-content:center;
+               background:conic-gradient(var(--c,var(--moss)) calc(var(--p,0)*3.6deg), rgba(25,27,19,.10) 0)}
+  .bcard .ring::before{content:"";position:absolute;inset:7px;background:var(--field);border-radius:50%}
+  .bcard .ring .n{position:relative;z-index:1;font-family:var(--serif);font-size:31px;color:var(--ink);line-height:1}
+  .bcard .ring .d{position:relative;z-index:1;font-size:10px;color:var(--moss)}
   .bcard .vpill{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.08em;padding:3px 12px;border-radius:999px;color:#fff}
   .bcard .vpill.g{background:var(--fern)}.bcard .vpill.c{background:var(--brass);color:#15160f}.bcard .vpill.s{background:var(--blaze)}
   .bcard .vtxt{margin:8px 0 0;font-size:14px;line-height:1.4;color:var(--pine)}
   .bcard .fx{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:2px}
-  .bcard .fxc{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--hair);border-radius:10px;padding:8px 10px}
+  .bcard .fxc{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--hair);border-radius:10px;padding:10px 12px;transition:border-color .15s,box-shadow .15s}
+  .bcard .fxc:hover{border-color:rgba(168,133,62,.5);box-shadow:0 2px 8px rgba(15,16,11,.06)}
   .bcard .fxc .dt{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
   .bcard .fxc .l{font-size:10px;color:var(--marsh)}
   .bcard .fxc .v{font-size:13px;color:var(--ink);font-weight:600}
@@ -102,14 +106,17 @@
   .bcard .gold .gt{color:var(--brassL);font-size:12px;font-weight:800;letter-spacing:.08em}
   .bcard .gold .gd{color:var(--marsh);font-size:11px}
   .bcard .ghbar{position:relative;height:16px;border-radius:5px;background:#191b13;overflow:hidden}
-  .bcard .ghbar i{position:absolute;top:0;bottom:0;background:var(--brass);opacity:.92}
-  .bcard .ghbar .now{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--field)}
+  .bcard .ghbar i{position:absolute;top:1px;bottom:1px;background:var(--brass);opacity:.92;border-radius:3px}
+  .bcard .ghbar .now{position:absolute;top:-3px;bottom:-3px;width:2.5px;border-radius:2px;background:var(--field);box-shadow:0 0 0 1px rgba(25,27,19,.5)}
   .bcard .glabs{display:flex;justify-content:space-between;margin-top:5px;color:var(--marsh);font-size:10px}
   .bcard .cdn{display:flex;align-items:center;gap:9px;margin-top:10px;background:#191b13;border-radius:10px;padding:9px 11px}
   .bcard .cdn .ct{flex:1}
   .bcard .cdn .ct b{color:var(--field);font-size:13px;font-weight:600;display:block}
   .bcard .cdn .ct s{color:var(--marsh);font-size:11px;text-decoration:none}
-  .bcard .cdn .sp{flex:0 0 auto;background:var(--fern);color:var(--field);font-size:11px;font-weight:600;padding:3px 9px;border-radius:14px}
+  .bcard .cdn .sp{flex:0 0 auto;background:var(--moss);color:var(--field);font-size:11px;font-weight:600;padding:3px 9px;border-radius:14px}
+  .bcard .cdn .sp.g{background:var(--fern);color:var(--field)}
+  .bcard .cdn .sp.c{background:var(--brass);color:#15160f}
+  .bcard .cdn .sp.s{background:var(--blaze);color:var(--field)}
   .bcard .note{margin:9px 2px 0;color:var(--marsh);font-size:10.5px;line-height:1.4}
   .bcard .fresh{margin-top:11px;font-size:11px;color:var(--marsh)}
   .bcard .fresh.warn{color:var(--blaze);font-weight:800}
@@ -235,6 +242,16 @@
     .chint{white-space:normal;text-align:left;font-size:11px;line-height:1.45;padding:7px 8px 7px 13px;width:calc(100vw - 20px);max-width:360px}
     .riv .tw{display:none}
     .riv{font-size:11.5px;padding:6px 10px}
+    .bcard .fx{grid-template-columns:1fr 1fr}
+  }
+  /* ── desktop: float the Bite Score sheet as a centered card (spot cards use popups) ── */
+  @media (min-width:760px){
+    .sheet{left:50%;right:auto;width:680px;max-width:calc(100vw - 48px);bottom:22px;
+           border-radius:20px;border:2px solid var(--brass);box-shadow:0 26px 64px rgba(15,16,11,.5);
+           transform:translate(-50%,140%);max-height:84vh}
+    .sheet.open{transform:translate(-50%,0)}
+    .sheet .grab{display:none}
+    .bcard .fx{grid-template-columns:1fr 1fr;gap:10px}
   }
 </style>
 </head>
@@ -814,14 +831,15 @@ function goldBlock(sun,nowMin,peak){
     <div class="glabs"><span>4a</span><span>noon</span><span>10p</span></div>
     <div class="cdn"><span style="color:var(--brassL);font-size:16px">◷</span>
       <div class="ct"><b>${main}</b><s>${sub}</s></div>
-      ${peak!=null?`<span class="sp">Peaks ${peak}</span>`:''}</div>
+      ${peak!=null?`<span class="sp ${biteVerdict(peak).k}">Peaks ${peak}</span>`:''}</div>
     <p class="note">Morning window ${fmtClock(mb[0])}–${fmtClock(mb[1])}. Midday slump: fish deep or wait for the evening.</p>
   </div>`;
 }
 function renderBiteCard(b){
   if(b.paused){
     return `<div class="bcard">
-      <div class="bhead"><div class="ring" style="border-color:var(--moss)"><span class="n" style="font-size:22px">?</span><span class="d">/100</span></div>
+      <div class="btitle">Bite Score <span>· should you go?</span></div>
+      <div class="bhead"><div class="ring" style="--p:0;--c:var(--moss)"><span class="n" style="font-size:22px">?</span><span class="d">/100</span></div>
       <div><span class="vpill" style="background:var(--moss)">SCORE PAUSED</span>
       <p class="vtxt">Live weather is unavailable, so the score is paused rather than shown off stale data.${b.wxAge!=null?` Last good read ${fmtAgeM(b.wxAge)} ago.`:''} Golden hours below are computed on-device and stay current.</p></div></div>
       ${goldBlock(b.sun,b.nowMin,null)}
@@ -839,8 +857,9 @@ function renderBiteCard(b){
   const freshTxt=oldest==null?'No live data — showing nothing current'
     :`Updated ${fmtAgeM(oldest)} ago · water ${water&&water.ageMin!=null?fmtAgeM(water.ageMin):'—'} · weather ${wxAge!=null?fmtAgeM(wxAge):'—'}${oldest>STALE_MIN?' · REFRESH — 3h+ old':''}`;
   return `<div class="bcard">
+    <div class="btitle">Bite Score <span>· should you go?</span></div>
     <div class="bhead">
-      <div class="ring ${v.k}"><span class="n">${s}</span><span class="d">/100</span></div>
+      <div class="ring" style="--p:${s};--c:${v.k==='g'?'var(--fern)':v.k==='c'?'var(--brass)':'var(--blaze)'}"><span class="n">${s}</span><span class="d">/100</span></div>
       <div><span class="vpill ${v.k}">${v.w}</span><p class="vtxt">${verdictLine(v,ng,peak,f&&f.muddy)}</p></div>
     </div>
     <div class="fx">
@@ -917,8 +936,8 @@ async function updateRiver(){
   window.__water=col?{klass,cls,cfs:col.cfs,ageMin,waterF,muddy:(wqLabel==='MUDDY')}:null;
   const b=computeBite();
   const pill=b.paused
-    ? `<button class="bbtn stale" onclick="openBite()" title="Bite Score — tap for the read">BITE&nbsp;?</button>`
-    : `<button class="bbtn ${b.v.k}" onclick="openBite()" title="Bite Score — tap for the read">${b.v.w} · <span class="sc">${b.s}</span></button>`;
+    ? `<button class="bbtn stale" onclick="openBite()" title="Bite Score — tap for the read">Bite Score · <span class="sc">—</span></button>`
+    : `<button class="bbtn ${b.v.k}" onclick="openBite()" title="Bite Score — tap for the read">Bite Score · <span class="sc">${b.s}</span></button>`;
 
   const waterHTML=col?`<span class="pill ${klass}">${cls}</span>
       <span><b>Duck @ Columbia:</b> ${Math.round(col.cfs).toLocaleString()} cfs ${arrow(col.trend)} ${col.trend} <span class="age">(${fmtAge(ageMin)} ago)</span>
