@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5" />
 <meta name="theme-color" content="#191b13" />
-<title>Caster — Cast Maps</title>
+<title>Caster — Middle TN + Nolin Lake KY Honey Holes</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.min.css" />
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -287,7 +287,7 @@
   </button>
   <div class="brand">
     <span class="wordmark">CASTER</span>
-    <span class="guide">Cast Maps · 76 spots</span>
+    <span class="guide">Middle TN + Nolin Lake KY · 53 spots</span>
   </div>
   <span class="spacer"></span>
   <button class="hbtn iconic" id="homebtn">
@@ -331,7 +331,6 @@
   <div class="row"><span class="dot" style="background:var(--brass)"></span><b>Largemouth</b> <span class="d">— slow &amp; deep (lakes &amp; pools)</span></div>
   <div class="row"><span class="dot" style="background:var(--blaze)"></span><b>Mixed + catfish</b> <span class="d">— gravel bars &amp; pools</span></div>
   <div class="row"><span class="dot" style="background:var(--slate)"></span><b>Trout</b> <span class="d">— stocked tailwater (cool months)</span></div>
-  <div class="row"><span class="dot" style="background:#2e5d52"></span><b>Reservoir</b> <span class="d">— striper · walleye · crappie brush</span></div>
   <div class="key">
     <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-6.6 7-12a7 7 0 1 0-14 0c0 5.4 7 12 7 12Z"/><circle cx="12" cy="9" r="2.4"/></svg> park ·
     <svg class="ico" viewBox="0 0 24 24" fill="currentColor"><ellipse cx="9.5" cy="12" rx="7" ry="4.6"/><path d="M15.5 12l6.5-4.2v8.4Z"/></svg> walk to water ·
@@ -357,10 +356,9 @@ const CAT = {
   S:{c:'#3e6b40',label:'Smallmouth — fast, rocky, wadeable'},
   L:{c:'#a8853e',label:'Largemouth — slow & deep'},
   M:{c:'#a34e24',label:'Mixed + catfish — gravel bars & pools'},
-  T:{c:'#4a6d7c',label:'Trout — stocked tailwater'},
-  R:{c:'#2e5d52',label:'Reservoir — striper · walleye · crappie brush'}
+  T:{c:'#4a6d7c',label:'Trout — stocked tailwater'}
 };
-const CITY_ORDER = ['Brentwood','Franklin','Kingston Springs — Harpeth SP','Spring Hill / Williamsport','Columbia','Culleoka / Chapel Hill','Lewisburg','Shelbyville','Manchester / Normandy','Pulaski','Fayetteville — Elk River','Tims Ford — lower lake (dam · Lost · Hurricane)','Tims Ford — mid-lake (state park)','Tims Ford — upper lake (Winchester)'];
+const CITY_ORDER = ['Brentwood','Franklin','Kingston Springs — Harpeth SP','Spring Hill / Williamsport','Columbia','Culleoka / Chapel Hill','Lewisburg','Shelbyville','Manchester / Normandy','Pulaski','Fayetteville — Elk River','Nolin River Lake — KY'];
 const spots = [
  {n:'Eastern Flank (Franklin)',cat:'S',city:'Franklin',cast:'eastern-flank',park:[35.90915,-86.85587],water:[35.90975,-86.85490],d:'~120 yd (wade below the cross-vane)',sp:'Smallmouth, rock bass',note:'The 2012 dam-removal cross-vane — boulder vanes, plunge pool, riffle seams. Most diverse reach on the Franklin Harpeth.'},
  {n:'Pinkerton Park (Franklin)',cat:'S',city:'Franklin',cast:'pinkerton',park:[35.92119,-86.86291],water:[35.92060,-86.86510],d:'~90 yd to the river',sp:'Smallmouth, rock bass, bluegill',note:'Easy in-town Harpeth bend with gravel bars, wadeable runs. Fort Granger across the water.'},
@@ -405,39 +403,17 @@ const spots = [
  {n:'Veto Rd Ramp (Prospect / Elk R.)',cat:'M',city:'Fayetteville — Elk River',cast:'veto-rd',park:[35.01306,-86.99528],water:[35.01270,-86.99470],d:'~30 yd (ramp)',sp:'Smallmouth, largemouth, catfish',note:'TWRA ramp + bank in Giles County — lower Elk warmwater. Shoals and rock.'},
  {n:'Elk River — TN-50 below-dam (tailwater)',cat:'T',city:'Fayetteville — Elk River',cast:'elk-tn50',park:[35.1919,-86.2800],water:[35.19150,-86.27940],d:'~60 yd (gravel bar)',sp:'Stocked rainbow + brown trout',note:'Densest stocked trout water, immediate below Tims Ford (~38k rainbows + 20k browns/yr). Nymphs/midges in pools, streamers for browns. ⚠️ Highest surge exposure — check TVA.'},
  {n:'Farris Creek Bridge (Elk R. tailwater)',cat:'T',city:'Fayetteville — Elk River',cast:'farris-creek',park:[35.1635,-86.3186],water:[35.16323,-86.31871],d:'~50 yd (creek mouth)',sp:'Stocked trout (rainbow/brown)',note:'~8.5 mi below the dam — gravel bars + creek mouth, end of the popular 9-mi float. ⚠️ Tims Ford generation hazard.'},
- {n:'Tims Ford Dam Ramp (TVA)',cat:'R',city:'Tims Ford — lower lake (dam · Lost · Hurricane)',park:[35.19875,-86.27297],water:[35.19875,-86.27297],d:'at the ramp (fishing pier on site)',sp:'Striper, hybrid, walleye, smallmouth, catfish',note:'Free TVA ramp + pier on the deepest water in the lake (~150 ft). July: stripers/hybrids 18–19 ft over channel humps dam→Lost Creek; walleye 15–18 ft at the thermocline, night bite under lights. Generation info: TVA 800-238-2264.'},
- {n:'Lost Creek Ramp (Tims Ford)',cat:'S',city:'Tims Ford — lower lake (dam · Lost · Hurricane)',park:[35.25797,-86.30360],water:[35.25797,-86.30360],d:'at the ramp (minimal parking)',sp:'Smallmouth, crappie, walleye',note:'Remote NW arm, weak cell. TWRA names Lost Creek main-channel cobble banks among the best smallmouth water on the lake. Two marked brush piles just off the ramp.'},
- {n:'Turkey Creek PUA (Tims Ford)',cat:'S',city:'Tims Ford — lower lake (dam · Lost · Hurricane)',park:[35.26706,-86.27538],water:[35.26706,-86.27538],d:'at the ramp (primitive campground)',sp:'Smallmouth, crappie, largemouth',note:'State-park unit on the Hurricane Creek arm. Hurricane/Little Hurricane cobble banks are prime TWRA-named smallmouth water — steady gradual slopes, clear water.'},
- {n:'Neals Bridge Ramp (Tims Ford)',cat:'S',city:'Tims Ford — lower lake (dam · Lost · Hurricane)',park:[35.28083,-86.29258],water:[35.28083,-86.29258],d:'at the ramp (minimal parking)',sp:'Crappie, smallmouth, largemouth',note:'Upper Hurricane Creek, Lynchburg side. Bridge pylons hold crappie; marked 10–15 ft brush pile ~0.1 mi away.'},
- {n:'Anderton Branch Ramp (Tims Ford)',cat:'S',city:'Tims Ford — lower lake (dam · Lost · Hurricane)',park:[35.22550,-86.29076],water:[35.22550,-86.29076],d:'at the ramp (no facilities)',sp:'Smallmouth, largemouth, crappie',note:'Free NW-shore ramp, good parking, likely cell gap. Marked brush pile 0.3 mi out.'},
- {n:'Tims Ford State Park Ramp — Lakeview Marina',cat:'R',city:'Tims Ford — mid-lake (state park)',park:[35.21076,-86.24722],water:[35.21076,-86.24722],d:'at the ramp (courtesy dock)',sp:'All species — best pontoon base',note:'Main state-park ramp, free. Lakeview Marina: non-ethanol fuel, pontoon rentals, food. TWRA: the summer striper/hybrid zone runs from here down-lake to the dam. Park office 931-968-3536.'},
- {n:'Tims Ford Marina & Resort',cat:'R',city:'Tims Ford — mid-lake (state park)',park:[35.22423,-86.24311],water:[35.22423,-86.24311],d:'at the ramp (fuel · food docks)',sp:'All species · fuel · food',note:'Free public launch on Anderson Branch. 350 slips, fuel dock, ship’s store, Hard Dock Café + Amigos On The Dock. Trailer parking tight on busy weekends. 931-967-4509.'},
- {n:'Pleasant Grove PUA (Tims Ford)',cat:'L',city:'Tims Ford — mid-lake (state park)',park:[35.26627,-86.20037],water:[35.26627,-86.20037],d:'at the ramp (fishing pier)',sp:'Crappie, largemouth, bluegill',note:'Ramp + pier on the Little Hurricane arm — TWRA-named crappie water: stake beds, dock brush, creek backs.'},
- {n:'Winchester City Park Ramp (Tims Ford)',cat:'L',city:'Tims Ford — upper lake (Winchester)',park:[35.20104,-86.12808],water:[35.20104,-86.12808],d:'level walks (two ADA piers)',sp:'Crappie, largemouth, catfish, bluegill',note:'Best bank site on the lake: lighted 75-vehicle lot, two ADA fishing piers, restrooms. Boiling Fork Creek arm; marked brush pile 0.7 mi out.'},
- {n:'Rock Creek PUA (Estill Springs / Tims Ford)',cat:'R',city:'Tims Ford — upper lake (Winchester)',park:[35.25221,-86.14220],water:[35.25221,-86.14220],d:'at the ramp',sp:'Striper (spring run), crappie, largemouth',note:'TWRA-named launch for the spring striper/hybrid run up the Elk channel toward Woods Reservoir dam. Good crappie water near the ramp.'},
- {n:'Estill Springs Park (Tims Ford)',cat:'R',city:'Tims Ford — upper lake (Winchester)',park:[35.26119,-86.11981],water:[35.26119,-86.11981],d:'kayak launch + bank',sp:'Striper (spring), bank fishing',note:'Canoe/kayak launch + bank access, picnic shelters. Spring stripers stage from here up to Woods Reservoir dam.'},
- {n:'Dry Creek Ramp (Tims Ford)',cat:'L',city:'Tims Ford — upper lake (Winchester)',park:[35.19570,-86.13830],water:[35.19570,-86.13830],d:'at the ramp (beach nearby)',sp:'Crappie, largemouth, catfish',note:'Free ramp next to Twin Creeks Marina (fuel, Drafts & Watercrafts restaurant). Not on TWRA’s 14-site list — verify locally. Four TWRA attractors within a mile.'},
- {n:'TWRA brush #51 — Anderton Branch',cat:'R',city:'Tims Ford — lower lake (dam · Lost · Hurricane)',park:[35.22550,-86.29076],water:[35.22955,-86.28862],d:'by boat · 0.3 mi from Anderton ramp',sp:'Crappie (Oct–May, 6–12 ft), bass',note:'TWRA Christmas-tree attractor, 10–15 ft, marked with buoy. Source: TWRA fish-attractor GIS.'},
- {n:'TWRA brush #52 — Lost Creek',cat:'R',city:'Tims Ford — lower lake (dam · Lost · Hurricane)',park:[35.25797,-86.30360],water:[35.24767,-86.30572],d:'by boat · 0.7 mi from Lost Creek ramp',sp:'Crappie, bass',note:'TWRA Christmas-tree attractor, 15–20 ft, marked.'},
- {n:'TWRA brush #53 — Lost Creek',cat:'R',city:'Tims Ford — lower lake (dam · Lost · Hurricane)',park:[35.25797,-86.30360],water:[35.25675,-86.30750],d:'by boat · 0.2 mi from Lost Creek ramp',sp:'Crappie, bass',note:'TWRA Christmas-tree attractor, 15–20 ft, marked.'},
- {n:'TWRA brush #54 — Hurricane Creek',cat:'R',city:'Tims Ford — lower lake (dam · Lost · Hurricane)',park:[35.28083,-86.29258],water:[35.27998,-86.29395],d:'by boat · 0.1 mi from Neals Bridge ramp',sp:'Crappie, smallmouth',note:'TWRA Christmas-tree attractor, 10–15 ft, marked.'},
- {n:'TWRA brush #55 — Hurricane Creek',cat:'R',city:'Tims Ford — lower lake (dam · Lost · Hurricane)',park:[35.26706,-86.27538],water:[35.27160,-86.27707],d:'by boat · 0.3 mi from Turkey Creek ramp',sp:'Crappie, smallmouth',note:'TWRA Christmas-tree attractor, 15–20 ft, marked.'},
- {n:'TWRA brush #61 — dam area',cat:'R',city:'Tims Ford — lower lake (dam · Lost · Hurricane)',park:[35.19875,-86.27297],water:[35.20143,-86.27333],d:'by boat · 0.2 mi from the dam ramp',sp:'Crappie, bass, walleye',note:'TWRA Christmas-tree attractor, 15–20 ft, marked — inside the summer striper/walleye zone.'},
- {n:'TWRA Bass Bunkers #56 — Fall Lick',cat:'R',city:'Tims Ford — mid-lake (state park)',park:[35.26706,-86.27538],water:[35.26478,-86.24867],d:'by boat · 1.5 mi from Turkey Creek ramp',sp:'Bass, crappie',note:'TWRA corrugated-pipe “Bass Bunkers,” 10–15 ft, UNMARKED — GPS only.'},
- {n:'TWRA brush #57 — mid-lake',cat:'R',city:'Tims Ford — mid-lake (state park)',park:[35.26706,-86.27538],water:[35.25187,-86.26390],d:'by boat · 1.2 mi from Turkey Creek ramp',sp:'Crappie, bass',note:'TWRA Christmas-tree attractor, 5–10 ft, marked.'},
- {n:'TWRA brush #58 — Anderson Branch',cat:'R',city:'Tims Ford — mid-lake (state park)',park:[35.22423,-86.24311],water:[35.22093,-86.23960],d:'by boat · 0.3 mi from Tims Ford Marina',sp:'Crappie, bass, walleye (summer)',note:'TWRA Christmas-tree attractor, >20 ft, marked — deep enough to hold summer thermocline fish.'},
- {n:'TWRA stake bed #59 — mid-lake',cat:'R',city:'Tims Ford — mid-lake (state park)',park:[35.21076,-86.24722],water:[35.21735,-86.24968],d:'by boat · 0.5 mi from the state park ramp',sp:'Crappie, bass',note:'TWRA stake bed + Christmas tree, 15–20 ft, marked.'},
- {n:'TWRA pipe+brush #60 — State Park',cat:'R',city:'Tims Ford — mid-lake (state park)',park:[35.21076,-86.24722],water:[35.21067,-86.24782],d:'by boat · right off the state park ramp',sp:'Crappie, bass',note:'TWRA corrugated pipe + Christmas tree, 15–20 ft, marked — closest structure to the launch.'},
- {n:'TWRA Turnstyles #62 — Kitchens Creek',cat:'R',city:'Tims Ford — mid-lake (state park)',park:[35.21076,-86.24722],water:[35.20025,-86.24007],d:'by boat · 0.8 mi from the state park ramp',sp:'Crappie, bass, walleye (summer)',note:'TWRA PVC “Turnstyle” structure, >20 ft, marked.'},
- {n:'TWRA brush #63 — upper-mid lake',cat:'R',city:'Tims Ford — upper lake (Winchester)',park:[35.19570,-86.13830],water:[35.21742,-86.16002],d:'by boat · 1.9 mi from Dry Creek ramp',sp:'Crappie, bass, walleye (summer)',note:'TWRA Christmas-tree attractor, >20 ft, marked.'},
- {n:'TWRA brush #64 — upper-mid lake',cat:'R',city:'Tims Ford — upper lake (Winchester)',park:[35.19570,-86.13830],water:[35.20488,-86.15383],d:'by boat · 1.1 mi from Dry Creek ramp',sp:'Crappie, bass',note:'TWRA Christmas-tree attractor, 5–10 ft, marked.'},
- {n:'TWRA stake bed #65 — Dry Creek',cat:'R',city:'Tims Ford — upper lake (Winchester)',park:[35.19570,-86.13830],water:[35.19778,-86.14103],d:'by boat · 0.2 mi from Dry Creek ramp',sp:'Crappie (shallow)',note:'TWRA stake bed, <5 ft, marked — shallow spring/fall crappie spot.'},
- {n:'TWRA brush #66 — Dry Creek',cat:'R',city:'Tims Ford — upper lake (Winchester)',park:[35.19570,-86.13830],water:[35.19727,-86.13828],d:'by boat · 0.1 mi from Dry Creek ramp',sp:'Crappie, bass, walleye (summer)',note:'TWRA Christmas-tree attractor, >20 ft, marked, just off the ramp.'},
- {n:'TWRA brush #67 — Dry Creek',cat:'R',city:'Tims Ford — upper lake (Winchester)',park:[35.19570,-86.13830],water:[35.18713,-86.13682],d:'by boat · 0.6 mi from Dry Creek ramp',sp:'Crappie, bass',note:'TWRA Christmas-tree attractor, 15–20 ft, marked.'},
- {n:'TWRA brush #68 — Boiling Fork',cat:'R',city:'Tims Ford — upper lake (Winchester)',park:[35.20104,-86.12808],water:[35.19885,-86.11568],d:'by boat · 0.7 mi from Winchester City Park',sp:'Crappie, bass',note:'TWRA Christmas-tree attractor, 10–15 ft, marked — closest hot spot to the Winchester piers.'},
- {n:'TWRA brush #69 — upper lake',cat:'R',city:'Tims Ford — upper lake (Winchester)',park:[35.25221,-86.14220],water:[35.24340,-86.12957],d:'by boat · 0.9 mi from Rock Creek ramp',sp:'Crappie, bass, walleye (summer)',note:'TWRA Christmas-tree attractor, >20 ft, marked, on the Elk channel side.'},
- {n:'TWRA Turnstyles #70 — upper lake',cat:'R',city:'Tims Ford — upper lake (Winchester)',park:[35.26119,-86.11981],water:[35.25752,-86.11525],d:'by boat · 0.4 mi from Estill Springs Park',sp:'Crappie (shallow), bass',note:'TWRA stake-bed “Turnstyles,” 5–10 ft, UNMARKED — GPS only.'},
- {n:'TWRA PVC #71 — upper lake',cat:'R',city:'Tims Ford — upper lake (Winchester)',park:[35.26119,-86.11981],water:[35.26083,-86.11770],d:'by boat · 0.1 mi from Estill Springs Park',sp:'Crappie (shallow), bass',note:'TWRA PVC structure, 5–10 ft, UNMARKED — GPS only.'}
+ // ── Nolin River Lake, KY (added 2026-07-07 — Sept trip build; pins: KDFWR access-site pages + USGS NHD shoreline) ──
+ {n:'Nolin Dam Ramp — Site One (Nolin KY)',cat:'L',city:'Nolin River Lake — KY',park:[37.27790,-86.24260],water:[37.27785,-86.24124],d:'~130 yd (big set-back lot)',sp:'Largemouth (15" min), crappie (10" min), channel + flathead cat',note:'Corps ramp at the dam — deepest, rockiest water on the lake. Main-lake points + riprap; one of two ramps that reach winter pool. Courtesy dock, year-round, $5 launch (card only).'},
+ {n:'Tailwater Rec Area (below Nolin Dam)',cat:'T',city:'Nolin River Lake — KY',park:[37.27430,-86.25080],water:[37.27411,-86.25063],d:'~25 yd (flat walk to the platform)',sp:'Stocked rainbow trout (Apr–Nov, trout permit $10.57), sauger, rock bass, channel cat',note:'Concrete fishing platform + bank below the dam, free day-use. Fish the outflow seams and first current breaks. Boat ramp flagged temporarily closed (low water); bank is open. ☠️ Dam release water — heed sirens/signage, never wade a rising flow.'},
+ {n:'Brier Creek Ramp — Nolin Lake SP (KY)',cat:'L',city:'Nolin River Lake — KY',park:[37.29890,-86.21380],water:[37.29853,-86.21425],d:'~60 yd (paved)',sp:'Crappie (the lake\'s headline fish), largemouth, bluegill, catfish',note:'FREE state-park ramp, year-round, courtesy dock. Brier Creek arm = standing timber + brush in 10–18 ft — prime Sept crappie water as shad slide into the creeks. Park rebuilt after the 2025 floods; call (270) 286-4240 to confirm facilities.'},
+ {n:'Moutardier Ramp (Nolin KY)',cat:'L',city:'Nolin River Lake — KY',park:[37.31450,-86.23140],water:[37.31495,-86.23167],d:'~60 yd (paved)',sp:'Largemouth, crappie, channel cat, white bass (jumps)',note:'Corps flagship on the lower-mid lake — fishing pier, marina + bait next door (Po\' Boy\'s en route). Riprap banks and pocket mouths; watch for Sept shad "jumps" off the points at first light. $5 launch, year-round.'},
+ {n:'Dog Creek Ramp (Nolin KY)',cat:'L',city:'Nolin River Lake — KY',park:[37.31980,-86.13350],water:[37.31979,-86.13323],d:'~25 yd (gentlest walk on the lake)',sp:'Crappie (brush/timber), largemouth, bluegill, channel cat',note:'Mid-lake creek-arm ramp with the flattest bank access — fish-cleaning station, easy family water. Creek backs load with shad in late Sept. Ramp open Apr 1–Oct 31 ($5). Cell service is weak here.'},
+ {n:'Wax Ramp — KY 88 (Nolin KY)',cat:'L',city:'Nolin River Lake — KY',park:[37.34520,-86.12470],water:[37.34520,-86.12491],d:'~20 yd',sp:'Crappie, largemouth, white bass, channel cat',note:'Upper-mid lake at the KY 88 bridge — ADA fishing pier, marina fuel/store. Since 2025 the ramp is marina-managed: federal passes NOT honored, pay Wax Marina\'s launch fee (270-242-7205). Bridge pilings + creek-mouth seams.'},
+ {n:'Iberia Ramp & Beach (Nolin KY)',cat:'L',city:'Nolin River Lake — KY',park:[37.36880,-86.16030],water:[37.36868,-86.16057],d:'~30 yd',sp:'Largemouth, crappie, white bass (points)',note:'Bare-bones Corps ramp + swim beach on the east side — no restrooms, no dock. Long main-lake points nearby are the summer/fall walleye troll and white-bass jump water. Open Apr 1–Oct 31 ($5).'},
+ {n:'Conoloway Ramp / Ponderosa (Nolin KY)',cat:'L',city:'Nolin River Lake — KY',park:[37.36570,-86.22020],water:[37.36546,-86.21968],d:'~55 yd (gravel lot)',sp:'Walleye (14" min — trolled points, night), crappie, largemouth',note:'Single-lane fee ramp by Ponderosa Boat Dock (270-242-7215). KDFWR forecast names Conoloway Creek + the long points here for summer-into-fall walleye. New KDFWR bank-access trail nearby. Light boats only.'},
+ {n:'Bacon Creek Ramp (Nolin KY headwaters)',cat:'M',city:'Nolin River Lake — KY',park:[37.35950,-86.06570],water:[37.35980,-86.06559],d:'~35 yd (gravel)',sp:'White bass (spring run HQ), walleye, channel cat, crappie',note:'FREE KDFWR ramp on the riverine upper end — the white-bass-run launch, and the walleye river water starts upstream. Sept: falling water pulls fish to the channel; work creek-mouth seams. ⚠️ Rocky shoals upstream; no facilities, weak cell.'},
+ {n:'Broad Ford — KY 1214 bridge (Nolin R.)',cat:'M',city:'Nolin River Lake — KY',park:[37.38176,-86.07761],water:[37.38156,-86.07616],d:'bank only — stay in the bridge right-of-way',sp:'White bass (run), channel cat, rock bass',note:'Traditional KDFWR-named bank spot on the upper river. Roadside pull-off; banks beyond the right-of-way are PRIVATE — ask permission. Best in the spring run; a low-water scout stop in Sept.'}
 ];
 
 // ── icons (inline SVG, no emoji) ─────────────────────────────────────────────
@@ -480,18 +456,11 @@ const GROUNDED = new Set([
   'Riverside Drive Access (Columbia / Duck)','Chickasaw Trace (Columbia / Duck)','Williamsport Bridge (Columbia / Duck)',
   'Leftwich / Sowell Mill (Columbia / Duck)','Fountain Creek (Columbia / Duck)','Carpenter Bridge (Columbia / Duck)',
   'Hardison Mill (Columbia / Duck)',
-  // Tims Ford (2026-07-07): ramps traced to Natural Atlas/TVA/city sources; attractors are exact TWRA fish-attractor GIS coords.
-  // Anderton Branch, Estill Springs, and Dry Creek ramps are map-embed approximations — deliberately NOT grounded.
-  'Tims Ford Dam Ramp (TVA)','Lost Creek Ramp (Tims Ford)','Turkey Creek PUA (Tims Ford)','Neals Bridge Ramp (Tims Ford)',
-  'Tims Ford State Park Ramp — Lakeview Marina','Tims Ford Marina & Resort','Pleasant Grove PUA (Tims Ford)',
-  'Winchester City Park Ramp (Tims Ford)','Rock Creek PUA (Estill Springs / Tims Ford)',
-  'TWRA brush #51 — Anderton Branch','TWRA brush #52 — Lost Creek','TWRA brush #53 — Lost Creek',
-  'TWRA brush #54 — Hurricane Creek','TWRA brush #55 — Hurricane Creek','TWRA Bass Bunkers #56 — Fall Lick',
-  'TWRA brush #57 — mid-lake','TWRA brush #58 — Anderson Branch','TWRA stake bed #59 — mid-lake',
-  'TWRA pipe+brush #60 — State Park','TWRA brush #61 — dam area','TWRA Turnstyles #62 — Kitchens Creek',
-  'TWRA brush #63 — upper-mid lake','TWRA brush #64 — upper-mid lake','TWRA stake bed #65 — Dry Creek',
-  'TWRA brush #66 — Dry Creek','TWRA brush #67 — Dry Creek','TWRA brush #68 — Boiling Fork',
-  'TWRA brush #69 — upper lake','TWRA Turnstyles #70 — upper lake','TWRA PVC #71 — upper lake'
+  // Nolin KY (2026-07-07): park pins from KDFWR published access-site coordinates (asid 157-160, 211-242),
+  // water pins from USGS NHD shoreline — agency-grounded, not field-scouted. Broad Ford stays unverified.
+  'Nolin Dam Ramp — Site One (Nolin KY)','Tailwater Rec Area (below Nolin Dam)','Brier Creek Ramp — Nolin Lake SP (KY)',
+  'Moutardier Ramp (Nolin KY)','Dog Creek Ramp (Nolin KY)','Wax Ramp — KY 88 (Nolin KY)','Iberia Ramp & Beach (Nolin KY)',
+  'Conoloway Ramp / Ponderosa (Nolin KY)','Bacon Creek Ramp (Nolin KY headwaters)'
 ]);
 // Cast maps not yet FIELD-verified. All targets NHD-gate-checked 2026-07-01 (see
 // "Cast Map Evidence Audit - 2026-07-01.md"); vales-mill, leftwich, chickasaw passed clean.
