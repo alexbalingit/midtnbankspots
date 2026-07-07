@@ -44,6 +44,46 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 const SPOTS = {
+ 'tf-hurricane':{
+   title:'Hurricane Creek arm — Tims Ford (Turkey Creek PUA)', sub:'TROPHY smallmouth · TWRA-named cobble main-channel banks · 18" min (an 18" fish is ~7 yrs old)',
+   center:[35.26950,-86.27620], zoom:16, unverified:true,
+   targets:[
+     {n:1,ll:[35.27160,-86.27707],w:'TWRA brush #55 (exact GPS, 15–20 ft, buoy)',x:'crappie jig on the brush · smallmouth on the edge'},
+     {n:2,ll:[35.26950,-86.27650],w:'Main-channel cobble bank (TWRA read: steady gradual slope)',x:'shad swimbait on ¼–½ oz jig, drag the slope'},
+     {n:3,ll:[35.26760,-86.27590],w:'Channel swing off the ramp cove',x:'Ned/tube on the cobble, deeper in summer'}
+   ],
+   haz:'Boat traffic at the ramp on weekends — fish the far bank early.'
+ },
+ 'tf-lost-creek':{
+   title:'Lost Creek arm — Tims Ford', sub:'TROPHY smallmouth · TWRA-named cobble banks · remote NW arm, weak cell',
+   center:[35.25350,-86.30550], zoom:16, unverified:true,
+   targets:[
+     {n:1,ll:[35.25675,-86.30750],w:'TWRA brush #53 (exact GPS, 15–20 ft, buoy)',x:'brush crappie · smallmouth off the pile'},
+     {n:2,ll:[35.25500,-86.30500],w:'Main-channel cobble bank (TWRA read)',x:'swimbait / football jig down the slope'},
+     {n:3,ll:[35.24767,-86.30572],w:'TWRA brush #52 (exact GPS, 15–20 ft, buoy)',x:'second brush stop on the same run'}
+   ],
+   haz:'Minimal parking at the ramp · no facilities · weak cell service.'
+ },
+ 'tf-dam':{
+   title:'Dam zone — Tims Ford', sub:'STRIPER 20–30 lb class + summer walleye · deepest water (~150 ft) · July: 18–19 ft over the channel',
+   center:[35.20000,-86.27400], zoom:16, unverified:true,
+   targets:[
+     {n:1,ll:[35.20143,-86.27333],w:'TWRA brush #61 (exact GPS, 15–20 ft, buoy)',x:'start here — bass/crappie, walleye deeper off it'},
+     {n:2,ll:[35.19950,-86.27500],w:'Main channel in front of the dam reservation',x:'down-line live shad 18–19 ft · night: lights + shad at ~15 ft'},
+     {n:3,ll:[35.19880,-86.27340],w:'Ramp pier + riprap (bank option)',x:'catfish on cut shad · crappie on the pier at dusk'}
+   ],
+   haz:'☠️ Stay outside the dam restricted buoys. TVA generation info 800-238-2264 — matters below the dam, not on the lake.'
+ },
+ 'tf-statepark':{
+   title:'State Park ledges — Tims Ford', sub:'Summer striper/hybrid zone (avg 10/9 lb) + walleye · TWRA: fish 18–19 ft, park→dam',
+   center:[35.21000,-86.24600], zoom:15, unverified:true,
+   targets:[
+     {n:1,ll:[35.21067,-86.24782],w:'TWRA pipe+brush #60 (exact GPS, 15–20 ft, buoy) — off the ramp',x:'first stop, crappie/bass'},
+     {n:2,ll:[35.21735,-86.24968],w:'TWRA stake bed #59 (exact GPS, 15–20 ft, buoy)',x:'brush crappie · bass on the edge'},
+     {n:3,ll:[35.20025,-86.24007],w:'TWRA Turnstyles #62 — Kitchens Creek (exact GPS, >20 ft, buoy)',x:'deep structure — summer walleye/striper on the thermocline'}
+   ],
+   haz:'Down-line live 4–5" shad on a ½–¾ oz Carolina rig, 12" leader, 3/0 hook — work 16–19 ft between the three structures over the channel edge.'
+ },
  'elk-tn50':{
    title:'Elk River TN-50 — below Tims Ford (Lincoln)', sub:'Stocked rainbow + brown trout · tailwater runs & pools',
    center:[35.19150,-86.28030], zoom:16, unverified:true,
