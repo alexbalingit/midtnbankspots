@@ -838,11 +838,14 @@ function windScore(dir,mph){
 }
 const BW={light:35,pressure:25,wind:20,water:20};
 function biteScore(f){
-  let s=Math.round(BW.light*f.light+BW.pressure*f.pressure+BW.wind*f.wind+BW.water*f.water);
-  if(f.water===0) s=Math.min(s,28); // blown-out water (SKIP flow) gate: caps the day red
-  if(f.muddy) s=Math.min(s,39);     // muddy water = low odds (doctrine) → SLOW ceiling, no matter how good light/wind are
+  let s=BW.light*f.light+BW.pressure*f.pressure+BW.wind*f.wind+BW.water*f.water; // raw 0-100
+  // Bad-water bands (fix 2026-07-09): COMPRESS into a low band instead of a flat clamp, so the
+  // score still tracks light/pressure/wind on high/muddy water (dawn still beats midday) instead
+  // of freezing on the ceiling. Muddy never reads PRIME; blown-out (SKIP) sits even lower.
+  if(f.water===0) s=s*0.28;           // blown-out flow (SKIP) → 0-28 band (was Math.min(s,28))
+  else if(f.muddy) s=s*0.39;          // muddy water = low odds → 0-39 SLOW band (was Math.min(s,39))
   if(f.light<=0.25) s=Math.min(s,55); // wrong-time soft gate: bright midday never reads PRIME (time of day = biggest lever)
-  return s;
+  return Math.round(s);
 }
 function biteVerdict(s){ return s>=70?{k:'g',w:'PRIME'}:s>=40?{k:'c',w:'FAIR'}:{k:'s',w:'SLOW'}; }
 function nextGolden(now,sun){
