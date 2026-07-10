@@ -44,6 +44,50 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 const SPOTS = {
+ 'cf-longbranch':{
+   title:'Long Branch RA — “the Steps” · Caney Fork tailwater', sub:'Trophy stripers + 20”+ holdover trout at the dam base · rainbow 14–20” slot · brown 24” min',
+   center:[36.10024,-85.83495], zoom:17, unverified:true,
+   targets:[
+     {n:1,ll:[36.10024,-85.83495],w:'The “Steps” stilling-basin seam at the dam',x:'spoons/jigs up into the chute for stripers; drift eggs/Power Bait for trout'},
+     {n:2,ll:[36.10072,-85.83481],w:'Current-break boulders just downstream (low generation)',x:'nymph the seams; swing streamers for browns'},
+     {n:3,ll:[36.09989,-85.83533],w:'Riffle-to-pool transition',x:'drift the head of the pool; Rooster Tail on the seam'},
+     {n:4,ll:[36.09903,-85.83570],w:'Lower run of the rec area',x:'work the outside edge; deeper holds at higher flow'}
+   ],
+   haz:'☠️ Center Hill generation — bank/wade ONLY at low/no generation. Check TVA (lake code 37 · 800-238-2264) the morning of; rising/stained water or a siren = get out.'
+ },
+ 'cf-happyhollow':{
+   title:'Happy Hollow · Caney Fork tailwater', sub:'Most popular wade reach ~5 mi below the dam · rainbow 14–20” slot',
+   center:[36.13100,-85.80785], zoom:17, unverified:true,
+   targets:[
+     {n:1,ll:[36.13127,-85.80719],w:'Gravel-bar flat seam at the access',x:'dead-drift midges/eggs; Power Bait off the bar edge'},
+     {n:2,ll:[36.13148,-85.80865],w:'Riffle-to-pool transition',x:'nymph the drop; swing a wooly bugger'},
+     {n:3,ll:[36.13188,-85.80802],w:'Outside-bend pool with rock',x:'deeper trout + smallmouth; jig the rock'},
+     {n:4,ll:[36.13126,-85.80901],w:'Lower wade seam',x:'work the current line at low flow'}
+   ],
+   haz:'☠️ Center Hill generation — small lot fills fast; never wade with a unit scheduled. Verify the TVA schedule.'
+ },
+ 'cf-bettys':{
+   title:'Betty’s Island · Caney Fork tailwater', sub:'Island braids ~8.5 mi below the dam · lower end of the trout zone',
+   center:[36.14700,-85.84055], zoom:17, unverified:true,
+   targets:[
+     {n:1,ll:[36.14685,-85.84041],w:'Right braid seam around the island',x:'drift the seam edge; eggs/Power Bait'},
+     {n:2,ll:[36.14717,-85.84116],w:'Left braid seam',x:'nymph the current line'},
+     {n:3,ll:[36.14667,-85.83992],w:'Gravel-bar head',x:'swing streamers for browns + smallmouth'},
+     {n:4,ll:[36.14623,-85.84025],w:'Outside-bend pool below the island',x:'deeper hold; slow presentations'}
+   ],
+   haz:'☠️ Center Hill generation — narrow road, small lot. Wade only at low/no generation; verify TVA.'
+ },
+ 'lake-acorn':{
+   title:'Lake Acorn · Montgomery Bell SP', sub:'Bill Dance Signature Lake · 15–18” bass slot + 22”+ trophy · ~26 ac · electric only',
+   center:[36.09975,-87.27300], zoom:17, unverified:true,
+   targets:[
+     {n:1,ll:[36.10005,-87.27130],w:'Dam / spillway riprap (NE)',x:'jig/craw on the rock; low-light ambush bass · winter trout'},
+     {n:2,ll:[36.09990,-87.27250],w:'Deep basin / old channel bend off the dam',x:'drop-shot the drop-off edge; summer thermocline'},
+     {n:3,ll:[36.09951,-87.27326],w:'Creek inflow (upper/south)',x:'spring spawn staging + crappie; dingier, warmer first'},
+     {n:4,ll:[36.09984,-87.27400],w:'Lodge-cove points + dock line',x:'skip docks; work points/shade lines for bass + trout'}
+   ],
+   haz:'Small lake — partial NHD coverage at the east/dam arm; the dam & basin targets are set from the structure read + 2 NHD-confirmed wet points. High-zoom satellite verify pending. Bank/boat lake — no wading.'
+ },
  'tf-hurricane':{
    title:'Hurricane Creek arm — Tims Ford (Turkey Creek PUA)', sub:'TROPHY smallmouth · TWRA-named cobble main-channel banks · 18" min (an 18" fish is ~7 yrs old)',
    center:[35.26950,-86.27620], zoom:16, unverified:true,
