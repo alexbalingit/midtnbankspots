@@ -153,6 +153,14 @@
   .panel .ph{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;border-bottom:1px solid var(--hair)}
   .panel .ph b{font-size:11px;text-transform:uppercase;letter-spacing:.18em;color:var(--moss);font-weight:700}
   .panel .ph .cl{cursor:pointer;color:var(--moss);border:none;background:none;padding:4px;display:flex}
+  .psearch{display:flex;align-items:center;gap:8px;margin:10px 12px 2px;padding:8px 12px;
+           background:rgba(25,27,19,.05);border:1px solid var(--hair);border-radius:10px;color:var(--moss)}
+  .psearch:focus-within{border-color:var(--brass);box-shadow:0 0 0 2px rgba(168,133,62,.18)}
+  .psearch .ico{flex:0 0 auto;width:15px;height:15px}
+  .psearch input{flex:1;min-width:0;border:none;background:none;outline:none;font:inherit;font-size:13.5px;color:var(--ink)}
+  .psearch input::placeholder{color:var(--marsh);opacity:.85}
+  .psearch input::-webkit-search-cancel-button{-webkit-appearance:none}
+  .psearch #searchclear{flex:0 0 auto;display:flex;border:none;background:none;color:var(--moss);cursor:pointer;padding:2px}
   .city h3{display:flex;align-items:baseline;gap:8px;margin:14px 16px 2px;padding:0 0 6px;
            font-family:var(--serif);font-weight:700;font-size:14.5px;color:var(--pine);
            border-bottom:2px solid var(--brass)}
@@ -287,7 +295,7 @@
   </button>
   <div class="brand">
     <span class="wordmark">CASTER</span>
-    <span class="guide">Cast Maps · 93 spots</span>
+    <span class="guide">Cast Maps · 101 spots</span>
   </div>
   <span class="spacer"></span>
   <button class="hbtn iconic" id="homebtn">
@@ -310,6 +318,13 @@
   <div class="ph"><b>Spots by city</b>
     <button class="cl" id="panelclose" aria-label="Close">
       <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <div class="psearch">
+    <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.9-4.9"/></svg>
+    <input id="spotsearch" type="search" placeholder="Search — try: dam, striper, trout" autocomplete="off" spellcheck="false">
+    <button id="searchclear" aria-label="Clear search" style="display:none">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
     </button>
   </div>
   <div id="citylist"></div>
@@ -360,7 +375,7 @@ const CAT = {
   T:{c:'#4a6d7c',label:'Trout — stocked tailwater'},
   R:{c:'#2e5d52',label:'Reservoir — striper · walleye · crappie brush'}
 };
-const CITY_ORDER = ['Brentwood','Franklin','Kingston Springs — Harpeth SP','Spring Hill / Williamsport','Columbia','Culleoka / Chapel Hill','Lewisburg','Shelbyville','Manchester / Normandy','Pulaski','Fayetteville — Elk River','Tims Ford — lower lake (dam · Lost · Hurricane)','Tims Ford — mid-lake (state park)','Tims Ford — upper lake (Winchester)','Nolin River Lake — KY','Caney Fork — dam tailwater (Long Branch · Buffalo Valley)','Caney Fork — trout run (Happy Hollow · Betty’s Island · Gordonsville)','Montgomery Bell SP — Lake Acorn & Creech Hollow'];
+const CITY_ORDER = ['Brentwood','Franklin','Kingston Springs — Harpeth SP','Spring Hill / Williamsport','Columbia','Culleoka / Chapel Hill','Lewisburg','Shelbyville','Manchester / Normandy','Pulaski','Fayetteville — Elk River','Tims Ford — lower lake (dam · Lost · Hurricane)','Tims Ford — mid-lake (state park)','Tims Ford — upper lake (Winchester)','Nolin River Lake — KY','Caney Fork — dam tailwater (Long Branch · Buffalo Valley)','Caney Fork — trout run (Happy Hollow · Betty’s Island · Gordonsville)','Stones River — Percy Priest Dam tailwater (Nashville)','Cumberland — Old Hickory Dam tailwater','Cumberland — Cheatham Dam tailwater (Ashland City)','Montgomery Bell SP — Lake Acorn & Creech Hollow'];
 const spots = [
  {n:'Eastern Flank (Franklin)',cat:'S',city:'Franklin',cast:'eastern-flank',park:[35.90915,-86.85587],water:[35.90975,-86.85490],d:'~120 yd (wade below the cross-vane)',sp:'Smallmouth, rock bass',note:'The 2012 dam-removal cross-vane — boulder vanes, plunge pool, riffle seams. Most diverse reach on the Franklin Harpeth.'},
  {n:'Pinkerton Park (Franklin)',cat:'S',city:'Franklin',cast:'pinkerton',park:[35.92119,-86.86291],water:[35.92082,-86.8651],d:'~90 yd to the river',sp:'Smallmouth, rock bass, bluegill',note:'Easy in-town Harpeth bend with gravel bars, wadeable runs. Fort Granger across the water.'},
@@ -455,7 +470,16 @@ const spots = [
  {n:'Betty’s Island Access (Caney Fork tailwater)',cat:'T',city:'Caney Fork — trout run (Happy Hollow · Betty’s Island · Gordonsville)',cast:'cf-bettys',park:[36.14761,-85.83970],water:[36.14700,-85.84055],d:'~70 yd · small lot, narrow road',sp:'Stocked rainbow + brown trout · smallmouth',note:'TWRA/county ramp ~8.5 mi below the dam — lower end of the prime trout zone. Wade the braids around the island at low flow. ☠️ Generation hazard.'},
  {n:'Stonewall / Gordonsville Bridge (Caney Fork)',cat:'M',city:'Caney Fork — trout run (Happy Hollow · Betty’s Island · Gordonsville)',park:[36.18504,-85.90655],water:[36.18414,-85.90662],d:'big lot + overflow field',sp:'Smallmouth, largemouth, striped bass, catfish',note:'Trousdale Ferry Pike bridge ~14.5 mi below the dam — the warmwater transition: trout thin, smallmouth + spring stripers grow. Best parking on the river.'},
  {n:'Lake Acorn (Montgomery Bell SP)',cat:'L',city:'Montgomery Bell SP — Lake Acorn & Creech Hollow',cast:'lake-acorn',park:[36.09991,-87.27227],water:[36.09963,-87.27331],d:'flat walk · fish outside the roped swim beach',sp:'Trophy-slot largemouth, black crappie, bluegill/redear, channel cat + winter rainbow trout',note:'⭐ Bill Dance Signature Lake — 15–18” bass slot, one 22”+/day (park pushes C&R). Delayed-harvest rainbows C&R to Mar 31, then 5/day. Fish the dam riprap, lodge-cove points, creek inflow. Electric motors only; Broken Paddle rents Mar–Oct.'},
- {n:'Creech Hollow Lake (Montgomery Bell SP)',cat:'L',city:'Montgomery Bell SP — Lake Acorn & Creech Hollow',park:[36.08433,-87.27238],water:[36.08693,-87.27376],d:'1.6-mi loop trail = bank access all around',sp:'Largemouth, crappie, bluegill/redear, channel cat',note:'Quiet no-boats lake reached by the Creech Hollow Trail — same Bill Dance park regs as Acorn. Foot-traffic only, the low-pressure option.'}
+ {n:'Creech Hollow Lake (Montgomery Bell SP)',cat:'L',city:'Montgomery Bell SP — Lake Acorn & Creech Hollow',park:[36.08433,-87.27238],water:[36.08693,-87.27376],d:'1.6-mi loop trail = bank access all around',sp:'Largemouth, crappie, bluegill/redear, channel cat',note:'Quiet no-boats lake reached by the Creech Hollow Trail — same Bill Dance park regs as Acorn. Foot-traffic only, the low-pressure option.'},
+ // ── Big-fish dam tailwaters (added 2026-07-14 — Percy Priest · Old Hickory · Cheatham; pins: Natural Atlas print-map URLs + USGS gage sites, water pins NHD-gated) ──
+ {n:'Percy Priest Dam — Right Bank Tailwater (Stones R.)',cat:'M',city:'Stones River — Percy Priest Dam tailwater (Nashville)',cast:'percy-priest',park:[36.15855,-86.61891],water:[36.15860,-86.61981],d:'~90 yd (riprap bank)',sp:'Hybrid striper, white bass (Apr–May run), smallmouth (18" min), catfish + stocked rainbow (Dec–Feb)',note:'USACE east-bank access below the dam — generation = bite ON: hybrids + white bass stack the outflow seams at low light. TWRA winter rainbows Dec–Feb. Finn\'s Tackle 2 min up Bell Rd for live shiners. ☠️ Obey the posted line at the outflow; never wade a release (USGS 03430100 · 615-369-7555).'},
+ {n:'Stones River Greenway Trailhead (Percy Priest Dam)',cat:'M',city:'Stones River — Percy Priest Dam tailwater (Nashville)',park:[36.15855,-86.62085],water:[36.15859,-86.62031],d:'~55 yd · kayak hand-launch',sp:'Hybrid striper, white bass, largemouth, catfish + winter rainbow',note:'West-bank trailhead at 3734 Bell Rd (I-40 exit 219) — bank seams + the paddle put-in for the dam→Heartland float (~2.5 hr with one unit running, no rest banks). ☠️ Generation hazard — check the schedule before wading or launching.'},
+ {n:'Heartland / Stones River Access (ramp)',cat:'M',city:'Stones River — Percy Priest Dam tailwater (Nashville)',park:[36.18540,-86.66501],water:[36.18547,-86.66459],d:'at the ramp + kayak launch',sp:'Largemouth, white bass (spring run), hybrid, catfish',note:'TWRA + Metro joint ramp near the Cumberland confluence — take-out for the dam float. TWRA documents the Apr–May white bass run dam→confluence through this water. 10 gravel spaces, free.'},
+ {n:'Old Hickory Dam Tailwater — bank & platform (Cumberland)',cat:'M',city:'Cumberland — Old Hickory Dam tailwater',cast:'old-hickory',park:[36.29658,-86.65943],water:[36.29704,-86.65874],d:'~90 yd (platform + riprap)',sp:'Striped bass (40-lb class water), hybrid, sauger (Nov–Mar), smallmouth, skipjack, blue cat',note:'USACE south-bank access off Cinder Rd — one of TN\'s storied striper tailwaters: guides ran live skipjack here for 40–50 lb fish. Winter sauger Dec–Mar. TWRA: the lock side fishes better above ~30,000 cfs. ☠️ Releases without warning — heed sirens (USGS 03426310 · 615-822-4846).'},
+ {n:'Old Hickory Dam Tailwater Ramp (Cumberland)',cat:'M',city:'Cumberland — Old Hickory Dam tailwater',park:[36.29878,-86.66325],water:[36.29918,-86.66298],d:'at the ramp',sp:'Striper, hybrid, sauger, blue cat, white bass',note:'USACE concrete ramp just downstream of the platform — boat access to the tailrace, bank at the lot. Prone to debris closures after high water — call (615) 822-4846 to confirm open.'},
+ {n:'Cheatham Dam Tailwater — rock bank & ramp (Cumberland)',cat:'M',city:'Cumberland — Cheatham Dam tailwater (Ashland City)',cast:'cheatham',park:[36.32600,-87.22790],water:[36.32594,-87.22829],d:'~40 yd (rock bank)',sp:'Trophy blue cat (the 122-lb TN record came from this river), flathead, striper to 30 lb, sauger (Dec–Mar), white bass, skipjack',note:'USACE ramp + rock bank below the lock & dam (Cheatham Dam Rd via Cheap Hill) — big blues stack the boils on cut skipjack; catch bait in the tailrace on sabikis. PFD mandatory in boats dam→ramp. ☠️ Sirens = water coming, now (615-792-2190).'},
+ {n:'Cheatham Dam Left Bank — pier & tailwater trail',cat:'M',city:'Cumberland — Cheatham Dam tailwater (Ashland City)',park:[36.32090,-87.22581],water:[36.32136,-87.22626],d:'~70 yd via the trail',sp:'Blue + channel cat, striper, white bass (Feb–May)',note:'USACE picnic area with a fishing pier + dedicated tailwater fishing trail on the opposite bank of the tailrace. ⚠️ Verify the left-bank access road with the lake office (615-792-5697) before the first trip.'},
+ {n:'Lock A Campground bank (Cheatham Lake)',cat:'M',city:'Cumberland — Cheatham Dam tailwater (Ashland City)',park:[36.31583,-87.18694],water:[36.31585,-87.18669],d:'~25 yd (campground bank)',sp:'Blue + channel catfish, largemouth, bream',note:'USACE campground just upstream of the dam — TWRA names it a great catfish bank; fish-cleaning station on site. Open Apr 1–Oct 31 (gatehouse 615-792-3715).'}
 ];
 
 // ── icons (inline SVG, no emoji) ─────────────────────────────────────────────
@@ -515,11 +539,18 @@ const GROUNDED = new Set([
   // water pins from USGS NHD shoreline — agency-grounded, not field-scouted. Broad Ford stays unverified.
   'Nolin Dam Ramp — Site One (Nolin KY)','Tailwater Rec Area (below Nolin Dam)','Brier Creek Ramp — Nolin Lake SP (KY)',
   'Moutardier Ramp (Nolin KY)','Dog Creek Ramp (Nolin KY)','Wax Ramp — KY 88 (Nolin KY)','Iberia Ramp & Beach (Nolin KY)',
-  'Conoloway Ramp / Ponderosa (Nolin KY)','Bacon Creek Ramp (Nolin KY headwaters)'
+  'Conoloway Ramp / Ponderosa (Nolin KY)','Bacon Creek Ramp (Nolin KY headwaters)',
+  // Dam tailwaters (2026-07-14): park pins from Natural Atlas print-map URLs (5-dec) / recreation.gov;
+  // water pins NHD-gated (area-polygon GREEN). Cheatham Tailwater ramp pin is 4-decimal source precision —
+  // deliberately NOT grounded until QA-snapped on site.
+  'Percy Priest Dam — Right Bank Tailwater (Stones R.)','Stones River Greenway Trailhead (Percy Priest Dam)',
+  'Heartland / Stones River Access (ramp)','Old Hickory Dam Tailwater — bank & platform (Cumberland)',
+  'Old Hickory Dam Tailwater Ramp (Cumberland)','Cheatham Dam Left Bank — pier & tailwater trail',
+  'Lock A Campground bank (Cheatham Lake)'
 ]);
 // Cast maps not yet FIELD-verified. All targets NHD-gate-checked 2026-07-01 (see
 // "Cast Map Evidence Audit - 2026-07-01.md"); vales-mill, leftwich, chickasaw passed clean.
-const UNVERIFIED_CAST = new Set(['tf-hurricane','tf-lost-creek','tf-dam','tf-statepark','nolin-dam','nolin-wax','nolin-iberia','nolin-conoloway','elk-tn50','iron-bridge','three-forks','normandy','howard-bridge','henry-horton','williamsport','pinkerton','harlinsdale','wc-rec','ladd','jim-warren','river-park','tower-park','deerwood','edwin-warner','williamsport-bridge','yanahli','riverwalk','riverside','fountain-creek','carpenter-bridge','hardison-mill','milltown','henry-horton-ramp','new-lake','narrows','newsoms-mill','hidden-lake','mullins-mill','vfw','fishermans','dement','old-stone-fort','old-dam-ford','stone-bridge','veto-rd','cf-longbranch','cf-happyhollow','cf-bettys','lake-acorn','farris-creek']);
+const UNVERIFIED_CAST = new Set(['tf-hurricane','tf-lost-creek','tf-dam','tf-statepark','nolin-dam','nolin-wax','nolin-iberia','nolin-conoloway','elk-tn50','iron-bridge','three-forks','normandy','howard-bridge','henry-horton','williamsport','pinkerton','harlinsdale','wc-rec','ladd','jim-warren','river-park','tower-park','deerwood','edwin-warner','williamsport-bridge','yanahli','riverwalk','riverside','fountain-creek','carpenter-bridge','hardison-mill','milltown','henry-horton-ramp','new-lake','narrows','newsoms-mill','hidden-lake','mullins-mill','vfw','fishermans','dement','old-stone-fort','old-dam-ford','stone-bridge','veto-rd','cf-longbranch','cf-happyhollow','cf-bettys','lake-acorn','farris-creek','percy-priest','old-hickory','cheatham']);
 
 // ── spot card (shared by desktop popup + mobile sheet) ───────────────────────
 function renderCard(s){
@@ -684,8 +715,25 @@ function spotRow(s,extra){
   const cast=s.cast?`<a class="cast" href="sat.html?id=${s.cast}" target="_blank" rel="noopener" title="cast map">${I.target}</a>`:'';
   return `<div class="spot" data-idx="${idx}"><span class="dot" style="background:${CAT[s.cat].c}"></span><span class="nm">${s.n.replace(/ \(.*\)/,'')}</span>${extra||''}${cast}</div>`;
 }
+// ── spot search (2026-07-14, Alex request: "search for dams, big fish") ──────
+// matches name + city group + species + note + category label; live-filters the drawer
+const searchIn=document.getElementById('spotsearch'), searchClear=document.getElementById('searchclear');
+function spotHay(s){ return (s.n+' '+s.city+' '+s.sp+' '+s.note+' '+CAT[s.cat].label).toLowerCase(); }
 function buildList(){
   let html='';
+  const qq=(searchIn.value||'').trim().toLowerCase();
+  searchClear.style.display=qq?'flex':'none';
+  if(qq){
+    const terms=qq.split(/\s+/);
+    const hits=spots.filter(s=>{const hay=spotHay(s);return terms.every(t=>hay.includes(t));});
+    html+=`<div class="city"><h3 class="home">Search — “${searchIn.value.trim().replace(/</g,'&lt;')}” <span class="ct">(${hits.length})</span></h3>`;
+    if(hits.length) hits.forEach(s=>{ html+=spotRow(s,`<span class="nearmin">${s.city.replace(/ —.*/,'')}</span>`); });
+    else html+=`<div class="empty">No spots match — try a water (“Cumberland”), a fish (“striper”), or “dam”.</div>`;
+    html+=`</div>`;
+    cl.innerHTML=html;
+    wireRows();
+    return;
+  }
   const h=getHome();
   if(h){
     const near=spots.map(s=>({s,km:kmBetween(h,s.park)})).filter(x=>x.km<=RADIUS_KM).sort((a,b)=>a.km-b.km);
@@ -702,6 +750,9 @@ function buildList(){
     html+=`</div>`;
   });
   cl.innerHTML=html;
+  wireRows();
+}
+function wireRows(){
   cl.querySelectorAll('.spot').forEach(el=>{
     el.addEventListener('click',e=>{
       if(e.target.closest('.cast')) return;
@@ -712,6 +763,8 @@ function buildList(){
     });
   });
 }
+searchIn.addEventListener('input',buildList);
+searchClear.addEventListener('click',()=>{ searchIn.value=''; buildList(); searchIn.focus(); });
 function fixTops(){ // keep the drawer below the masthead + conditions strip
   const hh=document.getElementById('hdr').offsetHeight;
   const b=document.getElementById('riv');

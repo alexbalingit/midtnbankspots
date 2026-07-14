@@ -44,6 +44,40 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 const SPOTS = {
+ // ── Big-fish dam tailwaters (2026-07-14) — targets NHD-gated (area-polygon GREEN), not field-verified ──
+ 'percy-priest':{
+   title:'Percy Priest Dam — Right Bank Tailwater · Stones River', sub:'Hybrids + white bass on generation · 18” min smallmouth · winter rainbows Dec–Feb',
+   center:[36.15920,-86.62030], zoom:17, unverified:true,
+   targets:[
+     {n:1,ll:[36.15870,-86.62010],w:'Outflow seam at the gage pool — first legal water below the boil',x:'white jig/fluke or live shiner swung through the seam on generation; low light = hybrids'},
+     {n:2,ll:[36.15934,-86.62040],w:'East-bank riprap edge — dark water off the rocks',x:'cut shad on bottom for cats; Ned/tube along the rock seam for the 18”-class smallmouth'},
+     {n:3,ll:[36.15937,-86.62066],w:'West-bank greenway seam (fish from the trailhead side)',x:'inline spinners + Power Bait for winter rainbows; curly-tails for white bass in the run'},
+     {n:4,ll:[36.16054,-86.62121],w:'Mid-channel shoal tail at the bend downstream',x:'Apr–May white bass stack here — cast shad imitations across the current seam'}
+   ],
+   haz:'☠️ Single-turbine peaking dam — water rises without warning. Check the release line (615-369-7555 · USGS 03430100), obey the posted restricted line. Bell Rd over the dam closed 7a–3p M–F thru Jul 2026.'
+ },
+ 'old-hickory':{
+   title:'Old Hickory Dam Tailwater · Cumberland River', sub:'40–50 lb striper water (live skipjack) · sauger Nov–Mar · blue cats',
+   center:[36.29800,-86.66050], zoom:17, unverified:true,
+   targets:[
+     {n:1,ll:[36.29710,-86.65780],w:'Tailrace boil seam below the dam face',x:'balloon-rig a live skipjack on the seam edge when units run; sabiki the turbulence for bait'},
+     {n:2,ll:[36.29710,-86.65880],w:'Platform riprap edge — dark water off the rocks',x:'cut skipjack on bottom for blues; 3/4-oz jig + minnow for winter sauger'},
+     {n:3,ll:[36.29880,-86.66145],w:'Mid-river current seam at the first bend',x:'boat water — drift live bait along the channel edge'},
+     {n:4,ll:[36.29935,-86.66280],w:'Ramp eddy / Mansker Creek mouth influence',x:'white bass + hybrids ambush the slack-to-current line; swim a white fluke'}
+   ],
+   haz:'☠️ Releases without warning — sirens mean water NOW. Lock side fishes better above ~30,000 cfs (TWRA). Resource office (615) 822-4846 · USGS 03426310.'
+ },
+ 'cheatham':{
+   title:'Cheatham Dam Tailwater · Cumberland River', sub:'Trophy blue cats — the 122-lb TN-record river · stripers to 30 lb · winter sauger',
+   center:[36.32420,-87.22680], zoom:17, unverified:true,
+   targets:[
+     {n:1,ll:[36.32231,-87.22512],w:'Tailrace boil line below the spillway',x:'heavy cut skipjack just off the boils — the biggest blues hold the first seam'},
+     {n:2,ll:[36.32428,-87.22694],w:'Mid-run channel seam',x:'drift 8–12 oz bottom rigs through the trough (boat); stripers run the seam Apr–Jun + Sep–Oct'},
+     {n:3,ll:[36.32480,-87.22760],w:'Rock-bank drop — dark water off the riprap',x:'the bank-fishing water: cast cut bait to the edge of the drop, rod in a holder, clicker on'},
+     {n:4,ll:[36.32590,-87.22835],w:'Ramp eddy at the PFD-zone line',x:'sauger jigs Dec–Mar; white bass Feb–May on the eddy seam'}
+   ],
+   haz:'☠️ Warning sirens = units starting or the lock dumping — water rises fast. PFD mandatory in boats dam→ramp. Info line (615) 792-2190.'
+ },
  'cf-longbranch':{
    title:'Long Branch RA — “the Steps” · Caney Fork tailwater', sub:'Trophy stripers + 20”+ holdover trout at the dam base · rainbow 14–20” slot · brown 24” min',
    center:[36.10024,-85.83495], zoom:17, unverified:true,
