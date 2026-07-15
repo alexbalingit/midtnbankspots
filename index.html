@@ -506,7 +506,7 @@ const spots = [
  {n:'Birdsong Fishing Pier (Kentucky Lake)',cat:'R',city:'Kentucky Lake — mid-lake (Mousetail · Birdsong · Eva)',park:[35.96739,-88.05042],water:[35.96700,-88.04840],d:'easy — TWRA fishing pier',sp:'Crappie (2–3 lb slabs Feb–Jun), largemouth, bluegill, white bass, catfish',note:'TWRA public fishing pier on the Birdsong embayment — Kentucky Lake is the crappie capital and Birdsong bills itself "home of the three-pounders." Vertical-jig the pier pilings and drop brush; peak Feb–Jun. Toggle the Fish-attractors layer — brush piles ring this arm.'},
  {n:'Mousetail Landing SP bank (Kentucky Lake)',cat:'R',city:'Kentucky Lake — mid-lake (Mousetail · Birdsong · Eva)',park:[35.64961,-88.01725],water:[35.64930,-88.01880],d:'day-use shoreline + riprap',sp:'Largemouth, crappie, bluegill, channel cat',note:'State-park day-use bank + boat-ramp riprap on the east shore (Hwy 50 E of Linden). Quiet, low-pressure main-lake access; fish the riprap and creek mouths. Natural Atlas ramp coords — pin sits on the day-use lot, bank straight west.'},
  {n:'Nathan Bedford Forrest SP — Eva Beach (Kentucky Lake)',cat:'R',city:'Kentucky Lake — mid-lake (Mousetail · Birdsong · Eva)',park:[36.06113,-87.99732],water:[36.06150,-87.99560],d:'ADA fishing pier (user fee)',sp:'Crappie, bluegill, largemouth, catfish',note:'Wheelchair-accessible Eva pier on Hwy 191 plus three ramps for riprap bank. Duck River / main-lake flats hold crappie around the pier. Natural Atlas coords at the Eva Beach day-use bank below Pilot Knob.'},
- {n:'Paris Landing SP Pier (Kentucky Lake)',cat:'R',city:'Kentucky Lake — lower lake (Paris Landing · Hwy 79)',park:[36.43500,-88.08600],water:[36.43420,-88.08760],d:'ADA pier + Hwy 79 causeway riprap',sp:'Crappie, white bass + sauger (seasonal, Hwy 79 bridge), bluegill, largemouth, catfish',note:'Big open-water state park at the Ned McWherter (Hwy 79) bridge — ADA pier plus causeway riprap. The bridge structure funnels white bass and sauger seasonally; crappie on the pier pilings. Hwy 79 is the TN–KY reciprocal-license line. ⚠️ Wind builds fast on this open main-lake stretch.'}
+ {n:'Paris Landing SP Pier (Kentucky Lake)',cat:'R',city:'Kentucky Lake — lower lake (Paris Landing · Hwy 79)',park:[36.43477,-88.08035],water:[36.43331,-88.07940],d:'ADA pier + Hwy 79 causeway riprap',sp:'Crappie, white bass + sauger (seasonal, Hwy 79 bridge), bluegill, largemouth, catfish',note:'Big open-water state park at the Ned McWherter (Hwy 79) bridge — ADA pier plus causeway riprap. The bridge structure funnels white bass and sauger seasonally; crappie on the pier pilings. Hwy 79 is the TN–KY reciprocal-license line. ⚠️ Wind builds fast on this open main-lake stretch. Pin snapped to the day-use cove at the old inn site (satellite imagery is construction-era) — confirm the pier on arrival.'}
 ];
 
 // ── icons (inline SVG, no emoji) ─────────────────────────────────────────────
@@ -575,8 +575,9 @@ const GROUNDED = new Set([
   'Old Hickory Dam Tailwater Ramp (Cumberland)','Cheatham Dam Left Bank — pier & tailwater trail',
   'Lock A Campground bank (Cheatham Lake)',
   // Kentucky Lake (2026-07-15): Pickwick tailwater banks = TVA GIS coords; Birdsong pier = TWRA fishing-sites GIS (pier=Yes).
-  // Mousetail + NBF Eva Beach re-pinned to Natural Atlas coords 2026-07-15 — grounded. Paris Landing SP Pier is
-  // still a park-centroid approximation — deliberately NOT grounded until QA-snapped.
+  // Mousetail + NBF Eva Beach re-pinned to Natural Atlas coords 2026-07-15 — grounded. Paris Landing SP Pier
+  // imagery-snapped to the day-use cove 2026-07-15 (old pin was on the golf course; imagery is construction-era) —
+  // deliberately NOT grounded until confirmed on site.
   'Pickwick Dam Tailwater — south bank (Kentucky Lake)','Pickwick Dam Tailwater — north bank (Kentucky Lake)',
   'Birdsong Fishing Pier (Kentucky Lake)',
   'Mousetail Landing SP bank (Kentucky Lake)','Nathan Bedford Forrest SP — Eva Beach (Kentucky Lake)'
