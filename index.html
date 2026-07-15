@@ -248,6 +248,17 @@
   .hmenu button:last-child{border-bottom:none}
   .hmenu .ico{color:var(--moss)}
   .hmenu .hint{padding:9px 15px;font-size:11px;color:var(--marsh);background:rgba(25,27,19,.04)}
+  /* ── live reference layers (TWRA + PAD-US) ──────────────────────────────── */
+  .hmenu button small{display:block;font-size:10.5px;color:var(--marsh);font-weight:500;margin-top:1px;line-height:1.35}
+  .hmenu button.lrow{align-items:flex-start}
+  .hmenu button.lrow .ico{margin-top:2px}
+  .hmenu button.lrow.on .ico{color:var(--brass)}
+  .refpop{font-family:var(--sans);font-size:12.5px;line-height:1.5;min-width:170px;max-width:230px}
+  .refpop b{font-family:var(--serif);font-size:13.5px;line-height:1.3;display:block}
+  .refpop .w{color:var(--moss);margin-top:3px}
+  .refpop .btn{display:inline-flex;align-items:center;gap:6px;margin-top:9px;padding:6px 13px;border-radius:999px;
+               background:var(--brass);color:#15160f;font-weight:700;font-size:11.5px;text-decoration:none}
+  .refpop .src{margin-top:8px;font-size:10px;color:var(--marsh);border-top:1px solid var(--hair);padding-top:6px}
 
   /* leaflet chrome */
   .leaflet-bar{border:none !important;box-shadow:0 8px 22px rgba(15,16,11,.35) !important;border-radius:12px !important;overflow:hidden}
@@ -295,9 +306,13 @@
   </button>
   <div class="brand">
     <span class="wordmark">CASTER</span>
-    <span class="guide">Cast Maps · 101 spots</span>
+    <span class="guide">Cast Maps · 102 spots</span>
   </div>
   <span class="spacer"></span>
+  <button class="hbtn iconic" id="laybtn" aria-label="Map layers">
+    <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="m12 3.5 8.5 4.7L12 12.9 3.5 8.2Z"/><path d="m4.2 12.6 7.8 4.3 7.8-4.3"/><path d="m4.2 16.4 7.8 4.3 7.8-4.3"/></svg>
+    <span class="lbl">Layers</span>
+  </button>
   <button class="hbtn iconic" id="homebtn">
     <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/></svg>
     <span class="lbl" id="homelbl">Home</span>
@@ -364,6 +379,7 @@
 </div>
 
 <div class="hmenu" id="hmenu"></div>
+<div class="hmenu" id="lmenu"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>
@@ -414,6 +430,7 @@ const spots = [
  {n:'Dement Bridge (Bedford / Duck)',cat:'S',city:'Shelbyville',cast:'dement',park:[35.46639,-86.29418],water:[35.46717,-86.2936],d:'~50 yd',sp:'Smallmouth, rock bass (+ winter trout)',note:'TWRA streamside, swift rocky tailwater. ⚠️ Parking legally closed at ≥400 cfs Normandy release.'},
  {n:'Old Stone Fort (Manchester / Duck)',cat:'S',city:'Manchester / Normandy',cast:'old-stone-fort',park:[35.48626,-86.10269],water:[35.48086,-86.11119],d:'~1.25 mi trail to Big Falls',sp:'Smallmouth (trophy), rock bass',note:'Trails ~1.25 mi to Big Falls — deep rocky pool holds 4-lb-class smallmouth. Bluff-limited: hike-and-spot-fish.'},
  {n:'Normandy Dam Tailwater (Duck)',cat:'T',city:'Manchester / Normandy',cast:'normandy',park:[35.46455,-86.24585],water:[35.46493,-86.24655],d:'~50 ft to the shoal',sp:'Stocked rainbow trout (Nov–Jun) + smallmouth',note:'TVA tailwater below the dam — park ~50 ft from a flat rocky shoal, wade in. Rooster Tails, nightcrawlers/Power Bait, wooly buggers. ☠️ Never wade on a generation release (USGS gage 03596500).'},
+ {n:'Barton Springs piers (Normandy Lake)',cat:'R',city:'Manchester / Normandy',park:[35.45452,-86.21824],water:[35.45540,-86.21730],d:'easy — 2 public fishing piers',sp:'Crappie (2 lb+ common), largemouth (15" min), walleye (stocked), catfish',note:'The one bank play on the lake: TWRA placed 2 fishing piers here inside a dense field of sunken Christmas-tree attractors (7+ within casting range in 5–21 ft, plus a highlighted brush pile ½ mi upstream on the right bank). Toggle the Fish-attractors layer to see them. Vertical-jig the brush for slabs Nov–Apr; the 38 lake attractors are otherwise boat-only. Blacknose crappie avg ~1 lb.'},
  {n:'Vales Mill Ramp ⚠️ (Pulaski / Richland Cr.)',cat:'M',city:'Pulaski',cast:'vales-mill',park:[35.1939,-87.0625],water:[35.19350,-87.06190],d:'bank only (NEVER wade the dam)',sp:'Smallmouth, largemouth, catfish',note:'⚠️ Below a LOW-HEAD DAM (a swimmer was swept here 6/23/2026 — bank only). Fish the tailrace eddies, seams, undercut outside bends.'},
  {n:'Old Dam Ford (Elk R.)',cat:'M',city:'Fayetteville — Elk River',cast:'old-dam-ford',park:[35.12406,-86.33227],water:[35.12370,-86.33170],d:'~50 yd',sp:'Smallmouth, largemouth (+ fall/spring trout)',note:'~14 mi below Tims Ford — trout-to-smallmouth transition zone. Shoals, riffles, rock. ⚠️ Tims Ford generation hazard.'},
  {n:'Stone Bridge Memorial Park (Fayetteville / Elk R.)',cat:'M',city:'Fayetteville — Elk River',cast:'stone-bridge',park:[35.14472,-86.56833],water:[35.14430,-86.56770],d:'~60 yd',sp:'Smallmouth, largemouth',note:'Developed Fayetteville city park on the Elk — shoals, riffles/runs, rock. Warmwater smallmouth zone.'},
@@ -700,13 +717,145 @@ function buildHomeMenu(){
     }); };
 }
 function toggleHomeMenu(open){
-  if(open){ buildHomeMenu();
+  if(open){ document.getElementById('lmenu').classList.remove('open'); buildHomeMenu();
     hmenu.style.top=(document.getElementById('hdr').offsetHeight+8)+'px';
     hmenu.classList.add('open');
   } else hmenu.classList.remove('open');
 }
 document.getElementById('homebtn').onclick=()=>toggleHomeMenu(!hmenu.classList.contains('open'));
 map.on('click',()=>toggleHomeMenu(false));
+
+// ── Live reference layers — TWRA + PAD-US (added 2026-07-15) ─────────────────
+// Queried in the BROWSER per map view (same pattern as the USGS conditions strip):
+// nothing baked into the file, so the layers stay current as TWRA republishes.
+// These are REFERENCE pins, not scouted Caster spots — no grounding flags; every
+// popup carries the agency source and a "not a scouted spot" note instead.
+// Services (traced 2026-07-15 via ArcGIS item registry):
+//   attractors — TWRA_GIS Fish_Attractor_Locations_view (brush · stake beds · structure)
+//   access     — TWRA_GIS Boat_Launch_Sites + Fishing_Sites
+//   public land— USGS PAD-US "Public Access" (OA open · RA restricted · XA closed)
+const REF_SRC = {
+  att :'https://services3.arcgis.com/PWXNAH2YKmZY7lBq/arcgis/rest/services/Fish_Attractor_Locations_view/FeatureServer/0',
+  ramp:'https://services3.arcgis.com/PWXNAH2YKmZY7lBq/arcgis/rest/services/Boat_Launch_Sites/FeatureServer/0',
+  fsh :'https://services3.arcgis.com/PWXNAH2YKmZY7lBq/arcgis/rest/services/Fishing_Sites/FeatureServer/0',
+  pad :'https://services.arcgis.com/v01gqwM5QqNysAAi/arcgis/rest/services/PADUS_Public_Access/FeatureServer/0'
+};
+const LAYERS = {
+  att:{label:'Fish attractors',       sub:'TWRA brush piles · stake beds — sunken structure',      zmin:10, perReq:400, cap:1200, srcs:[{u:REF_SRC.att, k:'att'}]},
+  acc:{label:'Ramps & fishing access',sub:'TWRA boat launches + bank fishing sites',               zmin:10, perReq:400, cap:900,  srcs:[{u:REF_SRC.ramp,k:'ramp'},{u:REF_SRC.fsh,k:'fsh'}]},
+  pad:{label:'Public land',           sub:'PAD-US boundaries — where you can legally stand',       zmin:11, perReq:100, cap:260,  poly:true, srcs:[{u:REF_SRC.pad, k:'pad'}]}
+};
+Object.values(LAYERS).forEach(d=>{ d.group=L.layerGroup(); d.seen=new Set(); d.seq=0; });
+const LAY_KEY='caster_layers';
+let layState=(()=>{ try{return JSON.parse(localStorage.getItem(LAY_KEY))||{};}catch(e){return {};} })();
+function saveLay(){ localStorage.setItem(LAY_KEY,JSON.stringify(layState)); }
+function esc(v){ return String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+// defensive field pick — TWRA/PAD-US schemas drift; exact match first, then substring
+function pick(p,keys){ if(!p) return null; const lk=Object.keys(p);
+  for(const k of keys){ const h=lk.find(x=>x.toLowerCase()===k.toLowerCase()); if(h&&p[h]!=null&&String(p[h]).trim()!=='') return p[h]; }
+  for(const k of keys){ const h=lk.find(x=>x.toLowerCase().includes(k.toLowerCase())); if(h&&p[h]!=null&&String(p[h]).trim()!=='') return p[h]; }
+  return null; }
+// Tims Ford attractors #51–71 are already curated Caster spots — suppress live twins <100 m
+const bakedAtt = spots.filter(s=>/^TWRA /.test(s.n)).map(s=>s.water);
+function nearBakedAtt(ll){ return bakedAtt.some(b=>kmBetween(b,ll)<0.1); }
+function refIcon(kind){
+  const g={ att:'<path d="M8 12.6V4.8M8 9.2 5.2 6.6M8 9.2l2.8-2.6M8 12.6l-2.2-1.6M8 12.6l2.2-1.6" stroke="#c8a55a"/>',
+            ramp:'<path d="M3.2 11.5 12.8 7.2" stroke="#9ec3d2"/><path d="M4.4 8.6h5.4l-1.3 2.2H5.3Z" fill="#9ec3d2" stroke="none"/>',
+            fsh:'<g fill="#8fbf92" stroke="none"><ellipse cx="6.9" cy="8" rx="3.7" ry="2.5"/><path d="M10 8l3.4-2.2v4.4Z"/></g>' }[kind];
+  return L.divIcon({className:'cpin refbadge',
+    html:`<svg width="17" height="17" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="#262b1d" stroke="#efe9d8" stroke-width="1.6"/><g fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${g}</g></svg>`,
+    iconSize:[17,17], iconAnchor:[8.5,8.5], popupAnchor:[0,-9]});
+}
+function refPopup(kind,p,ll){
+  const fallback={att:'Fish attractor',ramp:'Boat ramp',fsh:'Fishing access'}[kind];
+  const name=pick(p,['Name','Site_Name','SiteName','AccessName','Ramp_Name','Location'])||fallback;
+  const water=pick(p,['Waterbody','Waterway','Water_Body','Reservoir','Lake','River','Stream']);
+  const bits=[];
+  if(kind==='att'){ const t=pick(p,['StructureTypes','Structure','Material','Attractor']), d=pick(p,['DepthRange','Depth']), y=pick(p,['Year']);
+    if(t)bits.push(esc(t)); if(d)bits.push('~'+esc(d)+' ft'); if(y)bits.push('placed '+esc(y)); }
+  else { const o=pick(p,['Owner','Manager','Agency','Managed']), c=pick(p,['County']);
+    if(o)bits.push(esc(o)); if(c)bits.push(esc(c)+' Co.');
+    if(/^y/i.test(String(pick(p,['FishingPier'])||''))) bits.push('fishing pier');
+    if(/^y/i.test(String(pick(p,['Restrooms'])||'')))   bits.push('restrooms'); }
+  const src={att:'TWRA fish-attractor GIS',ramp:'TWRA boat-launch GIS',fsh:'TWRA fishing-sites GIS'}[kind];
+  return `<div class="refpop"><b>${esc(name)}</b>${water?`<div class="w">${esc(water)}</div>`:''}${bits.length?`<div class="w">${bits.join(' · ')}</div>`:''}<a class="btn" href="${gdir(ll)}" target="_blank" rel="noopener">${I.nav} Navigate</a><div class="src">${src} — live agency data, not a scouted Caster spot</div></div>`;
+}
+const PAD_LBL={OA:'Open to the public',RA:'Restricted access — check rules',XA:'Closed to the public',UK:'Access unknown'};
+function padCode(p){ const v=pick(p,['Pub_Access','Access']); return v?String(v).toUpperCase().slice(0,2):'UK'; }
+function padStyle(code){
+  return code==='OA'?{color:'#3e6b40',fillColor:'#3e6b40',fillOpacity:.15,weight:1.2}
+       : code==='RA'?{color:'#a8853e',fillColor:'#a8853e',fillOpacity:.13,weight:1.2,dashArray:'5,4'}
+       : code==='XA'?{color:'#a34e24',fillColor:'#a34e24',fillOpacity:.10,weight:1.2,dashArray:'2,4'}
+       :             {color:'#8b8163',fillColor:'#8b8163',fillOpacity:.08,weight:1,  dashArray:'2,4'};
+}
+function padPopup(p){
+  const nm=pick(p,['Unit_Nm','Loc_Nm','Name'])||'Protected land';
+  const mgr=pick(p,['MngNm_Desc','Loc_Mang','Mang_Name','Manager','MngNm']);
+  const code=padCode(p);
+  const acc=pick(p,['d_Pub_Access'])||PAD_LBL[code]||PAD_LBL.UK;
+  return `<div class="refpop"><b>${esc(nm)}</b><div class="w">${esc(acc)}</div>${mgr?`<div class="w">${esc(mgr)}</div>`:''}<div class="src">USGS PAD-US — live agency data. Boundaries are approximate; posted signs win.</div></div>`;
+}
+function addRefFeature(key,kind,f){
+  const d=LAYERS[key], p=f.properties||{};
+  const id=kind+':'+(f.id!=null?f.id:(p.OBJECTID!=null?p.OBJECTID:(p.FID!=null?p.FID:JSON.stringify((f.geometry||{}).coordinates||'').slice(0,48))));
+  if(d.seen.has(id)) return; d.seen.add(id);
+  if(d.poly){
+    const lyr=L.geoJSON(f,{style:()=>padStyle(padCode(p))});
+    lyr.bindPopup(padPopup(p),{maxWidth:250});
+    d.group.addLayer(lyr); return;
+  }
+  if(!f.geometry||f.geometry.type!=='Point') return;
+  const ll=[f.geometry.coordinates[1],f.geometry.coordinates[0]];
+  if(kind==='att'&&nearBakedAtt(ll)) return;
+  const m=L.marker(ll,{icon:refIcon(kind),zIndexOffset:-200});
+  m.bindPopup(refPopup(kind,p,ll),{maxWidth:250});
+  d.group.addLayer(m);
+}
+async function loadLayer(key){
+  const d=LAYERS[key]; if(!layState[key]) return;
+  if(map.getZoom()<d.zmin) return;                 // menu hint covers the "zoom in" case
+  if(d.seen.size>d.cap){ d.group.clearLayers(); d.seen.clear(); }  // view-local refresh, keeps phones happy
+  const b=map.getBounds(), padd=0.02;
+  const env=[b.getWest()-padd,b.getSouth()-padd,b.getEast()+padd,b.getNorth()+padd].map(v=>v.toFixed(5)).join(',');
+  const seq=++d.seq;
+  for(const s of d.srcs){
+    const u=`${s.u}/query?f=geojson&where=1%3D1&outFields=*&geometry=${env}&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&resultRecordCount=${d.perReq}`+(d.poly?'&geometryPrecision=5':'');
+    try{
+      const r=await fetch(u); if(!r.ok) continue;
+      const gj=await r.json();
+      if(seq!==d.seq||!layState[key]) return;      // stale response or toggled off mid-flight
+      (gj.features||[]).forEach(f=>addRefFeature(key,s.k,f));
+    }catch(e){ /* offline / blocked — layer simply stays as-is */ }
+  }
+}
+function setLayer(key,on){
+  layState[key]=!!on; saveLay();
+  const d=LAYERS[key];
+  if(on){ d.group.addTo(map); loadLayer(key); }
+  else  { map.removeLayer(d.group); d.group.clearLayers(); d.seen.clear(); }
+  document.getElementById('laybtn').classList.toggle('set',Object.keys(LAYERS).some(k=>layState[k]));
+}
+const lmenu=document.getElementById('lmenu');
+const CHK_ON ='<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="5" fill="rgba(168,133,62,.18)"/><path d="m8 12.4 2.8 2.8L16.4 9"/></svg>';
+const CHK_OFF='<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/></svg>';
+function buildLayerMenu(){
+  const needZoom=Object.keys(LAYERS).some(k=>layState[k]&&map.getZoom()<LAYERS[k].zmin);
+  lmenu.innerHTML = Object.keys(LAYERS).map(k=>
+    `<button class="lrow ${layState[k]?'on':''}" data-lk="${k}">${layState[k]?CHK_ON:CHK_OFF}<span><b>${LAYERS[k].label}</b><small>${LAYERS[k].sub}</small></span></button>`
+  ).join('')+`<div class="hint">${needZoom?'<b>Zoom in</b> to load layer pins for the view.<br>':''}Live from TWRA &amp; USGS PAD-US · reference layers, not scouted Caster spots.</div>`;
+  lmenu.querySelectorAll('[data-lk]').forEach(btn=>btn.onclick=()=>{ setLayer(btn.dataset.lk,!layState[btn.dataset.lk]); buildLayerMenu(); });
+}
+function toggleLayerMenu(open){
+  if(open){ toggleHomeMenu(false); buildLayerMenu();
+    lmenu.style.top=(document.getElementById('hdr').offsetHeight+8)+'px';
+    lmenu.classList.add('open');
+  } else lmenu.classList.remove('open');
+}
+document.getElementById('laybtn').onclick=()=>toggleLayerMenu(!lmenu.classList.contains('open'));
+map.on('click',()=>toggleLayerMenu(false));
+let layT=null;
+map.on('moveend',()=>{ clearTimeout(layT); layT=setTimeout(()=>Object.keys(LAYERS).forEach(k=>loadLayer(k)),350); });
+Object.keys(LAYERS).forEach(k=>{ if(layState[k]) setLayer(k,true); }); // restore last session's toggles
 
 // ── city directory drawer ────────────────────────────────────────────────────
 const panel=document.getElementById('panel'), cl=document.getElementById('citylist'), scrim=document.getElementById('scrim');
