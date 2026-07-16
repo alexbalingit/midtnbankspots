@@ -44,6 +44,28 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 const SPOTS = {
+ 'obey-tail':{
+   title:'Obey River Tailwater · below Dale Hollow Dam', sub:'Hatchery-fed trout (weekly releases at the NFH) + the East Fork walleye run · cold, clear, wadeable at low flow',
+   center:[36.53760,-85.45720], zoom:16, unverified:true,
+   targets:[
+     {n:1,ll:[36.53715,-85.45114],w:'Dam apron — first cold water off the release, the deepest pool',x:'nymphs / small spoons deep through the slot; ☠️ NEVER wade the apron — lethal on generation'},
+     {n:2,ll:[36.53652,-85.45578],w:'Tailrace run — the main current seam below the dam',x:'swing a fly or drift a jig+minnow through the seam; stocked trout stack the current edge'},
+     {n:3,ll:[36.5382,-85.46101],w:'Hatchery outflow / NFH public fishing area — the reliable bank spot',x:'weekly trout releases concentrate here — bait under a float or a small in-line spinner along the outflow'},
+     {n:4,ll:[36.53936,-85.46383],w:'Lower run — deeper slots as the river bends toward Celina',x:'walleye hold the deeper slots on the spring run; drift a jig-and-minnow along the bottom seam'}
+   ],
+   haz:'☠️ Hydro tailwater — flow rises fast and without warning on generation (cold, deep, fast). Call TVA Lake Info 1-800-238-2264 (press 4, 37, #) before wading; re-check same-day. PFD on; cold year-round.'
+ },
+ 'rock-island-gorge':{
+   title:'Blue Hole · Caney Fork gorge below the Great Falls powerhouse', sub:'Spring walleye run (Center Hill fish stack below the falls) + trophy muskie · Jan 1–Apr 30 single-hook / 3-rod reg (SP ramp → dam)',
+   center:[35.80337,-85.63570], zoom:17, unverified:true,
+   targets:[
+     {n:1,ll:[35.80519,-85.63631],w:'Powerhouse discharge boil — first current below the plant',x:'when they’re generating, walleye hold the seam edges of the boil — heavy jig + minnow bounced through the current'},
+     {n:2,ll:[35.80392,-85.63556],w:'Upper gorge run — current seam along the west wall',x:'work the fast-to-slack seam; muskie follow big baits off the wall, walleye on the bottom seam'},
+     {n:3,ll:[35.80281,-85.63549],w:'Deep gorge pool — the Blue Hole holding water',x:'the deepest slot — vertical jig for walleye; slow-roll a big rubber for a gorge muskie'},
+     {n:4,ll:[35.80158,-85.63541],w:'Pool tailout — where the pool shallows to the next run',x:'muskie ambush the tailout ledge; smallmouth on the current break — swing a jerkbait across the lip'}
+   ],
+   haz:'☠️ The gorge floods FAST and lethally when Great Falls Dam spills/generates — it has killed people. Check the TVA Great Falls release schedule (tva.com or the Lake Info app) before entering; heed rising/discoloring water and get to high bank immediately.'
+ },
  'wb-bellcove':{
    title:'Bell Cove / Riley Creek · Watts Bar Lake (lower-reservoir smallmouth)', sub:'TWRA best-smallmouth reach · main-river ledges · TARP smallmouth max 26" · striper/sauger',
    center:[35.84371,-84.532], zoom:17, unverified:true,
