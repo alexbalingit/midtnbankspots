@@ -44,6 +44,37 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 const SPOTS = {
+ 'sanders-ferry':{
+   title:'Sanders Ferry Park Pier · Old Hickory Lake (Drakes Creek mouth)', sub:'TWRA winter striper embayment (Dec–Feb) · white crappie · blue cat — TARP: 322 lake entries, 49% since 2020',
+   center:[36.29740,-86.61280], zoom:17, unverified:true,
+   targets:[
+     {n:1,ll:[36.29750,-86.61330],w:'Pier-end drop',x:'cut skipjack or live shad on bottom Dec–Feb — the stripers are IN this embayment per TWRA; crappie jigs spring/fall'},
+     {n:2,ll:[36.29800,-86.61240],w:'Channel edge off the pier point',x:'cast past the drop and work back — white crappie stage on the edge Oct–May in 6–12 ft'},
+     {n:3,ll:[36.29620,-86.61180],w:'Drakes Creek mouth seam',x:'the creek-mouth current seam — winter stripers push bait here; big cut bait, rod holder, clicker on'}
+   ],
+   haz:'Lake current follows dam generation — check the release schedule (800-238-2264, opt 4). Pier gets weekend pressure; dawn is the window.'
+ },
+ 'lock-4':{
+   title:'Lock 4 Park Pier · Old Hickory Lake (E. Station Camp Creek mouth)', sub:'TWRA winter striper embayment (Dec–Feb) · white crappie · largemouth — city pier, Gallatin',
+   center:[36.33650,-86.47690], zoom:17, unverified:true,
+   targets:[
+     {n:1,ll:[36.33660,-86.47640],w:'Pier-end drop',x:'winter striper water — TWRA documents Station Camp stacking from December; cut skipjack on bottom'},
+     {n:2,ll:[36.33580,-86.47750],w:'Creek-mouth seam',x:'where East Station Camp meets the main lake — crappie minnows spring, stripers on the seam in winter'},
+     {n:3,ll:[36.33740,-86.47820],w:'Point off the peninsula',x:'wind-blown point — largemouth spring/fall, white crappie over any brush'},
+     {n:4,ll:[36.33500,-86.47650],w:'Channel edge up the creek arm',x:'follow the MTB-trail bank for walk-in casts at the deeper creek channel'}
+   ],
+   haz:'Porta-potty only. Gravel lot at the trailhead; more parking near the ramp.'
+ },
+ 'hunters-point':{
+   title:'Hunters Point Access · Old Hickory upper river (Lebanon)', sub:'TWRA: Jan–Mar sauger run concentrates Hunter’s Point → Cordell Hull · world-record-walleye water (25 lb, 1960)',
+   center:[36.29970,-86.26550], zoom:17, unverified:true,
+   targets:[
+     {n:1,ll:[36.29950,-86.26560],w:'Ramp channel drop',x:'Jan–Mar: heavy jig + live minnow crawled on bottom — the sauger stack is a winter bank play here'},
+     {n:2,ll:[36.30060,-86.26520],w:'Upstream current seam',x:'riverine reach — stripers ride the cool current; white bass hit bank eddies Apr–May'},
+     {n:3,ll:[36.30000,-86.26480],w:'Mid-channel edge',x:'walleye hold the same winter water as sauger — ¼–1½ oz jig, 4in chartreuse/white curly-tail'}
+   ],
+   haz:'Riverine current when Cordell Hull generates — mind footing on the ramp apron in winter.'
+ },
  // ── Big-fish dam tailwaters (2026-07-14) — targets NHD-gated (area-polygon GREEN), not field-verified ──
  'percy-priest':{
    title:'Percy Priest Dam — Right Bank Tailwater · Stones River', sub:'Hybrids + white bass on generation · 18” min smallmouth · winter rainbows Dec–Feb',
