@@ -44,6 +44,66 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 const SPOTS = {
+ 'wb-bellcove':{
+   title:'Bell Cove / Riley Creek · Watts Bar Lake (lower-reservoir smallmouth)', sub:'TWRA best-smallmouth reach · main-river ledges · TARP smallmouth max 26" · striper/sauger',
+   center:[35.84371,-84.532], zoom:17, unverified:true,
+   targets:[
+     {n:1,ll:[35.84371,-84.532],w:'Ramp-mouth ledge',x:'float-n-fly or drop-shot the gravel-to-rock transition — TWRA winter smallmouth pattern'},
+     {n:2,ll:[35.84371,-84.53244],w:'Channel-swing edge',x:'the deeper main-river break just off the point — jerkbait/football jig for lower-reservoir smallmouth'},
+     {n:3,ll:[35.84317,-84.53161],w:'Bluff-wall seam',x:'tight to the rock wall — smallmouth ride the vertical break; sauger stage here in winter current'}
+   ],
+   haz:'Run-of-river current rises on generation (reservoir code 18). Barge traffic on the main channel — keep clear of markers.'
+ },
+ 'wb-roddy':{
+   title:'Roddy / Whites Creek · Watts Bar Lake (embayment smallmouth)', sub:'Whites Creek arm · smallmouth + crappie · ⚠️ Alabama bass invasive here',
+   center:[35.76249,-84.76183], zoom:17, unverified:true,
+   targets:[
+     {n:1,ll:[35.76249,-84.76183],w:'Creek-channel edge',x:'work the drop where the ramp cove meets the creek channel — smallmouth + Alabama bass'},
+     {n:2,ll:[35.76249,-84.76139],w:'Embayment point',x:'wind-blown point — spring/fall smallmouth, crappie over any brush'},
+     {n:3,ll:[35.76312,-84.76183],w:'Mouth of the arm',x:'the main-lake mouth seam — smallmouth stage here moving in and out'}
+   ],
+   haz:'Winter drawdown 5–6 ft exposes flats Nov–Mar — verify pool before relying on a low bank.'
+ },
+ 'fl-lenoir':{
+   title:'Lenoir City Park · Fort Loudoun Lake (trophy blue cat)', sub:'Deep main-channel blue-cat water by the dam · TARP blue cat max 54" · ⚠️ do-not-eat (PCBs)',
+   center:[35.79836,-84.23767], zoom:17, unverified:true,
+   targets:[
+     {n:1,ll:[35.79836,-84.23767],w:'Main-channel deep',x:'cut skipjack/shad on bottom in the deep channel — the one-over-34" reg = real trophy blues'},
+     {n:2,ll:[35.79836,-84.23723],w:'Dam forebay riprap',x:'the rock just off the dam holds big blues in current — heavy rig, rod holder, clicker on'},
+     {n:3,ll:[35.79782,-84.23728],w:'Channel-swing bank',x:'where the channel swings to the bank — flatheads on live bait after dark'}
+   ],
+   haz:'Fort Loudoun Dam generation (reservoir code 08) drives sudden current — check before bank fishing near the dam. Release all catfish (advisory).'
+ },
+ 'mh-dam':{
+   title:'Melton Hill Dam · Melton Hill Lake (striper on current)', sub:'Below-dam current = striper + catfish magnet · TARP striper 50" · former state-record 63-12',
+   center:[35.88326,-84.29723], zoom:17, unverified:true,
+   targets:[
+     {n:1,ll:[35.88326,-84.29723],w:'Tailrace current seam',x:'live/cut skipjack on the first seam when a unit runs — stripers stack the boil line'},
+     {n:2,ll:[35.88326,-84.29679],w:'Slack behind the point',x:'the eddy off the current — big stripers rest here between pushes; blue cat on bottom'},
+     {n:3,ll:[35.88326,-84.29767],w:'Deep dam-face hole',x:'vertical for suspended stripers off the dam face in low-current windows'}
+   ],
+   haz:'☠️ DOUBLE-DAM FLOW — Melton Hill + Norris upstream. Water rises fast on generation; heed sirens and get off the rocks.'
+ },
+ 'mh-greenway':{
+   title:'Melton Lake Greenway · Melton Hill Lake (muskie corridor)', sub:'5.7-mi greenway shoreline on the main-river muskie/striper corridor · state-record-muskie water',
+   center:[36.03261,-84.19266], zoom:17, unverified:true,
+   targets:[
+     {n:1,ll:[36.03261,-84.19266],w:'Weed/rock flat by deep water',x:'the state-record-muskie pattern — big glidebaits/bucktails over the flat next to the drop'},
+     {n:2,ll:[36.03261,-84.1931],w:'Greenway shoreline drop',x:'cast parallel to the developed bank — muskie and striper cruise the shade line'},
+     {n:3,ll:[36.03315,-84.19227],w:'Channel edge',x:'the main-river break — figure-8 boatside; striper ride the current seam here'}
+   ],
+   haz:'National rowing course — yield to shells and coach boats, avoid casting across lanes, expect event-day congestion.'
+ },
+ 'mh-knoxpier':{
+   title:'Melton Hill Park pier · Melton Hill Lake (muskie / Williams Bend)', sub:'Knox Co. fishing pier + deep-water cliff edges · muskie + striper',
+   center:[35.94945,-84.23036], zoom:17, unverified:true,
+   targets:[
+     {n:1,ll:[35.94945,-84.23036],w:'Peninsula point deep',x:'muskie hold the deep cliff edge off the point — slow glidebaits along the rock'},
+     {n:2,ll:[35.94945,-84.22992],w:'Cliff-wall drop',x:'vertical rock into deep water — the classic Melton Hill muskie/striper edge'},
+     {n:3,ll:[35.94945,-84.2308],w:'Pier-end channel',x:'cast from the pier into the channel break — striper and the odd muskie cruise through'}
+   ],
+   haz:'Water pin is ~350 m off the park coord (snapped to NHD) — confirm the pier location on arrival. Dawn–dusk gate; no legal night fishing.'
+ },
  'sanders-ferry':{
    title:'Sanders Ferry Park Pier · Old Hickory Lake (Drakes Creek mouth)', sub:'TWRA winter striper embayment (Dec–Feb) · white crappie · blue cat — TARP: 322 lake entries, 49% since 2020',
    center:[36.29740,-86.61280], zoom:17, unverified:true,
