@@ -44,6 +44,40 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 const SPOTS = {
+ 'soho-tail':{
+   title:'South Holston Tailwater · Osceola Island weir', sub:'Wild brown trout (80–90% of the population) + stocked rainbow · 16–22" protected slot · one of the East’s great tailwaters',
+   center:[36.5262,-82.10980], zoom:17, unverified:true,
+   targets:[
+     {n:1,ll:[36.52706,-82.11236],w:'Weir pool below the low weir',x:'swing a soft-hackle or drift a nymph through the pool seam — wild browns stack the weir'},
+     {n:2,ll:[36.52686,-82.10930],w:'Head of the Osceola Island side channel (boardwalk)',x:'the boardwalk wade lane — dead-drift small nymphs along the current edge'},
+     {n:3,ll:[36.52604,-82.10831],w:'Boardwalk run — mid side-channel',x:'sight-fish rising browns to sulphurs/midges on light tippet'},
+     {n:4,ll:[36.52545,-82.10724],w:'Lower side-channel run / tailout',x:'swing a streamer through the tailout for the bigger browns'}
+   ],
+   haz:'☠️ South Holston Dam generation — the tailwater rises fast and hard when TVA generates (held at ~90 cfs by the weir between releases). Check the TVA South Holston schedule + Lake Info app before wading; get to bank on any rise. Live-flow: USGS 03476010 (dam) / 03477000 (Bluff City).'
+ },
+ 'watauga-tail':{
+   title:'Watauga Tailwater · below Wilbur Dam', sub:'Trophy brown + rainbow trout · Quality Trout Area (14" min · 2 fish · no bait) Smallings → CSX bridges',
+   center:[36.35500,-82.14300], zoom:15, unverified:true,
+   targets:[
+     {n:1,ll:[36.34891,-82.13136],w:'Wilbur Dam tailrace — first runs off the release',x:'high water: swing streamers on the seam; low water: nymph the pockets for browns/rainbows'},
+     {n:2,ll:[36.34919,-82.13099],w:'Upper wade runs below Wilbur',x:'dead-drift nymphs through the riffle-to-pool — wadeable only at zero generation'},
+     {n:3,ll:[36.36421,-82.15335],w:'Downstream bend — deep run',x:'the deeper trophy water — big browns hold the bend; streamers or a heavy nymph'},
+     {n:4,ll:[36.36563,-82.15314],w:'Lower run toward Elizabethton',x:'the QTA water — light tippet, small flies, release everything 14–22"'}
+   ],
+   haz:'☠️ Wilbur Dam generation surge is lethal to waders — a wadeable river becomes a torrent in minutes. Check the TVA Wilbur schedule + Lake Info app before wading. Live-flow proxy: USGS 03486000 (Watauga R. at Elizabethton).'
+ },
+ 'cherokee-tail':{
+   title:'Holston River Tailwater · below Cherokee Dam', sub:'Striper + sauger + stocked trout on the shoals · state-record paddlefish lake above · walk-in bank/wade',
+   center:[36.16800,-83.51700], zoom:15, unverified:true,
+   targets:[
+     {n:1,ll:[36.16735,-83.49993],w:'Dam tailrace / shoals below Cherokee Dam',x:'walk down to the shoals — striper + sauger on jigs through the seams; stocked trout in the cold flow'},
+     {n:2,ll:[36.17022,-83.50718],w:'First bend below the dam',x:'swing cut bait for stripers on generation; drift the shoals for trout + rock bass'},
+     {n:3,ll:[36.16983,-83.52274],w:'Meander run',x:'the wadeable riffle-to-pool at low water — nymph for trout, jig the deeper slots for sauger'},
+     {n:4,ll:[36.16873,-83.53549],w:'Lower shoals (Nances Ferry reach)',x:'best upstream wade — work the riffles; get out before the ~5h generation slug arrives'}
+   ],
+   haz:'☠️ Cherokee Dam generation — pulse releases ~every 5 hours; the first 2–3 miles rise fast (arriving ~3h at Indian Cave, ~5h at Nances Ferry), and can exceed 16,000 cfs. Check the TVA schedule; clear a high-ground exit before the rise. Live-flow: USGS 03493510.'
+ },
+
  'obey-tail':{
    title:'Obey River Tailwater · below Dale Hollow Dam', sub:'Hatchery-fed trout (weekly releases at the NFH) + the East Fork walleye run · cold, clear, wadeable at low flow',
    center:[36.53760,-85.45720], zoom:16, unverified:true,
