@@ -72,6 +72,7 @@
   .riv a{color:var(--brassL);font-weight:700;text-decoration:none}
   .riv .tw{color:var(--marsh);font-size:11px}
   .riv .wr{color:var(--blaze);font-weight:800}
+  .riv .pill.src{background:rgba(200,165,90,.14);color:var(--brassL);border:1px solid rgba(200,165,90,.55);letter-spacing:.07em}
   .riv .age{color:var(--marsh);font-size:11px}
   .riv .wq{font-weight:800}
   .riv .wq.CLEAR{color:#8fbf92}.riv .wq.STAINED{color:var(--brassL)}.riv .wq.MUDDY{color:#d9764a}
@@ -123,6 +124,7 @@
   .bcard .note{margin:9px 2px 0;color:var(--marsh);font-size:10.5px;line-height:1.4}
   .bcard .fresh{margin-top:11px;font-size:11px;color:var(--marsh)}
   .bcard .fresh.warn{color:var(--blaze);font-weight:800}
+  .bcard .fresh.src{color:var(--brassL);font-weight:700}
   /* ── 7-day outlook (inside the Bite Score card) ─────────────────────────── */
   .bcard .olk{margin-top:14px;background:#fff;border:1px solid var(--hair);border-radius:14px;padding:13px 14px}
   .bcard .olk .oh{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px}
@@ -1337,9 +1339,12 @@ function renderBiteCard(b){
   const lightVal=lightLabel(nowMin,sun,wx.cloud);
   const ages=[]; if(water&&water.ageMin!=null) ages.push(water.ageMin); if(wxAge!=null) ages.push(wxAge);
   const oldest=ages.length?Math.max.apply(null,ages):null;
-  const freshCls=(oldest!=null&&oldest>STALE_MIN)?'warn':'';
+  const appFresh=(wxAge!=null&&wxAge<=STALE_MIN);                 // weather just fetched ⇒ the app IS refreshing
+  const waterStale=(water&&water.ageMin!=null&&water.ageMin>STALE_MIN);
+  const srcOnly=appFresh&&waterStale;                            // source is behind, Caster is live — not an app lag
+  const freshCls=(oldest!=null&&oldest>STALE_MIN)?(srcOnly?'src':'warn'):'';
   const freshTxt=oldest==null?'No live data — showing nothing current'
-    :`Updated ${fmtAgeM(oldest)} ago · water ${water&&water.ageMin!=null?fmtAgeM(water.ageMin):'—'} · weather ${wxAge!=null?fmtAgeM(wxAge):'—'}${oldest>STALE_MIN?' · REFRESH — 3h+ old':''}`;
+    :`Updated ${fmtAgeM(oldest)} ago · water ${water&&water.ageMin!=null?fmtAgeM(water.ageMin):'—'} · weather ${wxAge!=null?fmtAgeM(wxAge):'—'}${srcOnly?' · ✓ Caster live — USGS feed behind, nothing to refresh':(oldest>STALE_MIN?' · REFRESH — 3h+ old':'')}`;
   return `<div class="bcard">
     <div class="btitle">Bite Score <span>· should you go?</span></div>
     <div class="bhead">
@@ -1447,7 +1452,14 @@ async function updateRiver(){
       <span class="tw">· ages = USGS publish lag · auto-refresh 15 min · Bite Score = tap the pill · Tailwaters (Normandy · Elk): check TVA first.</span></span>`
     :`<span class="wr">⚠ USGS gauge offline — water read unavailable</span> <span class="tw">· tap the Bite Score for timing + weather</span>`;
 
-  el.innerHTML=`${pill} <span class="tw">·</span> ${waterHTML}`;
+  // ── source-vs-app clarity badge: weather fresh but the gauge feed is stale/dark ⇒ Caster is live, USGS is behind ──
+  const _wxA=wx?Math.round((Date.now()-wx.t)/60000):null;
+  const _appLive=(_wxA!=null&&_wxA<=STALE_MIN);                    // fresh weather proves the fetch cycle ran
+  const _gaugeDark=!col, _gaugeStale=(col&&ageMin!=null&&ageMin>STALE_MIN);
+  const srcBadge=(_appLive&&(_gaugeDark||_gaugeStale))
+    ? `<span class="pill src" title="Caster fetched live moments ago — the USGS gauge feed itself is behind. Nothing to refresh.">⚠ USGS FEED ${_gaugeDark?'OFFLINE':'STALE'} · CASTER LIVE</span> `
+    : '';
+  el.innerHTML=`${pill} <span class="tw">·</span> ${srcBadge}${waterHTML}`;
   el.style.display='flex';
   fixTops();
   // keep the open Bite Score card live if it's showing while a refresh lands
