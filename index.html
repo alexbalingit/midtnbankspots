@@ -182,7 +182,7 @@
   /* ── trophy mode (2026-07-17) ───────────────────────────────────────────── */
   .hbtn.tro-on{background:var(--brass);color:var(--bark);border-color:var(--brassL)}
   .cpin.tgold{filter:drop-shadow(0 0 7px rgba(200,165,90,.85))}
-  body.trophy .leaflet-marker-pane .cpin:not(.tgold):not(.mepin){opacity:.3;transition:opacity .25s}
+  body.trophy .leaflet-marker-pane .cpin:not(.tgold):not(.mepin)>svg{opacity:.3;transition:opacity .25s}
   body.trophy .cluster{opacity:.3;transition:opacity .25s}
   body.trophy .leaflet-overlay-pane{opacity:.4}
   .tb{display:flex;gap:7px;align-items:flex-start;font-size:12px;line-height:1.45;background:rgba(168,133,62,.12);
@@ -1067,7 +1067,7 @@ function nearMe(quiet){
   },e=>{ meErr='Location unavailable — check GPS permission for this site.'; if(e&&e.code===1) try{localStorage.removeItem(ME_OK);}catch(x){} buildList(); },
   {enableHighAccuracy:true,maximumAge:60000,timeout:8000});
 }
-function nearMeHtml(){
+function nearMeHtml(compact){
   if(!mePos){
     return `<div class="city"><h3 class="home">Near me</h3>`+
       (meErr?`<div class="meerr">${meErr}</div>`:'')+
@@ -1079,7 +1079,8 @@ function nearMeHtml(){
   if(near.length<5){ near=all.filter(x=>x.km<=RADIUS_KM*2); label='~1 hr'; }
   if(near.length<1){ near=all.slice(0,8); label='nearest 8'; }
   near=near.slice(0,15);
-  let html=`<div class="city"><h3 class="home">Near you now <span class="ct">(${near.length} · ${label})</span></h3>`;
+  if(compact) near=near.slice().sort((a,b)=>((b.s._t&&b.s._t.sc)||0)-((a.s._t&&a.s._t.sc)||0)).slice(0,5);
+  let html=`<div class="city"><h3 class="home">Near you now${compact?' — best proven first':''} <span class="ct">(${near.length} · ${label})</span></h3>`;
   near.forEach(x=>{ html+=spotRow(x.s,
     `<span class="nearmin">~${driveMin(x.km)} min</span>`+
     (x.s._t&&x.s._t.wk?`<span class="tsc s2">${x.s._t.sc}</span>`:'')); });
@@ -1298,7 +1299,7 @@ function renderTrophyList(){
   let html=`<div class="city"><h3 class="home">Trophy Mode <span class="ct">(9,826 TWRA entries)</span></h3>
     <div class="tnote">Every spot scored on its water’s <b>proven</b> trophy record — TWRA-certified catches, recency, species fit, and bank access. Gold pins = the Elite 25. Pick a fish to rank the destinations for it.</div>
     ${chipsHtml()}</div>`;
-  html=nearMeHtml()+html;
+  html+=nearMeHtml(true);
   if(!troChip){
     html+=`<div class="city"><h3>The Elite 25 <span class="ct">(gold pins)</span></h3>`;
     TROPHY_RANKED.slice(0,25).forEach(s=>{ html+=spotRow(s,`<span class="tsc">${s._t.sc}</span>`); });
