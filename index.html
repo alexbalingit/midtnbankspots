@@ -1425,7 +1425,10 @@ document.getElementById('lclose').onclick=()=>setLegend(false);
 //   harpeth — same river math, gauges 03434500 Kingston Springs (main) + 03432350 Franklin (upstream
 //             warning). No locked doctrine yet, so GO/CAUTION/SKIP + clarity run on flow vs the
 //             USGS day-of-year seasonal MEDIAN (stat service, cached daily) — always labeled (est.).
-//   tailwaters (Normandy · Elk · Caney Fork · Cumberland dams …) — release-driven: safety notice, no fake read.
+//   tailwaters — Phase 2 (2026-07-17): Caney Fork (03424860 Stonewall) + Watauga (03486000 Elizabethton)
+//             get a live gauge-inferred release read (LOW WINDOW / DROPPING / HIGH FLOW / RELEASING off the
+//             24h pulse pattern) — the ONLY two dams on the map with live USGS discharge (gauge-desert
+//             finding, see issue file). All other tailwaters: operator-schedule notice (TVA vs USACE), no fake read.
 //   lakes — wind/level driven: honest "no gauge wired yet" note. Never another water's data. (Phase 3 = adapters.)
 // v2 behaviors kept: auto-refresh 15 min + tab wake · age stamps · upstream-rising downgrade ·
 // watershed rain via Open-Meteo · USGS publishes ~45-75 min behind real time.
@@ -1836,17 +1839,35 @@ const COND_CITY={
 };
 // release-driven groups whose names don't say "tailwater" (the regex below catches the rest)
 const COND_TAIL=['Caney Fork','Rock Island','Manchester / Normandy','Fayetteville — Elk River'];
+// ── Tailwater gauges (Phase 2, 2026-07-17). GAUGE DESERT FINDING: of every dam on the map,
+// only these two tailwaters publish live USGS discharge (verified 2026-07-17 — Normandy 03596500,
+// Elk 03580750, Percy Priest 03430100, Cheatham 03435000, Douglas 03469000, and the TN-river
+// sites 03568000/03571850/03593500 all exist but stream NO iv data, 00060 or 00065). Everything
+// else stays an operator-schedule notice until the USACE CWMS API spike (see issue file).
+const TAIL_GAUGE=[
+  ['Caney Fork',{site:'03424860',label:'Caney Fork @ Stonewall',link:'https://waterdata.usgs.gov/monitoring-location/03424860/',
+    note:'gauge sits at the LOWER end of the run — a release reaches Stonewall hours after the dam turns on'}],
+  ['Rock Island',null], // upper Caney below Great Falls — different reach, Stonewall gauge does not apply
+  ['Watauga tailwater',{site:'03486000',label:'Watauga @ Elizabethton',link:'https://waterdata.usgs.gov/monitoring-location/03486000/',note:''}]
+];
+const TAIL_USACE=['Stones River','Cumberland — Old Hickory','Cumberland — Cheatham','Cordell Hull','Dale Hollow — Obey','Caney Fork']; // Center Hill = USACE · Rock Island (Great Falls Dam) = TVA
 function condDescr(city){
   const k=COND_CITY[city]; if(k) return GAUGED[k];
   const name=city.replace(/ — .*/,'').replace(/ \(.*/,'').trim();
   const tail=COND_TAIL.some(p=>city.startsWith(p))||/tailwater|below .{0,24}dam|powerhouse/i.test(city);
   const kind=tail?'tailwater':(/lake|reservoir/i.test(city)?'lake':'river-x');
-  return {key:'x:'+name,name,kind};
+  const d={key:'x:'+name,name,kind};
+  if(kind==='tailwater'){
+    d.op=TAIL_USACE.some(p=>city.startsWith(p))?'USACE':'TVA';
+    for(const [p,g] of TAIL_GAUGE){ if(city.startsWith(p)){ d.g=g||null; break; } }
+    if(d.g) d.key='t:'+d.g.site; // gauged tailwaters share one key per gauge (both Caney groups → one read)
+  }
+  return d;
 }
 let condManual=false;
 let condFocus=(()=>{ // last session's water, else the water nearest home base (below)
   try{ const s=JSON.parse(localStorage.getItem(COND_KEY));
-    if(s&&s.key) return GAUGED[s.key]||(s.key.indexOf('x:')===0?s:null); }catch(e){}
+    if(s&&s.key) return GAUGED[s.key]||(s.key.indexOf('x:')===0||s.key.indexOf('t:')===0?s:null); }catch(e){}
   return null; })();
 if(!condFocus){
   const h=getHome()||HOME; let best=null,bd=1e9;
@@ -1866,7 +1887,7 @@ try{ // GPS-nearest at boot — only when Near Me was already granted (quiet, iO
 function setCondFocus(d,manual){
   if(!d) return;
   condFocus=d; if(manual) condManual=true;
-  try{ localStorage.setItem(COND_KEY,JSON.stringify({key:d.key,name:d.name,kind:d.kind})); }catch(e){}
+  try{ localStorage.setItem(COND_KEY,JSON.stringify({key:d.key,name:d.name,kind:d.kind,g:d.g||null,op:d.op||null})); }catch(e){}
   syncWaterFocus(); renderStrip();
 }
 function cycleCond(){ // tap the water chip → cycle the gauged waters (+ back to a non-gauged focus)
@@ -1887,11 +1908,50 @@ function waterBite(st){ // per-water Bite Score water factor — clarity first (
 }
 function syncWaterFocus(){ // point the Bite Score at the focused water's read
   const C=window.__cond||{};
-  const st=condFocus&&GAUGED[condFocus.key]?C[condFocus.key]:null;
-  window.__water=st?waterBite(st):null;
+  let w=null;
+  if(condFocus&&GAUGED[condFocus.key]){ const st=C[condFocus.key]; w=st?waterBite(st):null; }
+  else if(condFocus&&condFocus.g){ // gauged tailwater — release state drives the water factor
+    const c=tailCache[condFocus.g.site], rd=c&&c.read;
+    if(rd&&Date.now()-c.t<45*60*1000) w={klass:rd.klass,cls:rd.cls,cfs:rd.rv.cfs,ageMin:rd.ageMin,waterF:rd.tailF,muddy:false,wq:null};
+  }
+  window.__water=w;
   // keep an open Bite Score card live when the focus or a refresh lands
   const sh=document.getElementById('sheet'), sb=document.getElementById('sheetbody');
   if(sh&&sh.classList.contains('open')&&sb&&sb.querySelector('.bcard')) sb.innerHTML=renderBiteCard(computeBite());
+}
+// ── Gauged-tailwater release read (Phase 2, 2026-07-17): state inferred from the pulse pattern ──
+// A generation cycle shows at the gauge as a big daily swing (e.g. Caney Fork 491→5,660 cfs overnight
+// on ship day). Position inside that swing + trend = release state. ALWAYS labeled gauge-inferred
+// and ~1h behind (USGS publish lag) — never presented as "safe", the operator schedule is the check.
+const tailCache={}; // site → {t, inflight, read} · 15-min TTL · lazy per-focus fetch
+function tailState(rv){
+  const pulsing=rv.peakV>=1.8*Math.max(rv.minV,1);
+  const pos=(rv.peakV>rv.minV)?(rv.cfs-rv.minV)/(rv.peakV-rv.minV):0;
+  if(rv.trend==='rising') return {cls:'RELEASING',klass:'s',tailF:0.15,txt:'flow climbing — generation in the channel. Bank fishing only, DO NOT wade.'};
+  if(pulsing&&pos>=0.55)  return {cls:'HIGH FLOW',klass:'s',tailF:0.15,txt:'release flow still in the channel. Bank fishing only, DO NOT wade.'};
+  if(pulsing&&pos<=0.3)   return {cls:'LOW WINDOW',klass:'g',tailF:1.0,txt:'no-generation window (gauge-inferred) — the tailwater bite window. Releases start without warning.'};
+  if(pulsing)             return {cls:'DROPPING',klass:'c',tailF:0.5,txt:'release tapering off — improving, stay alert.'};
+  return {cls:'STEADY',klass:'c',tailF:0.65,txt:'no release pulse in the last 24h at the gauge — read the schedule, not just this number.'};
+}
+function fetchTail(d){
+  const g=d&&d.g; if(!g) return;
+  const c=tailCache[g.site];
+  if(c&&(c.inflight||Date.now()-c.t<14*60*1000)) return; // fresh or already fetching
+  tailCache[g.site]={t:c?c.t:0,inflight:true,read:c?c.read:null};
+  fetch(`https://waterservices.usgs.gov/nwis/iv/?sites=${g.site}&parameterCd=00060&period=P1D&format=json`,{cache:'no-store'})
+    .then(r=>r.ok?r.json():null)
+    .then(j=>{
+      let read=null;
+      if(j){
+        const ts=(j.value.timeSeries||[]).find(t=>t.variable.variableCode[0].value==='00060');
+        const vals=ts?((ts.values[0]||{}).value||[]):[];
+        if(vals.length){ const rv=rivRead(vals);
+          read=Object.assign({rv,ageMin:Math.max(0,Math.round((Date.now()-rv.t)/60000))},tailState(rv)); }
+      }
+      tailCache[g.site]={t:Date.now(),inflight:false,read};
+      if(condFocus&&condFocus.g&&condFocus.g.site===g.site){ syncWaterFocus(); renderStrip(); }
+    })
+    .catch(()=>{ tailCache[g.site]={t:Date.now(),inflight:false,read:null}; });
 }
 async function harpethBase(){ // seasonal day-of-year MEDIAN cfs @ Kingston Springs — USGS stat service, cached per day
   const CK='casterHarpethBase_v1';
@@ -2038,8 +2098,21 @@ function renderStrip(){ // render the strip for the FOCUSED water (fetch-free �
       <a href="${GAUGED.harpeth.link}" target="_blank" rel="noopener">gauge ↗</a></span>
       <span class="tw">· ages = USGS publish lag · auto-refresh 15 min · Bite Score = tap the pill · GO/CAUTION/SKIP here = flow vs seasonal median (est.) — no locked Harpeth doctrine yet.</span></span>`
     :`<span class="wr">⚠ USGS gauge offline — water read unavailable</span> <span class="tw">· tap the Bite Score for timing + weather</span>`;
+  } else if(d.kind==='tailwater'&&d.g){
+    fetchTail(d); // no-op when fresh or inflight
+    const c=tailCache[d.g.site], rd=c&&c.read;
+    const opTxt=d.op==='USACE'?'Corps release schedule (water.usace.army.mil)':'TVA generation schedule (TVA app · 800-238-2264)';
+    if(rd){
+      waterHTML=`<span class="pill ${rd.klass}">${rd.cls}</span>
+      <span><b>${d.g.label}:</b> ${Math.round(rd.rv.cfs).toLocaleString()} cfs ${arrow(rd.rv.trend)} ${rd.rv.trend} <span class="age">(${fmtAge(rd.ageMin)} ago)</span><span class="d2"> · 24h range ${Math.round(rd.rv.minV).toLocaleString()}–${Math.round(rd.rv.peakV).toLocaleString()} cfs</span>
+      · ${rd.txt} <span class="wr">⚠ gauge-inferred + ~1h behind — verify the ${opTxt} before wading${d.g.note?'; '+d.g.note:''}.</span><span class="d2">
+      <a href="${d.g.link}" target="_blank" rel="noopener">gauge ↗</a></span> <span class="tw">· Bite Score = tap the pill · auto-refresh 15 min</span></span>`;
+    } else {
+      waterHTML=`<span class="pill c">DAM</span><span><b>${d.name}:</b> ${c&&c.inflight?'reading the tailwater gauge… ':'tailwater gauge unreachable — '}release-driven water. <b>Check the ${opTxt} before you go.</b> <span class="wr">Never wade on a rising release.</span></span>`;
+    }
   } else if(d.kind==='tailwater'){
-    waterHTML=`<span class="pill c">DAM</span><span><b>${d.name}:</b> release-driven tailwater — flow can jump in minutes on generation. <b>Check the TVA / Corps release schedule before you go</b> (TVA: 800-238-2264). <span class="wr">Never wade on a rising release.</span><span class="tw"> · Bite Score here runs on light + weather — tap the pill.</span></span>`;
+    const opTxt=d.op==='USACE'?'Corps release schedule (water.usace.army.mil)':'TVA generation schedule (TVA app · 800-238-2264)';
+    waterHTML=`<span class="pill c">DAM</span><span><b>${d.name}:</b> release-driven tailwater — flow can jump in minutes on generation, and no public live gauge covers this reach (checked 2026-07-17). <b>Check the ${opTxt} before you go.</b> <span class="wr">Never wade on a rising release.</span><span class="tw"> · Bite Score here runs on light + weather — tap the pill.</span></span>`;
   } else if(d.kind==='lake'){
     waterHTML=`<span><b>${d.name}:</b> lake water — wind and level drive the bite; no live level gauge wired for this water yet.<span class="d2"> Judge the wind chip in the Bite Score card.</span><span class="tw"> · Bite Score runs on light + weather — tap the pill.</span></span>`;
   } else {
