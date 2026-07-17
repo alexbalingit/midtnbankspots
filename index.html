@@ -2178,7 +2178,7 @@ function renderStrip(){ // render the strip for the FOCUSED water (fetch-free �
       waterHTML=`<span class="pill ${rd.klass}">${rd.cls}</span>
       <span><b>${d.cda.dam} outflow:</b> ${Math.round(rd.rv.cfs).toLocaleString()} cfs ${arrow(rd.rv.trend)} ${rd.rv.trend} <span class="age">(${fmtAge(rd.ageMin)} ago)</span><span class="d2"> · 24h range ${Math.round(rd.rv.minV).toLocaleString()}–${Math.round(rd.rv.peakV).toLocaleString()} cfs</span>
       ${rd.sched?` · <b>Schedule:</b> ${rd.sched.txt} <span class="age d2">(Corps forecast — can change)</span>`:''}
-      · ${rd.txt} <span class="wr">⚠ Corps operations data, ~1-2h behind, schedules change without notice — never wade rising water.</span><span class="d2">
+      · ${rd.txt} <span class="wr">⚠ Corps observed flow can lag HOURS (see the age stamp) — trust the schedule line + your eyes; schedules change without notice; never wade rising water.</span><span class="d2">
       <a href="https://water.usace.army.mil/" target="_blank" rel="noopener">Corps water data ↗</a></span> <span class="tw">· Bite Score = tap the pill · auto-refresh 15 min</span></span>`;
     } else {
       waterHTML=`<span class="pill c">DAM</span><span><b>${d.name}:</b> ${c&&c.inflight?'reading Corps operations data… ':'Corps data unreachable — '}release-driven water. <b>Check the Corps release schedule (water.usace.army.mil) before you go.</b> <span class="wr">Never wade on a rising release.</span></span>`;
