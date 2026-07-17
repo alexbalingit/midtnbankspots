@@ -1589,9 +1589,10 @@ function moonSVG(illum,waxing,size){ // phase-accurate inline glyph (zero emoji,
     `<path d="${lit}" fill="var(--brassL)"/>`+
     `<circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="var(--brass)" stroke-width="1"/></svg>`;
 }
-async function fetchWx(){ // Open-Meteo: pressure(+3h trend), wind, cloud. null = unreachable
+async function fetchWx(ll){ // Open-Meteo at the given point (default HOME): pressure(+3h trend), wind, cloud. null = unreachable
   try{
-    const u='https://api.open-meteo.com/v1/forecast?latitude=35.615&longitude=-87.035&current=surface_pressure,wind_speed_10m,wind_direction_10m,cloud_cover&hourly=surface_pressure&past_hours=4&forecast_hours=1&wind_speed_unit=mph&timezone=auto';
+    const p=ll||HOME;
+    const u=`https://api.open-meteo.com/v1/forecast?latitude=${p[0]}&longitude=${p[1]}&current=surface_pressure,wind_speed_10m,wind_direction_10m,cloud_cover&hourly=surface_pressure&past_hours=4&forecast_hours=1&wind_speed_unit=mph&timezone=auto`;
     const r=await fetch(u); if(!r.ok) return null;
     const j=await r.json();
     const cur=j.current||{}, hp=(j.hourly||{}).surface_pressure||[], ht=(j.hourly||{}).time||[];
@@ -1737,7 +1738,8 @@ function lightLabel(now,sun,cloud){
 function computeBite(){
   const wx=window.__wx, water=window.__water;
   const now=new Date(), nowMin=now.getHours()*60+now.getMinutes();
-  const sun=sunTimes(HOME[0],HOME[1],now,-now.getTimezoneOffset());
+  const ll=window.__ll||HOME; // per-water: sun + weather at the focused water (Phase 4)
+  const sun=sunTimes(ll[0],ll[1],now,-now.getTimezoneOffset());
   const wxAge=wx?Math.round((Date.now()-wx.t)/60000):null, wxStale=wx?wxAge>STALE_MIN:true;
   if(!wx||wxStale) return {paused:true,wx,wxAge,water,sun,nowMin};
   const waterF=water?water.waterF:0.65;
@@ -1862,6 +1864,23 @@ const TAIL_CDA=[
   ['Dale Hollow — Obey',{obs:'DHTT1-DALE_HOLLOW',fc:'Dale Hollow Dam',dam:'Dale Hollow Dam'}],
   ['Caney Fork',{obs:'CEHT1-CENTER_HILL',fc:'Center Hill Dam',dam:'Center Hill Dam'}] // rides WITH the Stonewall gauge read
 ];
+// ── Corps LAKE levels (Phase 4, 2026-07-17): CWMS Elev-Pool.Inst.1Hour.0.man-rev, ft. Verified live:
+// Old Hickory 444.99 · Barkley 359.55 · Dale Hollow 646.67 · Cordell Hull 503.63. Level = DISPLAY read
+// (current + 24h/7d delta); the lake Bite Score driver stays WIND, now read at the lake itself (below).
+const LAKE_CDA=[
+  ['Old Hickory Lake',{obs:'OHHT1-OLD_HICKORY',dam:'Old Hickory'}],
+  ['Cordell Hull Lake',{obs:'COHT1-CORDELL_HULL',dam:'Cordell Hull'}],
+  ['Lake Barkley',{obs:'BAHK2-BARKLEY',dam:'Barkley'}],
+  ['Dale Hollow Lake',{obs:'DLHT1-DALE_HOLLOW',dam:'Dale Hollow'}]
+];
+// ── NWS/NWPS gauges for TVA tailwaters (Phase 4). TVA has NO public API, but it feeds the NWS —
+// api.water.noaa.gov carries these points. FEED CAVEAT (2026-07-17): the TVA→NWS pipeline was ~11 days
+// stale at build time (every series ended ~07-06), so this adapter is FRESHNESS-GATED: reads render only
+// when observations are <6h old; otherwise the operator notice stands. Lights up when the feed resumes.
+const TAIL_NWPS=[
+  ['Fayetteville — Elk River',{lid:'FYTT1',label:'Elk @ Fayetteville (NWS)',mode:'flow'}],
+  ['Chattanooga — Chickamauga',{lid:'CKTT1',label:'Chickamauga tailwater (NWS)',mode:'stage'}]
+];
 function condDescr(city){
   const k=COND_CITY[city]; if(k) return GAUGED[k];
   const name=city.replace(/ — .*/,'').replace(/ \(.*/,'').trim();
@@ -1872,9 +1891,12 @@ function condDescr(city){
     d.op=TAIL_USACE.some(p=>city.startsWith(p))?'USACE':'TVA';
     for(const [p,g] of TAIL_GAUGE){ if(city.startsWith(p)){ d.g=g||null; break; } }
     for(const [p,c] of TAIL_CDA){ if(city.startsWith(p)){ d.cda=c; break; } }
+    if(!d.g&&!d.cda){ for(const [p,n] of TAIL_NWPS){ if(city.startsWith(p)){ d.nw=n; break; } } }
     if(d.g) d.key='t:'+d.g.site; // gauged tailwaters share one key per gauge (both Caney groups → one read)
     else if(d.cda) d.key='c:'+d.cda.obs; // Corps-data dams share one key per dam
+    else if(d.nw) d.key='n:'+d.nw.lid;
   }
+  if(kind==='lake'){ for(const [p,l] of LAKE_CDA){ if(city.startsWith(p)){ d.lk=l; d.key='l:'+l.obs; break; } } }
   return d;
 }
 let condManual=false;
@@ -1900,7 +1922,8 @@ try{ // GPS-nearest at boot — only when Near Me was already granted (quiet, iO
 function setCondFocus(d,manual){
   if(!d) return;
   condFocus=d; if(manual) condManual=true;
-  try{ localStorage.setItem(COND_KEY,JSON.stringify({key:d.key,name:d.name,kind:d.kind,g:d.g||null,op:d.op||null,cda:d.cda||null})); }catch(e){}
+  try{ localStorage.setItem(COND_KEY,JSON.stringify({key:d.key,name:d.name,kind:d.kind,g:d.g||null,op:d.op||null,cda:d.cda||null,lk:d.lk||null,nw:d.nw||null})); }catch(e){}
+  ensureWx(); // per-water weather: wind/pressure read at the focused water, not home
   syncWaterFocus(); renderStrip();
 }
 function cycleCond(){ // tap the water chip → cycle the gauged waters (+ back to a non-gauged focus)
@@ -1930,6 +1953,10 @@ function syncWaterFocus(){ // point the Bite Score at the focused water's read
   else if(condFocus&&condFocus.cda){ // Corps-data tailwater — dam outflow state drives the water factor
     const c=cdaCache[condFocus.cda.obs], rd=c&&c.read;
     if(rd&&Date.now()-c.t<45*60*1000) w={klass:rd.klass,cls:rd.cls,cfs:rd.rv.cfs,ageMin:rd.ageMin,waterF:rd.tailF,muddy:false,wq:null};
+  }
+  else if(condFocus&&condFocus.nw){ // NWS-fed TVA tailwater — only when the freshness gate passed
+    const c=nwpsCache[condFocus.nw.lid], rd=c&&c.read;
+    if(rd&&Date.now()-c.t<45*60*1000) w={klass:rd.klass,cls:rd.cls,cfs:rd.mode==='flow'?rd.rv.cfs:null,ageMin:rd.ageMin,waterF:rd.tailF,muddy:false,wq:null};
   }
   window.__water=w;
   // keep an open Bite Score card live when the focus or a refresh lands
@@ -2010,6 +2037,92 @@ function fetchCda(d){
     cdaCache[c0.obs]={t:Date.now(),inflight:false,read};
     if(condFocus&&condFocus.cda&&condFocus.cda.obs===c0.obs){ syncWaterFocus(); renderStrip(); }
   }).catch(()=>{ cdaCache[c0.obs]={t:Date.now(),inflight:false,read:null}; });
+}
+// ── Corps LAKE-level adapter (Phase 4): pool elevation + 24h/7d delta. Display read — wind scores the lake. ──
+const lakeCache={}; // obs-id → {t, inflight, read} · 15-min TTL
+function fetchLake(d){
+  const l=d&&d.lk; if(!l) return;
+  const c=lakeCache[l.obs];
+  if(c&&(c.inflight||Date.now()-c.t<14*60*1000)) return;
+  lakeCache[l.obs]={t:c?c.t:0,inflight:true,read:c?c.read:null};
+  const now=Date.now();
+  const u='https://cwms-data.usace.army.mil/cwms-data/timeseries?office=LRN&name='+encodeURIComponent(l.obs+'.Elev-Pool.Inst.1Hour.0.man-rev')+'&begin='+new Date(now-7*864e5).toISOString()+'&end='+new Date(now).toISOString();
+  fetch(u,{headers:{Accept:'application/json;version=2'}})
+    .then(r=>r.ok?r.json():null)
+    .then(j=>{
+      let read=null;
+      const v=j?(j.values||[]).filter(x=>x[1]!=null):[];
+      if(v.length){
+        const last=v[v.length-1], lastT=last[0], lastV=last[1];
+        const at=h=>{ for(let i=v.length-1;i>=0;i--){ if(lastT-v[i][0]>=h*3600e3) return v[i][1]; } return v[0][1]; };
+        const d24=lastV-at(24), d7=lastV-v[0][1];
+        const trend=d24>0.05?'rising':d24<-0.05?'falling':'steady';
+        read={ft:lastV,d24,d7,trend,ageMin:Math.max(0,Math.round((Date.now()-lastT)/60000))};
+      }
+      lakeCache[l.obs]={t:Date.now(),inflight:false,read};
+      if(condFocus&&condFocus.lk&&condFocus.lk.obs===l.obs) renderStrip();
+    })
+    .catch(()=>{ lakeCache[l.obs]={t:Date.now(),inflight:false,read:null}; });
+}
+// ── NWS/NWPS adapter for TVA tailwaters (Phase 4) — FRESHNESS-GATED (see TAIL_NWPS note) ──
+const nwpsCache={}; // lid → {t, inflight, read, staleAge}
+function tailStateStage(rv){ // stage-based release read (ft): position in the daily swing
+  const range=rv.peakV-rv.minV;
+  if(range<0.8) return {cls:'STEADY',klass:'c',tailF:0.65,txt:'no release swing in the window — read the schedule, not just this number.'};
+  const pos=(rv.cfs-rv.minV)/range;
+  if(rv.trend==='rising') return {cls:'RISING',klass:'s',tailF:0.15,txt:'water coming up — generation likely in the channel. Bank fishing only, DO NOT wade.'};
+  if(pos>=0.55) return {cls:'HIGH WATER',klass:'s',tailF:0.15,txt:'release water still in the channel. Bank fishing only, DO NOT wade.'};
+  if(pos<=0.3) return {cls:'LOW WINDOW',klass:'g',tailF:1.0,txt:'low-water window (gauge-inferred) — releases start without warning.'};
+  return {cls:'DROPPING',klass:'c',tailF:0.5,txt:'water dropping out — improving, stay alert.'};
+}
+function fetchNwps(d){
+  const n0=d&&d.nw; if(!n0) return;
+  const c=nwpsCache[n0.lid];
+  if(c&&(c.inflight||Date.now()-c.t<14*60*1000)) return;
+  nwpsCache[n0.lid]={t:c?c.t:0,inflight:true,read:c?c.read:null,staleAge:c?c.staleAge:null};
+  fetch('https://api.water.noaa.gov/nwps/v1/gauges/'+n0.lid+'/stageflow')
+    .then(r=>r.ok?r.json():null)
+    .then(j=>{
+      let read=null,staleAge=null;
+      const data=(j&&j.observed&&j.observed.data)?j.observed.data:[];
+      const vals=[];
+      data.forEach(p=>{
+        const prim=+p.primary, sec=+p.secondary;
+        const val=n0.mode==='flow'?(sec>-100?sec*1000:null):(prim>-100?prim:null); // kcfs → cfs · -999 = missing
+        if(val!=null&&isFinite(val)) vals.push({dateTime:p.validTime,value:val});
+      });
+      if(vals.length){
+        const rv=rivRead(vals);
+        const ageMin=Math.max(0,Math.round((Date.now()-rv.t)/60000));
+        if(ageMin<=360) read=Object.assign({rv,ageMin,mode:n0.mode},(n0.mode==='flow'?tailState(rv):tailStateStage(rv)));
+        else staleAge=ageMin; // freshness gate: stale TVA→NWS feed ⇒ no read, the operator notice stands
+      }
+      nwpsCache[n0.lid]={t:Date.now(),inflight:false,read,staleAge};
+      if(condFocus&&condFocus.nw&&condFocus.nw.lid===n0.lid){ syncWaterFocus(); renderStrip(); }
+    })
+    .catch(()=>{ nwpsCache[n0.lid]={t:Date.now(),inflight:false,read:null,staleAge:null}; });
+}
+// ── Per-water weather (Phase 4): wind/pressure/cloud + sun read AT the focused water, not home ──
+const _llCache={};
+function focusLL(){
+  const key=condFocus?condFocus.key:'duck';
+  if(_llCache[key]) return _llCache[key];
+  let n=0,la=0,lo=0;
+  spots.forEach(s=>{ if(condDescr(s.city).key===key){ la+=s.park[0]; lo+=s.park[1]; n++; } });
+  const ll=n?[+(la/n).toFixed(3),+(lo/n).toFixed(3)]:HOME;
+  _llCache[key]=ll; return ll;
+}
+const wxByKey={}; // key → {t, inflight, wx} · 15-min per-water TTL
+async function ensureWx(){
+  const key=condFocus?condFocus.key:'duck';
+  window.__ll=focusLL(); // sun + golden hours reflect the focused water immediately, before weather resolves
+  const c=wxByKey[key];
+  if(c&&c.wx){ window.__wx=c.wx; }
+  if(c&&(c.inflight||Date.now()-c.t<14*60*1000)) return;
+  wxByKey[key]={t:c?c.t:0,inflight:true,wx:c?c.wx:null};
+  const wx=await fetchWx(focusLL());
+  wxByKey[key]={t:Date.now(),inflight:false,wx:wx||(c?c.wx:null)};
+  if(condFocus&&condFocus.key===key&&wx){ window.__wx=wx; window.__ll=focusLL(); renderStrip(); }
 }
 async function harpethBase(){ // seasonal day-of-year MEDIAN cfs @ Kingston Springs — USGS stat service, cached per day
   const CK='casterHarpethBase_v1';
@@ -2109,8 +2222,9 @@ async function updateRiver(){
   }catch(e){/* keep waters null — bite score still renders */}
   window.__cond=C;
   // ── stash live inputs for the Bite Score card, then render the focused strip ──
-  let wx=await fetchWx(); if(!wx) wx=cachedWx();
-  window.__wx=wx||null;
+  let wx=await fetchWx(focusLL()); if(!wx) wx=cachedWx();
+  window.__wx=wx||null; window.__ll=focusLL();
+  if(wx) wxByKey[condFocus?condFocus.key:'duck']={t:Date.now(),inflight:false,wx};
   window.__olk=(await fetchOutlook())||cachedOutlook()||null;
   syncWaterFocus();
   renderStrip();
@@ -2183,11 +2297,36 @@ function renderStrip(){ // render the strip for the FOCUSED water (fetch-free �
     } else {
       waterHTML=`<span class="pill c">DAM</span><span><b>${d.name}:</b> ${c&&c.inflight?'reading Corps operations data… ':'Corps data unreachable — '}release-driven water. <b>Check the Corps release schedule (water.usace.army.mil) before you go.</b> <span class="wr">Never wade on a rising release.</span></span>`;
     }
+  } else if(d.kind==='tailwater'&&d.nw){
+    fetchNwps(d); // no-op when fresh or inflight · freshness-gated
+    const c=nwpsCache[d.nw.lid], rd=c&&c.read;
+    const tvaTxt='TVA generation schedule (TVA app · 800-238-2264)';
+    if(rd){
+      const unit=rd.mode==='flow'?' cfs':' ft';
+      waterHTML=`<span class="pill ${rd.klass}">${rd.cls}</span>
+      <span><b>${d.nw.label}:</b> ${rd.mode==='flow'?Math.round(rd.rv.cfs).toLocaleString():rd.rv.cfs.toFixed(2)}${unit} ${arrow(rd.rv.trend)} ${rd.rv.trend} <span class="age">(${fmtAge(rd.ageMin)} ago)</span><span class="d2"> · 24h range ${rd.mode==='flow'?Math.round(rd.rv.minV).toLocaleString()+'–'+Math.round(rd.rv.peakV).toLocaleString()+' cfs':rd.rv.minV.toFixed(1)+'–'+rd.rv.peakV.toFixed(1)+' ft'}</span>
+      · ${rd.txt} <span class="wr">⚠ NWS-relayed TVA data — verify the ${tvaTxt} before wading.</span><span class="d2">
+      <a href="https://water.noaa.gov/gauges/${d.nw.lid}" target="_blank" rel="noopener">NWS gauge ↗</a></span> <span class="tw">· Bite Score = tap the pill · auto-refresh 15 min</span></span>`;
+    } else {
+      const staleTxt=(c&&c.staleAge)?` The NWS feed for this dam is currently stale (${fmtAge(c.staleAge)} old) — Caster will show a live read automatically when it resumes.`:'';
+      waterHTML=`<span class="pill c">DAM</span><span><b>${d.name}:</b> release-driven tailwater — flow can jump in minutes on generation. <b>Check the ${tvaTxt} before you go.</b>${staleTxt} <span class="wr">Never wade on a rising release.</span><span class="tw"> · Bite Score here runs on light + weather — tap the pill.</span></span>`;
+    }
   } else if(d.kind==='tailwater'){
     const opTxt=d.op==='USACE'?'Corps release schedule (water.usace.army.mil)':'TVA generation schedule (TVA app · 800-238-2264)';
     waterHTML=`<span class="pill c">DAM</span><span><b>${d.name}:</b> release-driven tailwater — flow can jump in minutes on generation, and no public live gauge covers this reach (checked 2026-07-17). <b>Check the ${opTxt} before you go.</b> <span class="wr">Never wade on a rising release.</span><span class="tw"> · Bite Score here runs on light + weather — tap the pill.</span></span>`;
+  } else if(d.kind==='lake'&&d.lk){
+    fetchLake(d); // no-op when fresh or inflight
+    const c=lakeCache[d.lk.obs], rd=c&&c.read;
+    if(rd){
+      const dTxt=x=>`${x>=0?'up ':'down '}${Math.abs(x).toFixed(2)} ft`;
+      waterHTML=`<span class="pill ${rd.trend==='falling'&&rd.d24<=-0.15?'c':'g'}">${rd.trend.toUpperCase()}</span>
+      <span><b>${d.name} level:</b> ${rd.ft.toFixed(2)} ft ${arrow(rd.trend)} <span class="age">(${fmtAge(rd.ageMin)} ago)</span><span class="d2"> · ${dTxt(rd.d24)} /24h · ${dTxt(rd.d7)} /7d · Corps operations data (${d.lk.dam} Dam)</span>
+      · wind drives the lake bite — the Bite Score wind read is AT this lake now.<span class="tw"> · tap the pill for wind + timing · auto-refresh 15 min</span></span>`;
+    } else {
+      waterHTML=`<span><b>${d.name}:</b> ${c&&c.inflight?'reading the Corps lake level…':'lake level unreachable —'} wind and level drive the bite.<span class="tw"> · Bite Score runs on light + weather at this lake — tap the pill.</span></span>`;
+    }
   } else if(d.kind==='lake'){
-    waterHTML=`<span><b>${d.name}:</b> lake water — wind and level drive the bite; no live level gauge wired for this water yet.<span class="d2"> Judge the wind chip in the Bite Score card.</span><span class="tw"> · Bite Score runs on light + weather — tap the pill.</span></span>`;
+    waterHTML=`<span><b>${d.name}:</b> lake water — wind and level drive the bite; no public live level source wired for this water (TVA has no open feed — checked 2026-07-17).<span class="d2"> Judge the wind chip in the Bite Score card — it now reads AT this lake.</span><span class="tw"> · Bite Score runs on light + weather — tap the pill.</span></span>`;
   } else {
     waterHTML=`<span><b>${d.name}:</b> no live gauge wired for this water yet — judge flow and clarity on sight.<span class="tw"> · Bite Score runs on light + weather — tap the pill.</span></span>`;
   }
