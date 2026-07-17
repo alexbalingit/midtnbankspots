@@ -73,6 +73,11 @@
   .riv .tw{color:var(--marsh);font-size:11px}
   .riv .wr{color:var(--blaze);font-weight:800}
   .riv .pill.src{background:rgba(200,165,90,.14);color:var(--brassL);border:1px solid rgba(200,165,90,.55);letter-spacing:.07em}
+  /* ── water selector chip (zone-aware strip v3): shows the focused water · tap to cycle ── */
+  .riv .wsel{flex:0 0 auto;cursor:pointer;font-family:var(--sans);display:inline-block;margin-top:1px;
+             background:rgba(239,233,216,.08);color:var(--field);border:1px solid rgba(239,233,216,.3);
+             border-radius:999px;padding:2px 10px;font-weight:800;font-size:10.5px;letter-spacing:.1em;white-space:nowrap}
+  .riv .wsel:hover{border-color:var(--brassL);color:var(--brassL)}
   .riv .age{color:var(--marsh);font-size:11px}
   .riv .wq{font-weight:800}
   .riv .wq.CLEAR{color:#8fbf92}.riv .wq.STAINED{color:var(--brassL)}.riv .wq.MUDDY{color:#d9764a}
@@ -954,6 +959,7 @@ map.on('click dragstart', closeSheet);
 // subsequent click of that marker (bug: spots worked once, then went dead; fixed 2026-07-05)
 const spotPopup = L.popup({maxWidth:290,autoPanPadding:[50,80]});
 function showCard(s, marker){
+  try{ setCondFocus(condDescr(s.city)); }catch(e){} // zone-aware strip v3: conditions follow the water you're looking at
   if(isMobile()){ openSheet(s); return; }
   const anchor=(marker.options.icon&&marker.options.icon.options.popupAnchor)||[0,-12];
   spotPopup.options.offset=L.point(anchor[0],anchor[1]);
@@ -1407,16 +1413,22 @@ function setLegend(open){ legendEl.classList.toggle('open',open); lchip.style.di
 lchip.onclick=()=>setLegend(true);
 document.getElementById('lclose').onclick=()=>setLegend(false);
 
-// ── River conditions strip v2 (USGS gauges + upstream early warning + rain) ──
-// Doctrine (Duck River - Columbia Bank Spots.md, seasonal flow read):
-// fishes best on STABLE or FALLING, clearing water. Summer base ~130-500 cfs at Columbia.
-// GO <=600 cfs & not rising · CAUTION 600-1000 falling/steady or <=600 rising · SKIP >1000 or fast-rising.
-// Gauges: 03599500 Columbia (Zones B/C) · 03599350 Hardison Mill (Zone A wading)
-//         · 03598000 Shelbyville (UPSTREAM early warning — a rise here hits Columbia hours later).
-// v2 (2026-07-06, after the 306-then-mud morning): auto-refresh every 15 min + on tab wake ·
-// reading-age stamp · upstream-rising downgrades GO→CAUTION · 12h upstream rain via Open-Meteo
-// (rain chip silently skips if API unreachable). USGS publishes ~45-75 min behind real time.
-// Tailwaters (Normandy 03596500 / Elk below Tims Ford) are TVA-release-driven — strip doesn't cover them.
+// ── Conditions strip v3 — ZONE-AWARE (water registry + focus-follows-map, 2026-07-17) ──
+// Fixes the single-tenant bug (see vault: "Caster - Product Issue - Per-Water Conditions Layer.md"):
+// the strip no longer shows Duck data for every water. A registry maps each city group → a water;
+// the strip renders the FOCUSED water (tap a spot → that water · tap the water chip to cycle ·
+// default = water nearest home, GPS-nearest at boot when Near Me is already granted).
+//   duck    — full engine, thresholds LOCKED (Duck River - Columbia Bank Spots.md seasonal flow read):
+//             GO <=600 cfs & not rising · CAUTION 600-1000 or rising · SKIP >1000 or fast-rising.
+//             Gauges: 03599500 Columbia (B/C) · 03599350 Hardison (Zone A wading) · 03598000 Shelbyville
+//             (upstream early warning) · 03596000 Manchester. Turbidity meter 63680 @ Shelbyville.
+//   harpeth — same river math, gauges 03434500 Kingston Springs (main) + 03432350 Franklin (upstream
+//             warning). No locked doctrine yet, so GO/CAUTION/SKIP + clarity run on flow vs the
+//             USGS day-of-year seasonal MEDIAN (stat service, cached daily) — always labeled (est.).
+//   tailwaters (Normandy · Elk · Caney Fork · Cumberland dams …) — release-driven: safety notice, no fake read.
+//   lakes — wind/level driven: honest "no gauge wired yet" note. Never another water's data. (Phase 3 = adapters.)
+// v2 behaviors kept: auto-refresh 15 min + tab wake · age stamps · upstream-rising downgrade ·
+// watershed rain via Open-Meteo · USGS publishes ~45-75 min behind real time.
 function rivRead(vals){ // latest value + trend. 6h ref @>10%, PLUS 2h ref @>5% to catch the front edge of a rise
   const last=vals[vals.length-1], lastV=+last.value, lastT=new Date(last.dateTime).getTime();
   const at=h=>{for(let i=vals.length-1;i>=0;i--){if(lastT-new Date(vals[i].dateTime).getTime()>=h*3600e3)return +vals[i].value;}return +vals[0].value;};
@@ -1431,13 +1443,14 @@ function rivRead(vals){ // latest value + trend. 6h ref @>10%, PLUS 2h ref @>5% 
 // Tier 1 (meter): Shelbyville turbidity sensor 63680 when it reports. FNU bands: <10 CLEAR · 10-40 STAINED · >=40 MUDDY.
 // Tier 2 (est.): inference from flow-vs-seasonal-base ratio + upstream rain + spike recency. Always labeled "(est.)" —
 // estimates stay distinct from measured values, never presented as fact.
-function rivClarity(col,fnu,rain){
+function rivClarity(col,fnu,rain,baseOvr){ // baseOvr (v3): per-water seasonal base — omitted = Duck's locked monthly table
   if(fnu!=null){
     return {label:fnu>=40?'MUDDY':(fnu>=10?'STAINED':'CLEAR'),est:false,fnu};
   }
   if(!col) return null;
   const BASE=[1800,2000,2400,1800,800,350,300,250,250,300,800,1500]; // ~monthly base cfs @ Columbia (doctrine: seasonal flow read)
-  const base=BASE[new Date().getMonth()];
+  const base=baseOvr!=null?baseOvr:BASE[new Date().getMonth()];
+  if(!(base>0)) return null;
   const R=col.cfs/base;
   const r24=rain?rain.r24:0, r48=rain?rain.r48:0;
   const spike=col.peakV>=2*Math.max(col.minV,1);                     // window saw a >=2x surge
@@ -1448,10 +1461,11 @@ function rivClarity(col,fnu,rain){
   else label='CLEAR';
   return {label,est:true,note};
 }
-async function rivRain(){ // watershed precip (Shelbyville · Normandy · Lewisburg/Fountain Ck · Columbia local): {r24,r48} max across points; null = unavailable
-  // 24-48h windows because a rain slug takes ~12-24h to travel Shelbyville -> Columbia (proven 2026-07-05: 5.3" at 11am, mud hit Columbia next morning)
+async function rivRain(lats,lons){ // watershed precip at the given points: {r24,r48} max across points; null = unavailable
+  // Duck default (Shelbyville · Normandy · Lewisburg/Fountain Ck · Columbia local). 24-48h windows because a
+  // rain slug takes ~12-24h to travel Shelbyville -> Columbia (proven 2026-07-05: 5.3" at 11am, mud next morning)
   try{
-    const u='https://api.open-meteo.com/v1/forecast?latitude=35.48,35.45,35.45,35.62&longitude=-86.50,-86.25,-86.79,-87.03&hourly=precipitation&past_days=2&forecast_days=1&precipitation_unit=inch&timezone=auto';
+    const u=`https://api.open-meteo.com/v1/forecast?latitude=${lats||'35.48,35.45,35.45,35.62'}&longitude=${lons||'-86.50,-86.25,-86.79,-87.03'}&hourly=precipitation&past_days=2&forecast_days=1&precipitation_unit=inch&timezone=auto`;
     const r=await fetch(u); if(!r.ok) return null;
     const j=await r.json(); const locs=Array.isArray(j)?j:[j];
     let r24=0,r48=0;
@@ -1679,7 +1693,10 @@ function computeOutlook(olk,water){
 }
 function outlookBlock(water){
   const olk=window.__olk||cachedOutlook();
-  const o=olk?computeOutlook(olk,water):null;
+  // v3: the outlook's river-recession model is calibrated to the Duck — for any other focused
+  // water, run it weather-only (no cfs seed) and say so, rather than projecting Duck physics onto it.
+  const duckFocus=!(typeof condFocus!=='undefined'&&condFocus&&condFocus.key!=='duck');
+  const o=olk?computeOutlook(olk,duckFocus?water:null):null;
   if(!o) return `<div class="olk"><div class="oh"><span class="ot">7-DAY OUTLOOK</span></div><p class="note">Forecast unreachable — refresh when you have signal.</p></div>`;
   const TIER=['WATCH','LIKELY','FIRM'];
   const dn=d=>new Date(d+'T12:00').toLocaleDateString('en-US',{weekday:'short'});
@@ -1698,7 +1715,7 @@ function outlookBlock(water){
   return `<div class="olk">
     <div class="oh"><span class="ot">7-DAY OUTLOOK · PLAN AHEAD</span><span class="od2">forecast · updated ${fmtAgeM(age)} ago</span></div>
     ${rows}
-    <p class="note">${bestTxt} FIRM ≈ 90% — driven by rain already on the ground and river physics. LIKELY = solid signal. WATCH = directional only; never plan a drive on it. "Up to" rain = wettest of 3 forecast models (GFS/ICON/ECMWF); storm odds cap the score on a sliding scale. "CLE∕MUD" = coin-flip water — hinges on whether the prior day's storm hits; plan both ways. Scores assume you fish the golden windows; water projection is an estimate.</p>
+    <p class="note">${bestTxt} FIRM ≈ 90% — driven by rain already on the ground and river physics. LIKELY = solid signal. WATCH = directional only; never plan a drive on it. "Up to" rain = wettest of 3 forecast models (GFS/ICON/ECMWF); storm odds cap the score on a sliding scale. "CLE∕MUD" = coin-flip water — hinges on whether the prior day's storm hits; plan both ways. Scores assume you fish the golden windows; water projection is an estimate.${duckFocus?'':` <b>Note:</b> rain/water columns are modeled on the Duck-corridor watershed — treat them as regional guidance for ${condFocus.name}.`}</p>
   </div>`;
 }
 
@@ -1769,7 +1786,9 @@ function renderBiteCard(b){
   }
   const {s,v,f,peak,ng,sun,nowMin,wx,water,wxAge}=b;
   const arw=t=>t==='rising'?'↗':t==='falling'?'↘':'→';
-  const waterVal=water?`${water.cls}${water.cfs!=null?' · '+Math.round(water.cfs).toLocaleString()+' cfs':''}`:'gauge offline';
+  const _wk=(typeof condFocus!=='undefined'&&condFocus)?condFocus.kind:'river';
+  const waterVal=water?`${water.cls}${water.cfs!=null?' · '+Math.round(water.cfs).toLocaleString()+' cfs':''}`
+    :(_wk==='tailwater'?'release-driven — check schedule':_wk==='lake'?'lake — no gauge wired':_wk==='river-x'?'no gauge for this water':'gauge offline');
   const pressVal=`${wx.trend.charAt(0).toUpperCase()+wx.trend.slice(1)} ${arw(wx.trend)}${wx.inHg!=null?' · '+wx.inHg.toFixed(2)+'"':''}`;
   const windVal=`${dirName(wx.windDir)} ${wx.windMph!=null?Math.round(wx.windMph):'—'} mph`;
   const lightVal=lightLabel(nowMin,sun,wx.cloud);
@@ -1805,30 +1824,119 @@ function openBite(){
   if(typeof setLegend==='function') setLegend(false);
 }
 
+// ── Water registry + zone-aware focus (v3) ───────────────────────────────────
+const COND_KEY='caster_water'; // state key — must survive edits (same law as the logger key)
+const GAUGED={
+  duck:{key:'duck',name:'Duck River',kind:'river',link:'https://waterdata.usgs.gov/monitoring-location/03599500/'},
+  harpeth:{key:'harpeth',name:'Harpeth River',kind:'river',link:'https://waterdata.usgs.gov/monitoring-location/03434500/'}
+};
+const COND_CITY={
+  'Brentwood':'harpeth','Franklin':'harpeth','Kingston Springs — Harpeth SP':'harpeth',
+  'Spring Hill / Williamsport':'duck','Columbia':'duck','Culleoka / Chapel Hill':'duck','Shelbyville':'duck','Lewisburg':'duck'
+};
+// release-driven groups whose names don't say "tailwater" (the regex below catches the rest)
+const COND_TAIL=['Caney Fork','Rock Island','Manchester / Normandy','Fayetteville — Elk River'];
+function condDescr(city){
+  const k=COND_CITY[city]; if(k) return GAUGED[k];
+  const name=city.replace(/ — .*/,'').replace(/ \(.*/,'').trim();
+  const tail=COND_TAIL.some(p=>city.startsWith(p))||/tailwater|below .{0,24}dam|powerhouse/i.test(city);
+  const kind=tail?'tailwater':(/lake|reservoir/i.test(city)?'lake':'river-x');
+  return {key:'x:'+name,name,kind};
+}
+let condManual=false;
+let condFocus=(()=>{ // last session's water, else the water nearest home base (below)
+  try{ const s=JSON.parse(localStorage.getItem(COND_KEY));
+    if(s&&s.key) return GAUGED[s.key]||(s.key.indexOf('x:')===0?s:null); }catch(e){}
+  return null; })();
+if(!condFocus){
+  const h=getHome()||HOME; let best=null,bd=1e9;
+  spots.forEach(s=>{ const dk=kmBetween(h,s.park); if(dk<bd){bd=dk;best=s;} });
+  condFocus=best?condDescr(best.city):GAUGED.duck;
+}
+try{ // GPS-nearest at boot — only when Near Me was already granted (quiet, iOS-safe), never over a manual pick
+  if(localStorage.getItem(ME_OK)==='1'&&navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(p=>{
+      if(condManual) return;
+      const me=[p.coords.latitude,p.coords.longitude]; let best=null,bd=1e9;
+      spots.forEach(s=>{ const dk=kmBetween(me,s.park); if(dk<bd){bd=dk;best=s;} });
+      if(best) setCondFocus(condDescr(best.city));
+    },()=>{},{enableHighAccuracy:false,maximumAge:300000,timeout:8000});
+  }
+}catch(e){}
+function setCondFocus(d,manual){
+  if(!d) return;
+  condFocus=d; if(manual) condManual=true;
+  try{ localStorage.setItem(COND_KEY,JSON.stringify({key:d.key,name:d.name,kind:d.kind})); }catch(e){}
+  syncWaterFocus(); renderStrip();
+}
+function cycleCond(){ // tap the water chip → cycle the gauged waters (+ back to a non-gauged focus)
+  const ring=[GAUGED.duck,GAUGED.harpeth];
+  if(condFocus&&!ring.some(w=>w.key===condFocus.key)) ring.push(condFocus);
+  const i=ring.findIndex(w=>condFocus&&w.key===condFocus.key);
+  setCondFocus(ring[(i+1)%ring.length],true);
+}
+function waterBite(st){ // per-water Bite Score water factor — clarity first (the truest read), flow class fallback
+  if(!st||!st.col) return null;
+  const wqLabel=st.wq?st.wq.label:null; let waterF;
+  if(st.klass==='s') waterF=0;                  // blown-out flow (SKIP) = gate to red
+  else if(wqLabel==='MUDDY') waterF=0.15;       // muddy = low odds (also triggers the SLOW gate)
+  else if(wqLabel==='STAINED') waterF=0.5;      // stain can still fish — moderate drag, not a veto
+  else if(wqLabel==='CLEAR') waterF=1.0;
+  else waterF=(st.klass==='g'?1:st.klass==='c'?0.4:0.65); // no clarity → flow class; no class → neutral
+  return {klass:st.klass||null,cls:st.cls||'READ',cfs:st.col.cfs,ageMin:st.ageMin,waterF,muddy:(wqLabel==='MUDDY'),wq:wqLabel};
+}
+function syncWaterFocus(){ // point the Bite Score at the focused water's read
+  const C=window.__cond||{};
+  const st=condFocus&&GAUGED[condFocus.key]?C[condFocus.key]:null;
+  window.__water=st?waterBite(st):null;
+  // keep an open Bite Score card live when the focus or a refresh lands
+  const sh=document.getElementById('sheet'), sb=document.getElementById('sheetbody');
+  if(sh&&sh.classList.contains('open')&&sb&&sb.querySelector('.bcard')) sb.innerHTML=renderBiteCard(computeBite());
+}
+async function harpethBase(){ // seasonal day-of-year MEDIAN cfs @ Kingston Springs — USGS stat service, cached per day
+  const CK='casterHarpethBase_v1';
+  let c=null; try{ c=JSON.parse(localStorage.getItem(CK)||'null'); }catch(e){}
+  const now=new Date(), mo=now.getMonth()+1, dy=now.getDate();
+  if(c&&c.mo===mo&&c.dy===dy&&c.v>0) return c.v;
+  try{
+    const u='https://waterservices.usgs.gov/nwis/stat/?format=rdb&sites=03434500&statReportType=daily&statTypeCd=median&parameterCd=00060';
+    const r=await fetch(u); if(!r.ok) return c?c.v:null;
+    const lines=(await r.text()).split('\n').filter(l=>l&&l[0]!=='#');
+    const hdr=(lines[0]||'').split('\t'), iM=hdr.indexOf('month_nu'), iD=hdr.indexOf('day_nu'), iV=hdr.indexOf('p50_va');
+    if(iM<0||iD<0||iV<0) return c?c.v:null;
+    let v=null;
+    for(let i=1;i<lines.length;i++){ const p=lines[i].split('\t');
+      if(+p[iM]===mo&&+p[iD]===dy&&+p[iV]>0){ v=+p[iV]; break; } }
+    if(v!=null){ try{ localStorage.setItem(CK,JSON.stringify({mo,dy,v})); }catch(e){} return v; }
+    return c?c.v:null;
+  }catch(e){ return c?c.v:null; }
+}
+
 async function updateRiver(){
   const el=document.getElementById('riv'); if(!el) return;
-  const fmtAge=m=>m>=120?`${(m/60).toFixed(1)}h`:`${m}m`;
-  const arrow=t=>t==='rising'?'↗':(t==='falling'?'↘':'→');
-  // ── water (USGS) — no early-return so the bite score still shows if a gauge is down ──
-  let col=null,hard=null,shel=null,manch=null,rain=null,cls=null,klass=null,warn='',wade='',ageMin=null,fnu=null,wq=null;
+  // ── fetch every gauged water in ONE USGS call, compute per-water; no early-return
+  //    so the bite score still shows if a gauge is down ──
+  const C={duck:null,harpeth:null};
   try{
-    const u='https://waterservices.usgs.gov/nwis/iv/?sites=03599500,03599350,03598000,03596000&parameterCd=00060,63680&period=P3D&format=json';
+    const u='https://waterservices.usgs.gov/nwis/iv/?sites=03599500,03599350,03598000,03596000,03434500,03432350&parameterCd=00060,63680&period=P3D&format=json';
     const r=await fetch(u,{cache:'no-store'});
     if(r.ok){
-      const j=await r.json(), S={};
+      const j=await r.json(), S={}; let fnu=null;
       (j.value.timeSeries||[]).forEach(ts=>{
         const site=ts.sourceInfo.siteCode[0].value, param=ts.variable.variableCode[0].value, vals=(ts.values[0]||{}).value||[];
         if(!vals.length) return;
         if(param==='00060') S[site]=rivRead(vals);
-        else if(param==='63680'){ // Shelbyville turbidity meter — trust only a fresh reading (<6h old)
+        else if(param==='63680'&&site==='03598000'){ // Shelbyville turbidity meter — trust only a fresh reading (<6h old)
           const last=vals[vals.length-1];
           if(Date.now()-new Date(last.dateTime).getTime()<6*3600e3) fnu=+last.value;
         }
       });
-      col=S['03599500']||null; hard=S['03599350']||null; shel=S['03598000']||null; manch=S['03596000']||null;
+      // ── DUCK — thresholds + upstream early warning: LOCKED doctrine, unchanged ──
+      const col=S['03599500']||null, hard=S['03599350']||null, shel=S['03598000']||null, manch=S['03596000']||null;
       if(col){
-        rain=await rivRain();
-        wq=rivClarity(col,fnu,rain);
+        const rain=await rivRain();
+        const wq=rivClarity(col,fnu,rain);
+        let cls,klass,warn='';
         if(col.cfs>1000||(col.trend==='rising'&&col.cfs>600)){cls='SKIP';klass='s';}
         else if(col.cfs>600||col.trend==='rising'){cls='CAUTION';klass='c';}
         else {cls='GO';klass='g';}
@@ -1840,10 +1948,11 @@ async function updateRiver(){
         else if(upRising) warn='upstream rising';
         else if(someRain) warn=`upstream rain ${r24.toFixed(1)}" /24h — expect stain`;
         if(!shel&&!manch) warn=(warn?warn+' · ':'')+'upstream gauges dark — early warning degraded, trust rain + eyes';
-        ageMin=Math.max(0,Math.round((Date.now()-col.t)/60000));
+        const ageMin=Math.max(0,Math.round((Date.now()-col.t)/60000));
         if(ageMin>STALE_MIN) warn=(warn?warn+' · ':'')+'Columbia gauge data 3h+ old — verify before trusting';
-        wade=hard?((cls==='GO'&&hard.trend!=='rising')?'wade Zone A OK':'no wading — bank Zone B/C only')
-                 :'Zone A gauge (Hardison) offline — judge wading on sight';
+        const wade=hard?((cls==='GO'&&hard.trend!=='rising')?'wade Zone A OK':'no wading — bank Zone B/C only')
+                       :'Zone A gauge (Hardison) offline — judge wading on sight';
+        C.duck={col,hard,shel,manch,rain,cls,klass,warn,wade,ageMin,wq};
         // ── calibration ledger (fix 5): one snapshot per day → storm-response pairs for re-fitting
         // the recession + cfs-per-inch constants (see vault: Duck River - Storm Response Ledger.md)
         try{
@@ -1856,54 +1965,98 @@ async function updateRiver(){
           localStorage.setItem('casterStormLedger_v1',JSON.stringify(Lg));
         }catch(e){}
       }
+      // ── HARPETH — v3 adapter: same math shape; base = USGS seasonal median; always labeled est. ──
+      const kng=S['03434500']||null, frk=S['03432350']||null;
+      if(kng){
+        const base=await harpethBase();
+        const rain=await rivRain('36.10,35.93,36.03','-87.10,-86.87,-86.78'); // Kingston Springs · Franklin · Brentwood
+        const wq=rivClarity(kng,null,rain,base); // no turbidity meter on the Harpeth → est.-only (null if no base)
+        let cls=null,klass=null,warn='';
+        if(base>0){ // thresholds scaled off the seasonal median (Duck's locked 600/1000 ≈ 2x/3.3x its summer base)
+          const R=kng.cfs/base;
+          if(R>=3.3||(kng.trend==='rising'&&R>=2)){cls='SKIP';klass='s';}
+          else if(R>=2||kng.trend==='rising'){cls='CAUTION';klass='c';}
+          else {cls='GO';klass='g';}
+          const r24=rain?rain.r24:0;
+          if(cls==='GO'&&((frk&&frk.trend==='rising')||r24>=1.0||(wq&&wq.label==='MUDDY'))){ cls='CAUTION';klass='c';
+            warn=(frk&&frk.trend==='rising')?'upstream rising — rise/mud headed downriver':(r24>=1.0?`watershed rain ${r24.toFixed(1)}" /24h — expect a rise`:'muddy water — low odds'); }
+          else if(frk&&frk.trend==='rising') warn='upstream rising';
+          else if(r24>=0.3) warn=`watershed rain ${r24.toFixed(1)}" /24h — expect stain`;
+        }
+        const ageMin=Math.max(0,Math.round((Date.now()-kng.t)/60000));
+        if(ageMin>STALE_MIN) warn=(warn?warn+' · ':'')+'Kingston Springs gauge 3h+ old — verify before trusting';
+        C.harpeth={col:kng,up:frk,rain,cls,klass,warn,ageMin,wq,base};
+      }
     }
-  }catch(e){/* keep water null — bite score still renders */}
-  const ageOf=g=>Math.max(0,Math.round((Date.now()-g.t)/60000));
-
-  // ── stash live inputs for the Bite Score card, compute the strip pill ──
+  }catch(e){/* keep waters null — bite score still renders */}
+  window.__cond=C;
+  // ── stash live inputs for the Bite Score card, then render the focused strip ──
   let wx=await fetchWx(); if(!wx) wx=cachedWx();
   window.__wx=wx||null;
   window.__olk=(await fetchOutlook())||cachedOutlook()||null;
-  // water factor is driven by CLARITY first (the truest read), flow class as fallback
-  const wqLabel=wq?wq.label:null;
-  let waterF;
-  if(klass==='s') waterF=0;                    // blown-out flow (SKIP) = gate to red
-  else if(wqLabel==='MUDDY') waterF=0.15;       // muddy = low odds (also triggers the SLOW gate below)
-  else if(wqLabel==='STAINED') waterF=0.5;      // stain can still fish — moderate drag, not a veto
-  else if(wqLabel==='CLEAR') waterF=1.0;
-  else waterF=(klass==='g'?1:klass==='c'?0.4:0); // no clarity read → judge on flow class
-  window.__water=col?{klass,cls,cfs:col.cfs,ageMin,waterF,muddy:(wqLabel==='MUDDY'),wq:wqLabel}:null;
+  syncWaterFocus();
+  renderStrip();
+  // spotty-cell hardening: if the focused water's gauge read failed, retry sooner than the 15-min tick (max 5 tries)
+  const focSt=condFocus&&GAUGED[condFocus.key]?C[condFocus.key]:C.duck;
+  if(!(focSt&&focSt.col)&&(window._rivRetry=(window._rivRetry||0)+1)<=5) setTimeout(updateRiver,45e3);
+  else if(focSt&&focSt.col) window._rivRetry=0;
+}
+
+function renderStrip(){ // render the strip for the FOCUSED water (fetch-free — safe to call on focus change)
+  const el=document.getElementById('riv'); if(!el) return;
+  const C=window.__cond;
+  const fmtAge=m=>m>=120?`${(m/60).toFixed(1)}h`:`${m}m`;
+  const arrow=t=>t==='rising'?'↗':(t==='falling'?'↘':'→');
+  const ageOf=g=>Math.max(0,Math.round((Date.now()-g.t)/60000));
   const b=computeBite();
   const pill=b.paused
     ? `<button class="bbtn stale" onclick="openBite()" title="Bite Score — tap for the read">Bite Score · <span class="sc">—</span></button>`
     : `<button class="bbtn ${b.v.k}" onclick="openBite()" title="Bite Score — tap for the read">Bite Score · <span class="sc">${b.s}</span></button>`;
-
-  const waterHTML=col?`<span class="pill ${klass}">${cls}</span>
-      <span><b>Duck @ Columbia:</b> ${Math.round(col.cfs).toLocaleString()} cfs ${arrow(col.trend)} ${col.trend} <span class="age">(${fmtAge(ageMin)} ago)</span><span class="d2">
-      ${(shel||manch)?`· <b>upstream (${shel?'Shelbyville':'Manchester'}):</b> ${Math.round((shel||manch).cfs).toLocaleString()} cfs ${arrow((shel||manch).trend)} <span class="age">(${fmtAge(ageOf(shel||manch))} ago)</span>`:''}
-      ${hard?`· <b>Hardison:</b> ${Math.round(hard.cfs).toLocaleString()} cfs ${arrow(hard.trend)} <span class="age">(${fmtAge(ageOf(hard))} ago)</span>`:''}</span>
-      ${wq?`· water: <span class="wq ${wq.label}">${wq.label}${wq.note?' → clearing':''}</span> <span class="age d2">${wq.est?'(est. — flow + rain model)':`(meter · ${Math.round(wq.fnu)} FNU)`}</span>`:''}
-      ${warn?`· <span class="wr">⚠ ${warn}</span>`:''}<span class="d2"> · ${wade}
-      <a href="https://waterdata.usgs.gov/monitoring-location/03599500/" target="_blank" rel="noopener">gauge ↗</a></span>
+  const d=condFocus||GAUGED.duck;
+  const wsel=`<button class="wsel" onclick="cycleCond()" title="Conditions for this water — tap to switch">${d.name.toUpperCase()} ▾</button>`;
+  const st=(C&&GAUGED[d.key])?C[d.key]:null;
+  let waterHTML='', srcBadge='';
+  if(!C&&GAUGED[d.key]){
+    waterHTML=`<span class="tw">reading the water…</span>`;
+  } else if(d.key==='duck'){
+    waterHTML=(st&&st.col)?`<span class="pill ${st.klass}">${st.cls}</span>
+      <span><b>Duck @ Columbia:</b> ${Math.round(st.col.cfs).toLocaleString()} cfs ${arrow(st.col.trend)} ${st.col.trend} <span class="age">(${fmtAge(st.ageMin)} ago)</span><span class="d2">
+      ${(st.shel||st.manch)?`· <b>upstream (${st.shel?'Shelbyville':'Manchester'}):</b> ${Math.round((st.shel||st.manch).cfs).toLocaleString()} cfs ${arrow((st.shel||st.manch).trend)} <span class="age">(${fmtAge(ageOf(st.shel||st.manch))} ago)</span>`:''}
+      ${st.hard?`· <b>Hardison:</b> ${Math.round(st.hard.cfs).toLocaleString()} cfs ${arrow(st.hard.trend)} <span class="age">(${fmtAge(ageOf(st.hard))} ago)</span>`:''}</span>
+      ${st.wq?`· water: <span class="wq ${st.wq.label}">${st.wq.label}${st.wq.note?' → clearing':''}</span> <span class="age d2">${st.wq.est?'(est. — flow + rain model)':`(meter · ${Math.round(st.wq.fnu)} FNU)`}</span>`:''}
+      ${st.warn?`· <span class="wr">⚠ ${st.warn}</span>`:''}<span class="d2"> · ${st.wade}
+      <a href="${GAUGED.duck.link}" target="_blank" rel="noopener">gauge ↗</a></span>
       <span class="tw">· ages = USGS publish lag · auto-refresh 15 min · Bite Score = tap the pill · Tailwaters (Normandy · Elk): check TVA first.</span></span>`
     :`<span class="wr">⚠ USGS gauge offline — water read unavailable</span> <span class="tw">· tap the Bite Score for timing + weather</span>`;
-
-  // ── source-vs-app clarity badge: weather fresh but the gauge feed is stale/dark ⇒ Caster is live, USGS is behind ──
-  const _wxA=wx?Math.round((Date.now()-wx.t)/60000):null;
-  const _appLive=(_wxA!=null&&_wxA<=STALE_MIN);                    // fresh weather proves the fetch cycle ran
-  const _gaugeDark=!col, _gaugeStale=(col&&ageMin!=null&&ageMin>STALE_MIN);
-  const srcBadge=(_appLive&&(_gaugeDark||_gaugeStale))
-    ? `<span class="pill src" title="Caster fetched live moments ago — the USGS gauge feed itself is behind. Nothing to refresh.">⚠ USGS FEED ${_gaugeDark?'OFFLINE':'STALE'} · CASTER LIVE</span> `
-    : '';
-  el.innerHTML=`${pill} <span class="tw">·</span> ${srcBadge}${waterHTML}`;
+  } else if(d.key==='harpeth'){
+    waterHTML=(st&&st.col)?`${st.klass?`<span class="pill ${st.klass}">${st.cls}</span>`:''}
+      <span><b>Harpeth @ Kingston Springs:</b> ${Math.round(st.col.cfs).toLocaleString()} cfs ${arrow(st.col.trend)} ${st.col.trend} <span class="age">(${fmtAge(st.ageMin)} ago)</span><span class="d2">
+      ${st.up?`· <b>upstream (Franklin):</b> ${Math.round(st.up.cfs).toLocaleString()} cfs ${arrow(st.up.trend)} <span class="age">(${fmtAge(ageOf(st.up))} ago)</span>`:''}
+      ${st.base>0?`· seasonal median ${Math.round(st.base)} cfs`:''}</span>
+      ${st.wq?`· water: <span class="wq ${st.wq.label}">${st.wq.label}${st.wq.note?' → clearing':''}</span> <span class="age d2">(est. — flow vs seasonal median + rain)</span>`:''}
+      ${st.warn?`· <span class="wr">⚠ ${st.warn}</span>`:''}<span class="d2">
+      <a href="${GAUGED.harpeth.link}" target="_blank" rel="noopener">gauge ↗</a></span>
+      <span class="tw">· ages = USGS publish lag · auto-refresh 15 min · Bite Score = tap the pill · GO/CAUTION/SKIP here = flow vs seasonal median (est.) — no locked Harpeth doctrine yet.</span></span>`
+    :`<span class="wr">⚠ USGS gauge offline — water read unavailable</span> <span class="tw">· tap the Bite Score for timing + weather</span>`;
+  } else if(d.kind==='tailwater'){
+    waterHTML=`<span class="pill c">DAM</span><span><b>${d.name}:</b> release-driven tailwater — flow can jump in minutes on generation. <b>Check the TVA / Corps release schedule before you go</b> (TVA: 800-238-2264). <span class="wr">Never wade on a rising release.</span><span class="tw"> · Bite Score here runs on light + weather — tap the pill.</span></span>`;
+  } else if(d.kind==='lake'){
+    waterHTML=`<span><b>${d.name}:</b> lake water — wind and level drive the bite; no live level gauge wired for this water yet.<span class="d2"> Judge the wind chip in the Bite Score card.</span><span class="tw"> · Bite Score runs on light + weather — tap the pill.</span></span>`;
+  } else {
+    waterHTML=`<span><b>${d.name}:</b> no live gauge wired for this water yet — judge flow and clarity on sight.<span class="tw"> · Bite Score runs on light + weather — tap the pill.</span></span>`;
+  }
+  // ── source-vs-app clarity badge (gauged waters only): weather fresh but gauge feed stale/dark ⇒ Caster live, USGS behind ──
+  if(C&&GAUGED[d.key]){
+    const wx=window.__wx;
+    const _wxA=wx?Math.round((Date.now()-wx.t)/60000):null;
+    const _appLive=(_wxA!=null&&_wxA<=STALE_MIN);                  // fresh weather proves the fetch cycle ran
+    const _gaugeDark=!(st&&st.col), _gaugeStale=!!(st&&st.col&&st.ageMin!=null&&st.ageMin>STALE_MIN);
+    if(_appLive&&(_gaugeDark||_gaugeStale))
+      srcBadge=`<span class="pill src" title="Caster fetched live moments ago — the USGS gauge feed itself is behind. Nothing to refresh.">⚠ USGS FEED ${_gaugeDark?'OFFLINE':'STALE'} · CASTER LIVE</span> `;
+  }
+  el.innerHTML=`${pill} ${wsel} <span class="tw">·</span> ${srcBadge}${waterHTML}`;
   el.style.display='flex';
   fixTops();
-  // keep the open Bite Score card live if it's showing while a refresh lands
-  const sh=document.getElementById('sheet'), sb=document.getElementById('sheetbody');
-  if(sh&&sh.classList.contains('open')&&sb&&sb.querySelector('.bcard')) sb.innerHTML=renderBiteCard(computeBite());
-  // spotty-cell hardening: if the water read failed, retry sooner than the 15-min tick (max 5 tries)
-  if(!col&&(window._rivRetry=(window._rivRetry||0)+1)<=5) setTimeout(updateRiver,45e3);
-  if(col) window._rivRetry=0;
 }
 updateRiver();
 setInterval(updateRiver,15*60*1000);                                          // auto-refresh every 15 min
