@@ -1851,6 +1851,17 @@ const TAIL_GAUGE=[
   ['Watauga tailwater',{site:'03486000',label:'Watauga @ Elizabethton',link:'https://waterdata.usgs.gov/monitoring-location/03486000/',note:''}]
 ];
 const TAIL_USACE=['Stones River','Cumberland — Old Hickory','Cumberland — Cheatham','Cordell Hull','Dale Hollow — Obey','Caney Fork']; // Center Hill = USACE · Rock Island (Great Falls Dam) = TVA
+// ── USACE CWMS Data API (Phase 3, 2026-07-17 — CORS verified open from this origin). Per dam:
+// obs = hourly observed total outflow (<code>.Flow.Ave.1Hour.1Hour.man-rev</code>, cfs, ~1-2h lag) ·
+// fc = the Corps' own hourly release FORECAST (<code>celrn-cwms-forecast</code>) = the generation schedule.
+const TAIL_CDA=[
+  ['Stones River',{obs:'JPPT1-J_PERCY_PRIEST',fc:'JPercyPriest Dam',dam:'Percy Priest Dam'}],
+  ['Cumberland — Old Hickory',{obs:'OHHT1-OLD_HICKORY',fc:'Old Hickory Dam',dam:'Old Hickory Dam'}],
+  ['Cumberland — Cheatham',{obs:'CHPT1-CHEATHAM',fc:'Cheatham Dam',dam:'Cheatham Dam'}],
+  ['Cordell Hull',{obs:'COHT1-CORDELL_HULL',fc:'Cordell Hull Dam',dam:'Cordell Hull Dam'}],
+  ['Dale Hollow — Obey',{obs:'DHTT1-DALE_HOLLOW',fc:'Dale Hollow Dam',dam:'Dale Hollow Dam'}],
+  ['Caney Fork',{obs:'CEHT1-CENTER_HILL',fc:'Center Hill Dam',dam:'Center Hill Dam'}] // rides WITH the Stonewall gauge read
+];
 function condDescr(city){
   const k=COND_CITY[city]; if(k) return GAUGED[k];
   const name=city.replace(/ — .*/,'').replace(/ \(.*/,'').trim();
@@ -1860,7 +1871,9 @@ function condDescr(city){
   if(kind==='tailwater'){
     d.op=TAIL_USACE.some(p=>city.startsWith(p))?'USACE':'TVA';
     for(const [p,g] of TAIL_GAUGE){ if(city.startsWith(p)){ d.g=g||null; break; } }
+    for(const [p,c] of TAIL_CDA){ if(city.startsWith(p)){ d.cda=c; break; } }
     if(d.g) d.key='t:'+d.g.site; // gauged tailwaters share one key per gauge (both Caney groups → one read)
+    else if(d.cda) d.key='c:'+d.cda.obs; // Corps-data dams share one key per dam
   }
   return d;
 }
@@ -1887,7 +1900,7 @@ try{ // GPS-nearest at boot — only when Near Me was already granted (quiet, iO
 function setCondFocus(d,manual){
   if(!d) return;
   condFocus=d; if(manual) condManual=true;
-  try{ localStorage.setItem(COND_KEY,JSON.stringify({key:d.key,name:d.name,kind:d.kind,g:d.g||null,op:d.op||null})); }catch(e){}
+  try{ localStorage.setItem(COND_KEY,JSON.stringify({key:d.key,name:d.name,kind:d.kind,g:d.g||null,op:d.op||null,cda:d.cda||null})); }catch(e){}
   syncWaterFocus(); renderStrip();
 }
 function cycleCond(){ // tap the water chip → cycle the gauged waters (+ back to a non-gauged focus)
@@ -1912,6 +1925,10 @@ function syncWaterFocus(){ // point the Bite Score at the focused water's read
   if(condFocus&&GAUGED[condFocus.key]){ const st=C[condFocus.key]; w=st?waterBite(st):null; }
   else if(condFocus&&condFocus.g){ // gauged tailwater — release state drives the water factor
     const c=tailCache[condFocus.g.site], rd=c&&c.read;
+    if(rd&&Date.now()-c.t<45*60*1000) w={klass:rd.klass,cls:rd.cls,cfs:rd.rv.cfs,ageMin:rd.ageMin,waterF:rd.tailF,muddy:false,wq:null};
+  }
+  else if(condFocus&&condFocus.cda){ // Corps-data tailwater — dam outflow state drives the water factor
+    const c=cdaCache[condFocus.cda.obs], rd=c&&c.read;
     if(rd&&Date.now()-c.t<45*60*1000) w={klass:rd.klass,cls:rd.cls,cfs:rd.rv.cfs,ageMin:rd.ageMin,waterF:rd.tailF,muddy:false,wq:null};
   }
   window.__water=w;
@@ -1952,6 +1969,47 @@ function fetchTail(d){
       if(condFocus&&condFocus.g&&condFocus.g.site===g.site){ syncWaterFocus(); renderStrip(); }
     })
     .catch(()=>{ tailCache[g.site]={t:Date.now(),inflight:false,read:null}; });
+}
+// ── USACE CWMS adapter (Phase 3): observed dam outflow + the Corps' release-schedule forecast ──
+const cdaCache={}; // obs-id → {t, inflight, read} · 15-min TTL · lazy per-focus fetch
+function cdaSched(fc){ // fc = [[ms,cfs],...] future hours ascending (~36h) → human schedule line
+  if(!fc||fc.length<4) return null;
+  const vs=fc.map(x=>x[1]);
+  const mn=Math.min.apply(null,vs), mx=Math.max.apply(null,vs);
+  const fmt=ms=>{const t=new Date(ms),h=t.getHours(),h12=h%12||12,ap=h<12?'a':'p';
+    return h12+ap+(t.toDateString()===new Date().toDateString()?'':' tomorrow');};
+  if(mx<1.6*Math.max(mn,50)) return {on:vs[0]>500,
+    txt:vs[0]>500?'steady generation scheduled around the clock — no low window in the forecast':'steady low flow scheduled — no big release in the forecast'};
+  const thr=mn+0.25*(mx-mn);
+  if(fc[0][1]>thr){ const off=fc.find(x=>x[1]<=thr);
+    return {on:true,txt:off?('release scheduled down ~'+fmt(off[0])):'release scheduled through the forecast window'}; }
+  const start=fc.find(x=>x[1]>thr);
+  return {on:false,txt:start?('next release scheduled ~'+fmt(start[0])):'no release scheduled in the next ~36h'};
+}
+function fetchCda(d){
+  const c0=d&&d.cda; if(!c0) return;
+  const c=cdaCache[c0.obs];
+  if(c&&(c.inflight||Date.now()-c.t<14*60*1000)) return;
+  cdaCache[c0.obs]={t:c?c.t:0,inflight:true,read:c?c.read:null};
+  const H={Accept:'application/json;version=2'}, B='https://cwms-data.usace.army.mil/cwms-data/timeseries?office=LRN&name=';
+  const now=Date.now();
+  const uObs=B+encodeURIComponent(c0.obs+'.Flow.Ave.1Hour.1Hour.man-rev')+'&begin='+new Date(now-26*3600e3).toISOString()+'&end='+new Date(now).toISOString();
+  const uFc =B+encodeURIComponent(c0.fc+'.Flow.Ave.1Hour.1Hour.celrn-cwms-forecast')+'&begin='+new Date(now).toISOString()+'&end='+new Date(now+36*3600e3).toISOString();
+  Promise.all([
+    fetch(uObs,{headers:H}).then(r=>r.ok?r.json():null).catch(()=>null),
+    fetch(uFc,{headers:H}).then(r=>r.ok?r.json():null).catch(()=>null)
+  ]).then(([jo,jf])=>{
+    let read=null;
+    const ov=jo?(jo.values||[]).filter(x=>x[1]!=null):[];
+    if(ov.length){
+      const rv=rivRead(ov.map(x=>({dateTime:new Date(x[0]).toISOString(),value:x[1]})));
+      read=Object.assign({rv,ageMin:Math.max(0,Math.round((Date.now()-rv.t)/60000))},tailState(rv));
+      const fv=jf?(jf.values||[]).filter(x=>x[1]!=null&&x[0]>=Date.now()-3600e3):[];
+      read.sched=cdaSched(fv.map(x=>[x[0],x[1]]));
+    }
+    cdaCache[c0.obs]={t:Date.now(),inflight:false,read};
+    if(condFocus&&condFocus.cda&&condFocus.cda.obs===c0.obs){ syncWaterFocus(); renderStrip(); }
+  }).catch(()=>{ cdaCache[c0.obs]={t:Date.now(),inflight:false,read:null}; });
 }
 async function harpethBase(){ // seasonal day-of-year MEDIAN cfs @ Kingston Springs — USGS stat service, cached per day
   const CK='casterHarpethBase_v1';
@@ -2099,16 +2157,31 @@ function renderStrip(){ // render the strip for the FOCUSED water (fetch-free �
       <span class="tw">· ages = USGS publish lag · auto-refresh 15 min · Bite Score = tap the pill · GO/CAUTION/SKIP here = flow vs seasonal median (est.) — no locked Harpeth doctrine yet.</span></span>`
     :`<span class="wr">⚠ USGS gauge offline — water read unavailable</span> <span class="tw">· tap the Bite Score for timing + weather</span>`;
   } else if(d.kind==='tailwater'&&d.g){
-    fetchTail(d); // no-op when fresh or inflight
+    fetchTail(d); if(d.cda) fetchCda(d); // no-ops when fresh or inflight
     const c=tailCache[d.g.site], rd=c&&c.read;
+    const cc=d.cda?cdaCache[d.cda.obs]:null, cd=cc&&cc.read;
+    const schedTxt=(cd&&cd.sched)?` · <b>${d.cda.dam} schedule:</b> ${cd.sched.txt} <span class="age d2">(Corps forecast — can change)</span>`:'';
     const opTxt=d.op==='USACE'?'Corps release schedule (water.usace.army.mil)':'TVA generation schedule (TVA app · 800-238-2264)';
     if(rd){
       waterHTML=`<span class="pill ${rd.klass}">${rd.cls}</span>
       <span><b>${d.g.label}:</b> ${Math.round(rd.rv.cfs).toLocaleString()} cfs ${arrow(rd.rv.trend)} ${rd.rv.trend} <span class="age">(${fmtAge(rd.ageMin)} ago)</span><span class="d2"> · 24h range ${Math.round(rd.rv.minV).toLocaleString()}–${Math.round(rd.rv.peakV).toLocaleString()} cfs</span>
+      ${cd?` · <b>at the dam:</b> ${Math.round(cd.rv.cfs).toLocaleString()} cfs ${arrow(cd.rv.trend)} <span class="age">(${fmtAge(cd.ageMin)} ago)</span>`:''}${schedTxt}
       · ${rd.txt} <span class="wr">⚠ gauge-inferred + ~1h behind — verify the ${opTxt} before wading${d.g.note?'; '+d.g.note:''}.</span><span class="d2">
       <a href="${d.g.link}" target="_blank" rel="noopener">gauge ↗</a></span> <span class="tw">· Bite Score = tap the pill · auto-refresh 15 min</span></span>`;
     } else {
-      waterHTML=`<span class="pill c">DAM</span><span><b>${d.name}:</b> ${c&&c.inflight?'reading the tailwater gauge… ':'tailwater gauge unreachable — '}release-driven water. <b>Check the ${opTxt} before you go.</b> <span class="wr">Never wade on a rising release.</span></span>`;
+      waterHTML=`<span class="pill c">DAM</span><span><b>${d.name}:</b> ${c&&c.inflight?'reading the tailwater gauge… ':'tailwater gauge unreachable — '}release-driven water.${schedTxt} <b>Check the ${opTxt} before you go.</b> <span class="wr">Never wade on a rising release.</span></span>`;
+    }
+  } else if(d.kind==='tailwater'&&d.cda){
+    fetchCda(d); // no-op when fresh or inflight
+    const c=cdaCache[d.cda.obs], rd=c&&c.read;
+    if(rd){
+      waterHTML=`<span class="pill ${rd.klass}">${rd.cls}</span>
+      <span><b>${d.cda.dam} outflow:</b> ${Math.round(rd.rv.cfs).toLocaleString()} cfs ${arrow(rd.rv.trend)} ${rd.rv.trend} <span class="age">(${fmtAge(rd.ageMin)} ago)</span><span class="d2"> · 24h range ${Math.round(rd.rv.minV).toLocaleString()}–${Math.round(rd.rv.peakV).toLocaleString()} cfs</span>
+      ${rd.sched?` · <b>Schedule:</b> ${rd.sched.txt} <span class="age d2">(Corps forecast — can change)</span>`:''}
+      · ${rd.txt} <span class="wr">⚠ Corps operations data, ~1-2h behind, schedules change without notice — never wade rising water.</span><span class="d2">
+      <a href="https://water.usace.army.mil/" target="_blank" rel="noopener">Corps water data ↗</a></span> <span class="tw">· Bite Score = tap the pill · auto-refresh 15 min</span></span>`;
+    } else {
+      waterHTML=`<span class="pill c">DAM</span><span><b>${d.name}:</b> ${c&&c.inflight?'reading Corps operations data… ':'Corps data unreachable — '}release-driven water. <b>Check the Corps release schedule (water.usace.army.mil) before you go.</b> <span class="wr">Never wade on a rising release.</span></span>`;
     }
   } else if(d.kind==='tailwater'){
     const opTxt=d.op==='USACE'?'Corps release schedule (water.usace.army.mil)':'TVA generation schedule (TVA app · 800-238-2264)';
