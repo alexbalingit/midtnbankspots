@@ -179,6 +179,32 @@
   .nearmin{flex:0 0 auto;font-size:10.5px;color:#7a5a1e;font-weight:700;background:rgba(168,133,62,.14);border-radius:999px;padding:2px 8px;white-space:nowrap}
   .panel .empty{padding:12px 16px;font-size:12px;color:var(--marsh)}
 
+  /* ── trophy mode (2026-07-17) ───────────────────────────────────────────── */
+  .hbtn.tro-on{background:var(--brass);color:var(--bark);border-color:var(--brassL)}
+  .cpin.tgold{filter:drop-shadow(0 0 7px rgba(200,165,90,.85))}
+  body.trophy .leaflet-marker-pane .cpin:not(.tgold){opacity:.3;transition:opacity .25s}
+  body.trophy .cluster{opacity:.3;transition:opacity .25s}
+  body.trophy .leaflet-overlay-pane{opacity:.4}
+  .tb{display:flex;gap:7px;align-items:flex-start;font-size:12px;line-height:1.45;background:rgba(168,133,62,.12);
+    border:1px solid rgba(168,133,62,.4);border-radius:8px;padding:7px 9px;margin:8px 0 2px;color:var(--ink)}
+  .tb .ico{margin-top:1px;color:var(--brass);flex:0 0 auto}
+  .tb b{color:#6e5626}
+  .tb.tb-none{opacity:.78;background:rgba(25,27,19,.05);border-color:var(--hair)}
+  .tsc{margin-left:auto;flex:0 0 auto;font-weight:800;font-size:11.5px;color:var(--bark);background:var(--brassL);
+    border-radius:999px;padding:2px 8px}
+  .tsc.s2{background:#d8cfae;color:var(--moss)}
+  .tnote{font-size:11.5px;color:var(--moss);line-height:1.5;padding:2px 2px 8px}
+  .tleg{display:none}
+  body.trophy .tleg{display:flex}
+  .tb2{font-weight:400;font-size:11.5px;color:var(--moss);margin-top:4px;line-height:1.5}
+  .tb2 b{color:#6e5626;font-weight:700}
+  .tb2.trec{color:#6e5626;font-weight:600}
+  .tchips{display:flex;flex-wrap:wrap;gap:6px;padding:2px 0 10px}
+  .tchips button{font-size:11px;font-weight:700;letter-spacing:.02em;border:1px solid rgba(168,133,62,.55);
+    background:none;color:var(--moss);border-radius:999px;padding:4px 10px;cursor:pointer}
+  .tchips button.on{background:var(--brass);border-color:var(--brass);color:var(--field)}
+  .twcred{font-size:11px;color:var(--moss);line-height:1.5;padding:0 2px 6px}
+  .twcred b{color:#6e5626}
   /* ── legend ─────────────────────────────────────────────────────────────── */
   .legend{position:absolute;right:12px;bottom:26px;z-index:1000;background-color:rgba(25,27,19,.94);color:rgba(239,233,216,.9);
           border:1px solid rgba(200,165,90,.3);border-radius:14px;padding:13px 15px;font-size:12.5px;
@@ -314,6 +340,10 @@
     <span class="guide">Cast Maps · 203 spots</span>
   </div>
   <span class="spacer"></span>
+  <button class="hbtn iconic" id="trobtn" aria-label="Trophy mode" title="Trophy Mode — rank spots by proven TWRA trophy catches">
+    <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0Z"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3"/></svg>
+    <span class="lbl">Trophy</span>
+  </button>
   <button class="hbtn iconic" id="laybtn" aria-label="Map layers">
     <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="m12 3.5 8.5 4.7L12 12.9 3.5 8.2Z"/><path d="m4.2 12.6 7.8 4.3 7.8-4.3"/><path d="m4.2 16.4 7.8 4.3 7.8-4.3"/></svg>
     <span class="lbl">Layers</span>
@@ -367,6 +397,7 @@
   <div class="row"><span class="dot" style="background:var(--blaze)"></span><b>Mixed + catfish</b> <span class="d">— gravel bars &amp; pools</span></div>
   <div class="row"><span class="dot" style="background:var(--slate)"></span><b>Trout</b> <span class="d">— stocked tailwater (cool months)</span></div>
   <div class="row"><span class="dot" style="background:#2e5d52"></span><b>Reservoir</b> <span class="d">— striper · walleye · crappie brush</span></div>
+  <div class="row tleg"><span class="dot" style="background:var(--brass);box-shadow:0 0 6px rgba(200,165,90,.9)"></span><b>Gold pin</b> <span class="d">— Elite 25 trophy spot (TARP-proven)</span></div>
   <div class="key">
     <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-6.6 7-12a7 7 0 1 0-14 0c0 5.4 7 12 7 12Z"/><circle cx="12" cy="9" r="2.4"/></svg> park ·
     <svg class="ico" viewBox="0 0 24 24" fill="currentColor"><ellipse cx="9.5" cy="12" rx="7" ry="4.6"/><path d="M15.5 12l6.5-4.2v8.4Z"/></svg> walk to water ·
@@ -607,6 +638,175 @@ const spots = [
  {n:'Reelfoot spillway / Lake Inn access (Tiptonville)',cat:'R',city:'Reelfoot Lake — Tiptonville (crappie · bluegill · bald cypress)',park:[36.37635,-89.4389],water:[36.37711,-89.43762],d:'~155 yd (bank near the spillway)',sp:'Crappie, bluegill, largemouth, catfish, bowfin',note:'Bank access near the Reelfoot spillway on the SW shore by the Reelfoot Lake Inn — moving-water concentration at the outlet; good crappie + bluegill.'},
 ];
 
+
+// ── TROPHY MODE — TARP-proven trophy density → per-spot Trophy Score (2026-07-17) ──
+// Source: TWRA TARP, all 9,826 certified entries 2003–2026 → vault: "TARP Trophy Density Rankings.md"
+// Score = (68·Proof + 24·Heat·min(1, entries/150)) · Match + Access
+//   Proof  = ln(entries+1)/ln(1128) — water's certified trophy count, log-scaled
+//   Heat   = since-2020 share ÷ 50% (capped 1) — discounted on thin samples (<150 entries)
+//   Match  = 1 if the spot's species overlap the water's top trophy species, else .55
+//   Access = +8 dam tailwater/tailrace/spillway · +4 pier/platform (where bank anglers reach trophy fish)
+// Tiers: ELITE = top 25 statewide (gold pins) · STRONG ≥62 · SOLID ≥40 · LOCAL = rest / no TARP record
+// Refresh cadence: quarterly with the TARP re-extraction (~110 new entries/quarter).
+const TARP={
+ 'CHICKAMAUGA':{n:'Chickamauga',e:1127,h:.21,r:1,sp:['catfish','crappie','largemouth']},
+ 'WATTS BAR':{n:'Watts Bar',e:724,h:.20,r:2,sp:['catfish','crappie','smallmouth']},
+ 'NICKAJACK':{n:'Nickajack',e:612,h:.31,r:3,sp:['catfish','smallmouth','drum','largemouth']},
+ 'KENTUCKY LAKE':{n:'Kentucky Lake',e:464,h:.26,r:4,sp:['crappie','redear','largemouth','catfish','sauger']},
+ 'CANEY FORK RIVER':{n:'Caney Fork',e:421,h:.14,r:5,sp:['trout','striper','muskie']},
+ 'DALE HOLLOW':{n:'Dale Hollow',e:388,h:.15,r:6,sp:['smallmouth','redear','walleye','crappie']},
+ 'BOONE':{n:'Boone',e:337,h:.46,r:7,sp:['striper','trout','smallmouth']},
+ 'OLD HICKORY':{n:'Old Hickory',e:322,h:.49,r:8,sp:['striper','crappie','redear','catfish','sauger','walleye']},
+ 'FORT LOUDOUN':{n:'Fort Loudoun',e:287,h:.24,r:9,sp:['catfish','crappie','flathead','striper']},
+ 'PERCY PRIEST':{n:'Percy Priest',e:227,h:.32,r:10,sp:['crappie','smallmouth','largemouth']},
+ 'NORRIS':{n:'Norris',e:226,h:.20,r:11,sp:['smallmouth','redear','crappie','bluegill','striper','walleye']},
+ 'CHEROKEE':{n:'Cherokee',e:217,h:.23,r:12,sp:['smallmouth','crappie','largemouth','striper','paddlefish']},
+ 'WATAUGA':{n:'Watauga',e:187,h:.20,r:13,sp:['smallmouth','lake trout','walleye','trout']},
+ 'MELTON HILL':{n:'Melton Hill',e:181,h:.22,r:14,sp:['muskie','striper','redear','perch']},
+ 'CLINCH RIVER':{n:'Clinch River',e:155,h:.25,r:15,sp:['trout','striper']},
+ 'DOUGLAS':{n:'Douglas',e:153,h:.31,r:16,sp:['crappie','largemouth','smallmouth','walleye','sauger']},
+ 'BARKLEY':{n:'Barkley',e:153,h:.47,r:17,sp:['crappie','catfish','flathead','redear']},
+ 'FORT PATRICK HENRY':{n:'Fort Patrick Henry',e:151,h:.48,r:19,sp:['cherokee','trout','striper','smallmouth']},
+ 'TIMS FORD':{n:'Tims Ford',e:144,h:.47,r:20,sp:['yellow bass','smallmouth','rock bass','crappie','striper','walleye']},
+ 'SOUTH HOLSTON':{n:'South Holston',e:139,h:.19,r:22,sp:['smallmouth','lake trout','trout','pike']},
+ 'CENTER HILL':{n:'Center Hill',e:130,h:.24,r:23,sp:['redear','smallmouth','crappie','rock bass']},
+ 'SOUTH HOLSTON RIVER':{n:'SoHo tailwater',e:129,h:.33,r:24,sp:['trout','smallmouth']},
+ 'CHEATHAM':{n:'Cheatham',e:106,h:.54,r:26,sp:['flathead','smallmouth','largemouth','catfish','striper','sauger']},
+ 'DUCK RIVER':{n:'Duck River',e:56,h:.50,r:30,sp:['rock bass','smallmouth','drum','catfish']},
+ 'HIWASSEE RIVER':{n:'Hiwassee',e:49,h:.47,r:0,sp:['perch','trout','catfish','crappie','striper']},
+ 'NORMANDY':{n:'Normandy',e:46,h:.43,r:0,sp:['crappie','rock bass','largemouth','walleye']},
+ 'CORDELL HULL':{n:'Cordell Hull',e:43,h:.33,r:0,sp:['striper','largemouth','sauger','walleye']},
+ 'REELFOOT':{n:'Reelfoot',e:43,h:.33,r:0,sp:['crappie','yellow bass','bowfin','bluegill']},
+ 'ELK RIVER':{n:'Elk River',e:43,h:.33,r:0,sp:['smallmouth','trout','rock bass','yellow bass']},
+ 'PICKWICK':{n:'Pickwick',e:43,h:.40,r:0,sp:['crappie','smallmouth','catfish','sauger']},
+ 'STONES RIVER':{n:'Stones River',e:40,h:.32,r:0,sp:['rock bass','smallmouth','yellow bass','striper','catfish']},
+ 'COLLINS RIVER':{n:'Collins River',e:38,h:.55,r:0,sp:['smallmouth','muskie','rock bass','walleye']},
+ 'WATAUGA RIVER':{n:'Watauga River',e:33,h:.21,r:0,sp:['trout','striper']},
+ 'HARPETH RIVER':{n:'Harpeth',e:20,h:.55,r:0,sp:['smallmouth','rock bass','gar','spotted']},
+ 'RICHLAND CREEK':{n:'Richland Creek',e:20,h:.30,r:0,sp:['rock bass','smallmouth','largemouth']},
+ 'WILLIAMSPORT LAKE':{n:'Williamsport Lakes',e:18,h:.17,r:0,sp:['largemouth','crappie','bluegill','redear']},
+ 'OBEY RIVER':{n:'Obey tailwater',e:14,h:0,r:0,sp:['trout','walleye']}
+};
+// Certified-species detail per water (TARP counts + published maxes) and record honors.
+// top: [species, entries, max-length?] · rec:{sp,txt} shown when the lens/species matches.
+const TARP_TOP={
+ 'CHICKAMAUGA':[['Blue cat',336,'60″'],['Black crappie',136],['White crappie',128,'18.75″'],['Largemouth',114,'28.25″'],['Redear',73],['Flathead',31,'54.75″']],
+ 'WATTS BAR':[['Blue cat',125],['White crappie',123],['Smallmouth',89,'26″'],['Black crappie',70],['Striper',66],['Flathead',59],['Sauger',14,'24″']],
+ 'NICKAJACK':[['Blue cat',218,'61″'],['Smallmouth',107],['Drum',52],['Largemouth',51]],
+ 'KENTUCKY LAKE':[['White crappie',153,'18″'],['Redear',64],['Largemouth',49],['Blue cat',45]],
+ 'CANEY FORK RIVER':[['Brook trout (stocked)',316],['Striper',30,'51″'],['Brown',27],['Muskie',12]],
+ 'DALE HOLLOW':[['Smallmouth',273,'23.5″'],['Redear',17],['Walleye',14],['Black crappie',14]],
+ 'BOONE':[['Striper',122,'49″'],['Brown',82,'34.5″'],['Smallmouth',52],['Cherokee bass',22]],
+ 'OLD HICKORY':[['Striper',72,'48″'],['White crappie',50],['Redear',28],['Blue cat',27],['Sauger',25],['Walleye',10]],
+ 'FORT LOUDOUN':[['Blue cat',105,'54″'],['White crappie',47],['Flathead',37],['Striper',24]],
+ 'PERCY PRIEST':[['White crappie',89,'17″'],['Black crappie',41],['Smallmouth',26],['Largemouth',20]],
+ 'NORRIS':[['Smallmouth',80,'24″'],['Redear',46],['Black crappie',21],['Bluegill',20,'12.5″']],
+ 'CHEROKEE':[['Smallmouth',63,'28″'],['White crappie',37],['Black crappie',27,'19″'],['Largemouth',19]],
+ 'WATAUGA':[['Smallmouth',42],['Lake trout',41],['Walleye',22,'31″'],['Rainbow',20]],
+ 'MELTON HILL':[['Muskie',67,'53.4″'],['Striper',28,'50″'],['Redear',19],['Yellow perch',16]],
+ 'CLINCH RIVER':[['Brook trout',71],['Brown',22,'34″'],['Striper',13],['Rainbow',12]],
+ 'DOUGLAS':[['White crappie',74,'18″'],['Largemouth',30,'27.5″'],['Smallmouth',20],['Black crappie',13]],
+ 'BARKLEY':[['White crappie',42],['Blue cat',37,'48.25″'],['Flathead',22],['Redear',9]],
+ 'FORT PATRICK HENRY':[['Cherokee bass',37],['Rainbow',29],['Striper',20],['Smallmouth',18]],
+ 'TIMS FORD':[['Yellow bass',52],['Smallmouth',40],['Rock bass',15],['Black crappie',12]],
+ 'SOUTH HOLSTON':[['Smallmouth',94,'24″'],['Lake trout',8],['Rainbow',6],['Rock bass',5]],
+ 'CENTER HILL':[['Redear',38,'14.5″'],['Smallmouth',21],['Black crappie',20],['Rock bass',11]],
+ 'SOUTH HOLSTON RIVER':[['Brown',56,'35″'],['Smallmouth',34],['Rainbow',17]],
+ 'CHEATHAM':[['Flathead',30],['Smallmouth',22],['Largemouth',12],['Blue cat',9]],
+ 'DUCK RIVER':[['Rock bass',25,'14.5″'],['Smallmouth',17],['Drum',4]],
+ 'HIWASSEE RIVER':[['Yellow perch',14],['Brook trout',11],['Blue cat',7],['White crappie',4]],
+ 'NORMANDY':[['Black crappie',20],['Rock bass',11],['White crappie',4],['Largemouth',3]],
+ 'CORDELL HULL':[['Striper',17],['Largemouth',6],['Sauger',5],['Walleye',4,'34″']],
+ 'REELFOOT':[['White crappie',28],['Yellow bass',6],['Bowfin',4],['Bluegill',2]],
+ 'ELK RIVER':[['Smallmouth',12],['Brook trout',12],['Rock bass',6],['Yellow bass',3]],
+ 'PICKWICK':[['White crappie',8],['Black crappie',7],['Smallmouth',6],['Blue cat',5]],
+ 'STONES RIVER':[['Rock bass',21],['Smallmouth',6],['Yellow bass',4]],
+ 'COLLINS RIVER':[['Smallmouth',12],['Muskie',11],['Rock bass',11]],
+ 'WATAUGA RIVER':[['Brown',11],['Striper',9],['Rainbow',7],['Brook trout',6]],
+ 'HARPETH RIVER':[['Smallmouth',7],['Rock bass',4],['Longnose gar',3]],
+ 'RICHLAND CREEK':[['Rock bass',13],['Smallmouth',5]],
+ 'WILLIAMSPORT LAKE':[['Largemouth',8],['Black crappie',3],['Bluegill',3],['Redear',2]],
+ 'OBEY RIVER':[['Brook trout',12],['Brown',1]]
+};
+// Record honors (vault: Spots Index + gap list + TARP rankings — phrased as documented, nothing invented)
+const TARP_REC={
+ 'DALE HOLLOW':{sp:'smallmouth',txt:'All-tackle WORLD-record smallmouth — 11 lb 15 oz, still stands'},
+ 'NICKAJACK':{sp:'largemouth',txt:'CURRENT TN state-record largemouth — 15.75 lb (Feb 2026)'},
+ 'CHICKAMAUGA':{sp:'blue cat',txt:'75-lb world line-class record blue cat (dam tailwater)'},
+ 'BARKLEY':{sp:'blue cat',txt:'TN state-record blue catfish — 122 lb 3 oz (2023)'},
+ 'CORDELL HULL':{sp:'striper',txt:'TN state-record striped bass — 65 lb 6 oz (2000, below the dam)'},
+ 'OLD HICKORY':{sp:'walleye|sauger',txt:'World-record-walleye water · TN’s #1 sauger water'},
+ 'SOUTH HOLSTON':{sp:'pike',txt:'TN state-record northern pike — 24 lb 8 oz'},
+ 'CLINCH RIVER':{sp:'brown|trout',txt:'TN state-record brown trout — 28 lb 12 oz (14–20″ slot)'},
+ 'WATAUGA':{sp:'lake trout|brown|trout',txt:'TN-record lake trout (22-2) + Ohrid brown (14-5)'},
+ 'FORT PATRICK HENRY':{sp:'cutthroat|trout',txt:'TN state-record cutthroat — 6 lb 9 oz (2024)'},
+ 'CHEROKEE':{sp:'paddlefish',txt:'TN state-record paddlefish — 149 lb'},
+ 'MELTON HILL':{sp:'muskie',txt:'Half of ALL TN muskie entries — max 53.4″'},
+ 'DUCK RIVER':{sp:'rock bass',txt:'TN’s #1 rock bass water (max 14.5″)'},
+ 'SOUTH HOLSTON RIVER':{sp:'brown|trout',txt:'TARP’s largest brown trout — 35″ (wild, 16–22″ slot)'}
+};
+Object.keys(TARP_TOP).forEach(k=>{ if(TARP[k]) TARP[k].top=TARP_TOP[k]; });
+Object.keys(TARP_REC).forEach(k=>{ if(TARP[k]) TARP[k].rec=TARP_REC[k]; });
+function fmtTop(t,limit){ return (t.top||[]).slice(0,limit||4).map(x=>`${x[0]} ${x[1]}${x[2]?` (max ${x[2]})`:''}`).join(' · '); }
+
+const TROPHY_CITY={
+ 'Brentwood':'HARPETH RIVER','Franklin':'HARPETH RIVER','Kingston Springs — Harpeth SP':'HARPETH RIVER',
+ 'Spring Hill / Williamsport':'DUCK RIVER','Columbia':'DUCK RIVER','Culleoka / Chapel Hill':'DUCK RIVER',
+ 'Shelbyville':'DUCK RIVER','Manchester / Normandy':'NORMANDY','Pulaski':'RICHLAND CREEK','Fayetteville — Elk River':'ELK RIVER'
+};
+// waters whose group names carry the water — resolve by prefix so new sub-groups inherit automatically
+const TROPHY_PREFIX=[
+ ['Tims Ford','TIMS FORD'],['Caney Fork','CANEY FORK RIVER'],['Stones River','STONES RIVER'],
+ ['Cumberland — Old Hickory','OLD HICKORY'],['Old Hickory Lake','OLD HICKORY'],['Cumberland — Cheatham','CHEATHAM'],
+ ['Kentucky Lake','KENTUCKY LAKE'],['Nickajack','NICKAJACK'],['Chattanooga — Chickamauga','CHICKAMAUGA'],
+ ['Chickamauga Lake','CHICKAMAUGA'],['Cleveland — lower Hiwassee','HIWASSEE RIVER'],['Watts Bar','WATTS BAR'],
+ ['Fort Loudoun','FORT LOUDOUN'],['Melton Hill','MELTON HILL'],['Dale Hollow — Obey','OBEY RIVER'],
+ ['Dale Hollow Lake','DALE HOLLOW'],['Lake Barkley','BARKLEY'],['Rock Island','CANEY FORK RIVER'],
+ ['Great Falls','COLLINS RIVER'],['Boone Lake','BOONE'],['South Holston Lake','SOUTH HOLSTON'],
+ ['South Holston tailwater','SOUTH HOLSTON RIVER'],['Watauga Lake','WATAUGA'],['Watauga tailwater','WATAUGA RIVER'],
+ ['Cherokee Lake','CHEROKEE'],['Fort Patrick Henry','FORT PATRICK HENRY'],['Clinch River tailwater','CLINCH RIVER'],
+ ['Norris Lake','NORRIS'],['Cordell Hull','CORDELL HULL'],['Douglas Lake','DOUGLAS'],['Reelfoot','REELFOOT'],
+ ['Percy Priest','PERCY PRIEST']
+];
+const TROPHY_OVR={'Williamsport Lakes (TWRA)':'WILLIAMSPORT LAKE'}; // spot-level exceptions
+const TROPHY_SYN={catfish:/blue cat|flathead|catfish/i,crappie:/crappie/i,largemouth:/largemouth/i,
+ smallmouth:/smallmouth/i,striper:/striper|striped bass|hybrid/i,trout:/trout|brown|rainbow|brook/i,
+ 'lake trout':/lake trout/i,walleye:/walleye/i,sauger:/sauger/i,muskie:/muskie|muskellunge/i,
+ 'rock bass':/rock bass|redeye/i,redear:/redear|shellcracker/i,bluegill:/bluegill/i,'yellow bass':/yellow bass/i,
+ perch:/perch/i,drum:/drum/i,spotted:/spotted/i,gar:/gar/i,flathead:/flathead/i,pike:/pike/i,
+ bowfin:/bowfin/i,cherokee:/cherokee|hybrid/i,paddlefish:/paddlefish/i};
+function trophyWater(s){
+  if(TROPHY_OVR[s.n]) return TROPHY_OVR[s.n];
+  if(TROPHY_CITY[s.city]) return TROPHY_CITY[s.city];
+  for(const [p,w] of TROPHY_PREFIX){ if(s.city.startsWith(p)) return w; }
+  return null; // Nolin (KY — outside TARP), park lakes, etc.
+}
+(function(){
+  spots.forEach(s=>{
+    const wk=trophyWater(s), t=wk&&TARP[wk];
+    if(!t){ s._t={wk:null,sc:0,rank:0,tier:'local'}; return; }
+    const P=Math.log(t.e+1)/Math.log(1128);
+    const H=Math.min(t.h/.5,1)*Math.min(1,t.e/150);
+    const M=t.sp.some(k=>{const rx=TROPHY_SYN[k];return rx&&rx.test(s.sp);})?1:.55;
+    const A=(/tailwater|tailrace|below .{0,20}dam|dam tailwater|weir|spillway|powerhouse/i.test(s.n+' '+s.city+' '+s.note)?8:0)
+           +(/pier|platform/i.test(s.n+' '+s.note)?4:0);
+    s._t={wk:wk,sc:Math.min(100,Math.round((68*P+24*H)*M+A)),rank:0,tier:'local'};
+  });
+  const ranked=spots.slice().sort((a,b)=>b._t.sc-a._t.sc
+    ||((TARP[a._t.wk]||{r:99}).r||99)-((TARP[b._t.wk]||{r:99}).r||99)
+    ||((TARP[b._t.wk]||{e:0}).e)-((TARP[a._t.wk]||{e:0}).e));
+  ranked.forEach((s,i)=>{ s._t.rank=i+1;
+    s._t.tier = s._t.wk ? (i<25?'elite':(s._t.sc>=62?'strong':(s._t.sc>=40?'solid':'local'))) : 'local'; });
+  window.TROPHY_RANKED=ranked;
+})();
+function tbadge(s){
+  const t=s._t;
+  if(!t.wk) return `<div class="tb tb-none">${I.cup}<span>No TWRA trophy record for this water — local water, fun over fame.</span></div>`;
+  const w=TARP[t.wk], tierLbl={elite:'ELITE',strong:'STRONG',solid:'SOLID',local:'LOCAL'}[t.tier];
+  const certLine = w.top ? `<div class="tb2"><b>Certified here:</b> ${fmtTop(w,5)}</div>` : '';
+  const recLine = w.rec ? `<div class="tb2 trec">★ ${w.rec.txt}</div>` : '';
+  return `<div class="tb tb-${t.tier}">${I.cup}<span><b>Trophy Score ${t.sc} · ${tierLbl}</b> — #${t.rank} of ${spots.length} · ${w.n}${w.r?` is TN’s #${w.r} trophy water`:''} · ${w.e} TWRA-certified trophies · ${Math.round(w.h*100)}% since ’20${certLine}${recLine}</span></div>`;
+}
 // ── icons (inline SVG, no emoji) ─────────────────────────────────────────────
 const I = {
   pin:'<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-6.6 7-12a7 7 0 1 0-14 0c0 5.4 7 12 7 12Z"/><circle cx="12" cy="9" r="2.4"/></svg>',
@@ -617,7 +817,8 @@ const I = {
   gps:'<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg>',
   tap:'<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 11.5V5a1.8 1.8 0 0 1 3.6 0v5.2l4.4 1.3c.9.3 1.5 1.2 1.3 2.1l-.8 4.3a2.5 2.5 0 0 1-2.5 2.1H11a2.5 2.5 0 0 1-1.9-.9L5 14.5a1.6 1.6 0 0 1 2.3-2.2L9 13.7"/></svg>',
   trash:'<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M9 7V5h6v2M6.5 7l1 13h9l1-13M10 11v6M14 11v6"/></svg>',
-  x:'<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>'
+  x:'<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+  cup:'<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0Z"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3"/></svg>'
 };
 
 // ── map + tinted basemap ─────────────────────────────────────────────────────
@@ -710,6 +911,7 @@ function renderCard(s){
      <h3>${s.n}</h3>
      <span class="z" style="background:${col}">${CAT[s.cat].label}</span>
      <p>${s.note}</p>
+     ${tbadge(s)}
      <div class="meta">${I.fish}<span><b>Fish here:</b> ${s.sp}</span></div>
      <div class="meta">${I.walk}<span><b>Walk:</b> ${s.d}</span></div>
      <div class="co">park ${s.park[0]}, ${s.park[1]}<br>water ${s.water[0]}, ${s.water[1]}</div>
@@ -798,6 +1000,27 @@ function updateHint(){
 function dismissHint(){ localStorage.setItem(HINT_KEY,'1'); updateHint(); }
 document.getElementById('chintx').onclick=dismissHint;
 clusterGroup.on('clusterclick',dismissHint); // once they use it, they get it
+
+// ── Trophy Mode — gold Elite-25 layer + lens toggle (2026-07-17) ─────────────
+function trophyPin(rank){ const mb=isMobile(), pw=mb?31:35, ph=mb?39:44;
+  return L.divIcon({className:'cpin tgold',
+    html:`<svg width="${pw}" height="${ph}" viewBox="0 0 30 38"><path d="M15 37C15 37 3 22.6 3 13a12 12 0 1 1 24 0c0 9.6-12 24-12 24Z" fill="#a8853e" stroke="#efe9d8" stroke-width="2"/><circle cx="15" cy="13" r="8.2" fill="#191b13"/><text x="15" y="17.2" text-anchor="middle" font-family="Inter,-apple-system,sans-serif" font-size="${rank>9?11:12.5}" font-weight="800" fill="#c8a55a">${rank}</text></svg>`,
+    iconSize:[pw,ph], iconAnchor:[pw/2,ph-1], popupAnchor:[0,-Math.round(ph*.9)]});}
+const tgLayer=L.layerGroup();
+TROPHY_RANKED.slice(0,25).forEach(s=>{ const m=L.marker(s.park,{icon:trophyPin(s._t.rank),zIndexOffset:1200});
+  m.on('click',()=>showCard(s,m)); tgLayer.addLayer(m); });
+const troBtn=document.getElementById('trobtn');
+let trophyOn=false;
+function setTrophy(on,quiet){ trophyOn=on;
+  document.body.classList.toggle('trophy',on);
+  troBtn.classList.toggle('tro-on',on);
+  if(on) tgLayer.addTo(map); else map.removeLayer(tgLayer);
+  try{localStorage.setItem('caster_trophy',on?'1':'0');}catch(e){}
+  buildList();
+  if(on&&!quiet) setPanel(true);
+}
+troBtn.onclick=()=>setTrophy(!trophyOn);
+
 map.on('zoomend moveend',()=>setTimeout(updateHint,80));
 setTimeout(updateHint,300);
 
@@ -998,11 +1221,57 @@ function spotRow(s,extra){
 // ── spot search (2026-07-14, Alex request: "search for dams, big fish") ──────
 // matches name + city group + species + note + category label; live-filters the drawer
 const searchIn=document.getElementById('spotsearch'), searchClear=document.getElementById('searchclear');
-function spotHay(s){ return (s.n+' '+s.city+' '+s.sp+' '+s.note+' '+CAT[s.cat].label).toLowerCase(); }
+function spotHay(s){ return (s.n+' '+s.city+' '+s.sp+' '+s.note+' '+CAT[s.cat].label+(s._t&&s._t.wk?' trophy '+s._t.tier:'')).toLowerCase(); }
+const TROPHY_CHIPS=[
+ ['Smallmouth',/smallmouth/i],['Striper',/striper/i],['Big cats',/blue cat|flathead/i],
+ ['Crappie',/crappie/i],['Trout',/trout|brown|rainbow|brook/i],['Walleye · Sauger',/walleye|sauger/i],
+ ['Muskie',/muskie/i],['Largemouth',/largemouth/i]];
+let troChip='';
+function speciesWaters(rx){
+  return Object.keys(TARP).map(k=>{ const t=TARP[k];
+    const hits=(t.top||[]).filter(x=>rx.test(x[0]));
+    const c=hits.reduce((a,x)=>a+x[1],0);
+    const mx=hits.map(x=>x[2]).filter(Boolean)[0]||null;
+    return {k,t,c,mx};
+  }).filter(x=>x.c>0).sort((a,b)=>b.c-a.c);
+}
+function chipsHtml(){
+  return `<div class="tchips"><button data-ch="" class="${troChip?'':'on'}">All fish</button>`+
+    TROPHY_CHIPS.map(([n])=>`<button data-ch="${n}" class="${troChip===n?'on':''}">${n}</button>`).join('')+`</div>`;
+}
+function renderTrophyList(){
+  let html=`<div class="city"><h3 class="home">Trophy Mode <span class="ct">(9,826 TWRA entries)</span></h3>
+    <div class="tnote">Every spot scored on its water’s <b>proven</b> trophy record — TWRA-certified catches, recency, species fit, and bank access. Gold pins = the Elite 25. Pick a fish to rank the destinations for it.</div>
+    ${chipsHtml()}</div>`;
+  if(!troChip){
+    html+=`<div class="city"><h3>The Elite 25 <span class="ct">(gold pins)</span></h3>`;
+    TROPHY_RANKED.slice(0,25).forEach(s=>{ html+=spotRow(s,`<span class="tsc">${s._t.sc}</span>`); });
+    html+=`</div><div class="city"><h3>Strong — worth the drive <span class="ct">(26–75)</span></h3>`;
+    TROPHY_RANKED.slice(25,75).forEach(s=>{ html+=spotRow(s,`<span class="tsc s2">${s._t.sc}</span>`); });
+    html+=`</div>`;
+  }else{
+    const rx=TROPHY_CHIPS.find(c=>c[0]===troChip)[1];
+    const waters=speciesWaters(rx).slice(0,7);
+    if(!waters.length) html+=`<div class="empty">No certified ${troChip} waters on the map yet.</div>`;
+    waters.forEach((wx,i)=>{
+      html+=`<div class="city"><h3>${i+1}. ${wx.t.n} <span class="ct">(${wx.c} certified${wx.mx?` · max ${wx.mx}`:''})</span></h3>`;
+      if(wx.t.rec&&rx.test(wx.t.rec.sp)) html+=`<div class="twcred"><b>★ ${wx.t.rec.txt}</b></div>`;
+      const here=spots.filter(s=>s._t.wk===wx.k);
+      const match=here.filter(s=>rx.test(s.sp)).sort((a,b)=>b._t.sc-a._t.sc);
+      const fill=here.filter(s=>!rx.test(s.sp)).sort((a,b)=>b._t.sc-a._t.sc);
+      match.concat(fill).slice(0,4).forEach(s=>{ html+=spotRow(s,`<span class="tsc s2">${s._t.sc}</span>`); });
+      html+=`</div>`;
+    });
+  }
+  cl.innerHTML=html;
+  cl.querySelectorAll('.tchips button').forEach(b=>{ b.addEventListener('click',e=>{ e.stopPropagation(); troChip=b.dataset.ch; renderTrophyList(); }); });
+  wireRows();
+}
 function buildList(){
   let html='';
   const qq=(searchIn.value||'').trim().toLowerCase();
   searchClear.style.display=qq?'flex':'none';
+  if(!qq && trophyOn){ renderTrophyList(); return; }
   if(qq){
     const terms=qq.split(/\s+/);
     const hits=spots.filter(s=>{const hay=spotHay(s);return terms.every(t=>hay.includes(t));});
@@ -1054,7 +1323,7 @@ function fixTops(){ // keep the drawer below the masthead + conditions strip
 function setPanel(open){ fixTops(); panel.classList.toggle('open',open); scrim.classList.toggle('on',open&&isMobile()); if(open) closeSheet(); }
 window.addEventListener('resize',fixTops);
 scrim.onclick=()=>setPanel(false);
-buildList(); drawHome(); fixTops();
+buildList(); drawHome(); fixTops(); try{ if(localStorage.getItem('caster_trophy')==='1') setTrophy(true,true); }catch(e){}
 document.getElementById('navbtn').onclick=()=>setPanel(!panel.classList.contains('open'));
 document.getElementById('panelclose').onclick=()=>setPanel(false);
 
