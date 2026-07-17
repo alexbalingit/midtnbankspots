@@ -1058,13 +1058,27 @@ function drawMe(){
     iconSize:[26,26],iconAnchor:[13,13]}),zIndexOffset:1500,interactive:false}).addTo(map);
 }
 function nearMe(quiet){
-  if(!navigator.geolocation){ meErr='No GPS available in this browser.'; buildList(); return; }
-  navigator.geolocation.getCurrentPosition(p=>{
+  // iOS only reliably grants geolocation on a USER TAP — quiet (auto) refreshes may be
+  // denied without a prompt. Rule (2026-07-17): quiet failures are SILENT and keep the
+  // last fix; only an explicit tap may surface an error or clear the grant flag.
+  if(!navigator.geolocation){ if(!quiet){ meErr='No GPS available in this browser.'; buildList(); } return; }
+  const ok=p=>{
     mePos=[p.coords.latitude,p.coords.longitude]; meAt=Date.now(); meErr='';
     try{localStorage.setItem(ME_OK,'1');}catch(e){}
     drawMe(); buildList();
     if(!quiet) map.flyTo(mePos,9,{duration:.8});
-  },e=>{ meErr='Location unavailable — check GPS permission for this site.'; if(e&&e.code===1) try{localStorage.removeItem(ME_OK);}catch(x){} buildList(); },
+  };
+  navigator.geolocation.getCurrentPosition(ok, e=>{
+    if(quiet) return;                       // silent — last known position stands
+    if(e&&e.code===1){                      // explicit denial on a real tap
+      meErr='Location is blocked for this site. iPhone: aA menu → Website Settings → Location → Allow (and Settings → Privacy → Location Services → Safari Websites → While Using).';
+      try{localStorage.removeItem(ME_OK);}catch(x){}
+      buildList(); return;
+    }
+    // timeout / position-unavailable → one low-accuracy retry before giving up
+    navigator.geolocation.getCurrentPosition(ok, e2=>{ meErr='Couldn’t get a GPS fix — move toward open sky and tap again.'; buildList(); },
+      {enableHighAccuracy:false,maximumAge:300000,timeout:15000});
+  },
   {enableHighAccuracy:true,maximumAge:60000,timeout:8000});
 }
 function nearMeHtml(compact){
