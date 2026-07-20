@@ -364,13 +364,16 @@
   .ccard .cbody .tw{display:block;margin-top:10px;color:var(--marsh);font-size:11.5px;line-height:1.55;border-top:1px solid var(--hair);padding-top:8px}
   /* ── river-gauge pins (2026-07-20): live cfs chips on the map ───────────── */
   .gwrap{background:none;border:none}
-  .gwrap .gchip{transform:translate(-50%,-50%)}
-  .gchip{display:flex;align-items:center;gap:5px;height:25px;padding:0 10px 0 8px;border-radius:999px;
+  .gwrap .gchip{transform:translate(-50%,9px)} /* hangs BELOW the gauge point (pins grow upward) */
+  .gchip{position:relative;display:flex;align-items:center;gap:5px;height:25px;padding:0 10px 0 8px;border-radius:999px;
          background:rgba(25,27,19,.94);border:1.5px solid rgba(200,165,90,.75);color:var(--field);
          font:700 11px/1 var(--sans);letter-spacing:.02em;white-space:nowrap;width:max-content;
          box-shadow:0 4px 12px rgba(15,16,11,.45);cursor:pointer}
-  .gchip .gd{width:7px;height:7px;border-radius:50%;flex:0 0 auto;background:var(--marsh)}
-  .gchip.g .gd{background:#8fbf92}.gchip.c .gd{background:var(--brassL)}.gchip.s .gd{background:#d9764a}
+  .gchip::before{content:"";position:absolute;left:50%;top:-6px;transform:translateX(-50%);
+         border:5px solid transparent;border-bottom-color:rgba(200,165,90,.9);border-top:none}
+  .gchip .u{font-weight:600;font-size:9px;opacity:.7;margin-left:-1px}
+  .gchip .gw{width:12px;height:12px;flex:0 0 auto;color:var(--marsh)}
+  .gchip.g .gw{color:#8fbf92}.gchip.c .gw{color:var(--brassL)}.gchip.s .gw{color:#d9764a}
   .gchip .ar{font-weight:800}
   .gchip .ar.rising{color:#d9764a}.gchip .ar.falling{color:#8fbf92}.gchip .ar.steady{color:var(--brassL)}
   .gchip.dark{opacity:.72}
@@ -2487,8 +2490,9 @@ function gaugeIcon(gp,mini){
   }
   const txt=rv?Math.round(rv.cfs).toLocaleString():'—';
   const ar=rv?`<span class="ar ${rv.trend}">${rv.trend==='rising'?'↗':rv.trend==='falling'?'↘':'→'}</span>`:'';
-  return L.divIcon({className:'gwrap',iconSize:[0,0],popupAnchor:[0,-16],
-    html:`<div class="gchip ${st.klass||''} ${rv?'':'dark'}"><span class="gd"></span>${txt}${ar}</div>`});
+  const wave=`<svg class="gw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M2 9c2.5-3 4.5-3 7 0s4.5 3 7 0 4-2.6 6 0"/><path d="M2 15.5c2.5-3 4.5-3 7 0s4.5 3 7 0 4-2.6 6 0"/></svg>`;
+  return L.divIcon({className:'gwrap',iconSize:[0,0],popupAnchor:[0,-4],
+    html:`<div class="gchip ${st.klass||''} ${rv?'':'dark'}">${wave}${txt}${rv?'<span class="u">cfs</span>':''}${ar}</div>`});
 }
 function gaugePopup(gp){
   const st=gaugeState(gp), rv=st.rv;
