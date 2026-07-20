@@ -1900,11 +1900,14 @@ function openBite(){
 const COND_KEY='caster_water'; // state key — must survive edits (same law as the logger key)
 const GAUGED={
   duck:{key:'duck',name:'Duck River',kind:'river',link:'https://waterdata.usgs.gov/monitoring-location/03599500/'},
-  harpeth:{key:'harpeth',name:'Harpeth River',kind:'river',link:'https://waterdata.usgs.gov/monitoring-location/03434500/'}
+  harpeth:{key:'harpeth',name:'Harpeth · Kingston Spr',kind:'river',link:'https://waterdata.usgs.gov/monitoring-location/03434500/'},
+  harpethUp:{key:'harpethUp',name:'Harpeth · Franklin',kind:'river',link:'https://waterdata.usgs.gov/monitoring-location/03432350/'},
+  duckShel:{key:'duckShel',name:'Duck · Shelbyville',kind:'river',link:'https://waterdata.usgs.gov/monitoring-location/03598000/'},
+  duckHard:{key:'duckHard',name:'Duck · Hardison Mill',kind:'river',link:'https://waterdata.usgs.gov/monitoring-location/03599350/'}
 };
 const COND_CITY={
-  'Brentwood':'harpeth','Franklin':'harpeth','Kingston Springs — Harpeth SP':'harpeth',
-  'Spring Hill / Williamsport':'duck','Columbia':'duck','Culleoka / Chapel Hill':'duck','Shelbyville':'duck','Lewisburg':'duck'
+  'Brentwood':'harpethUp','Franklin':'harpethUp','Kingston Springs — Harpeth SP':'harpeth',
+  'Spring Hill / Williamsport':'duck','Columbia':'duck','Culleoka / Chapel Hill':'duckHard','Shelbyville':'duckShel','Lewisburg':'duckHard'
 };
 // release-driven groups whose names don't say "tailwater" (the regex below catches the rest)
 const COND_TAIL=['Caney Fork','Rock Island','Manchester / Normandy','Fayetteville — Elk River'];
@@ -1994,7 +1997,7 @@ function setCondFocus(d,manual){
   syncWaterFocus(); renderStrip();
 }
 function cycleCond(){ // tap the water chip → cycle the gauged waters (+ back to a non-gauged focus)
-  const ring=[GAUGED.duck,GAUGED.harpeth];
+  const ring=[GAUGED.duck,GAUGED.duckShel,GAUGED.duckHard,GAUGED.harpeth,GAUGED.harpethUp];
   if(condFocus&&!ring.some(w=>w.key===condFocus.key)) ring.push(condFocus);
   const i=ring.findIndex(w=>condFocus&&w.key===condFocus.key);
   setCondFocus(ring[(i+1)%ring.length],true);
@@ -2191,13 +2194,13 @@ async function ensureWx(){
   wxByKey[key]={t:Date.now(),inflight:false,wx:wx||(c?c.wx:null)};
   if(condFocus&&condFocus.key===key&&wx){ window.__wx=wx; window.__ll=focusLL(); renderStrip(); }
 }
-async function harpethBase(){ // seasonal day-of-year MEDIAN cfs @ Kingston Springs — USGS stat service, cached per day
-  const CK='casterHarpethBase_v1';
+async function seasonalBase(site){ // seasonal day-of-year MEDIAN cfs at the given gauge — USGS stat service, cached per site per day
+  const CK='casterSeasonalBase_'+site;
   let c=null; try{ c=JSON.parse(localStorage.getItem(CK)||'null'); }catch(e){}
   const now=new Date(), mo=now.getMonth()+1, dy=now.getDate();
   if(c&&c.mo===mo&&c.dy===dy&&c.v>0) return c.v;
   try{
-    const u='https://waterservices.usgs.gov/nwis/stat/?format=rdb&sites=03434500&statReportType=daily&statTypeCd=median&parameterCd=00060';
+    const u=`https://waterservices.usgs.gov/nwis/stat/?format=rdb&sites=${site}&statReportType=daily&statTypeCd=median&parameterCd=00060`;
     const r=await fetch(u); if(!r.ok) return c?c.v:null;
     const lines=(await r.text()).split('\n').filter(l=>l&&l[0]!=='#');
     const hdr=(lines[0]||'').split('\t'), iM=hdr.indexOf('month_nu'), iD=hdr.indexOf('day_nu'), iV=hdr.indexOf('p50_va');
@@ -2210,6 +2213,21 @@ async function harpethBase(){ // seasonal day-of-year MEDIAN cfs @ Kingston Spri
   }catch(e){ return c?c.v:null; }
 }
 
+function estZoneClass(col,base,rain,wq,upRising){ // shared est.-zone classifier (thresholds scaled off the seasonal median)
+  let cls=null,klass=null,warn='';
+  if(base>0){
+    const R=col.cfs/base;
+    if(R>=3.3||(col.trend==='rising'&&R>=2)){cls='SKIP';klass='s';}
+    else if(R>=2||col.trend==='rising'){cls='CAUTION';klass='c';}
+    else {cls='GO';klass='g';}
+    const r24=rain?rain.r24:0;
+    if(cls==='GO'&&(upRising||r24>=1.0||(wq&&wq.label==='MUDDY'))){ cls='CAUTION';klass='c';
+      warn=upRising?'upstream rising — rise/mud headed downriver':(r24>=1.0?`watershed rain ${r24.toFixed(1)}" /24h — expect a rise`:'muddy water — low odds'); }
+    else if(upRising) warn='upstream rising';
+    else if(r24>=0.3) warn=`watershed rain ${r24.toFixed(1)}" /24h — expect stain`;
+  }
+  return {cls,klass,warn};
+}
 async function updateRiver(){
   const el=document.getElementById('riv'); if(!el) return;
   // ── fetch every gauged water in ONE USGS call, compute per-water; no early-return
@@ -2264,10 +2282,31 @@ async function updateRiver(){
           localStorage.setItem('casterStormLedger_v1',JSON.stringify(Lg));
         }catch(e){}
       }
+      // ── DUCK ZONE READS (2026-07-20): Shelbyville & Hardison-area spots read THEIR gauge —
+      // Columbia's LOCKED GO/CAUTION/SKIP doctrine applies at Columbia only; zones class vs
+      // their own seasonal median (est.), the same framework as the Harpeth adapter. ──
+      if(shel){
+        const baseS=await seasonalBase('03598000');
+        const rainS=(C.duck&&C.duck.rain)||await rivRain();
+        const wqS=rivClarity(shel,fnu,rainS,baseS); // Shelbyville carries the basin turbidity meter
+        const zS=estZoneClass(shel,baseS,rainS,wqS,!!(manch&&manch.trend==='rising'));
+        const ageS=Math.max(0,Math.round((Date.now()-shel.t)/60000));
+        if(ageS>STALE_MIN) zS.warn=(zS.warn?zS.warn+' · ':'')+'Shelbyville gauge 3h+ old — verify before trusting';
+        C.duckShel={col:shel,up:manch,upNm:'Manchester',rain:rainS,cls:zS.cls,klass:zS.klass,warn:zS.warn,ageMin:ageS,wq:wqS,base:baseS};
+      }
+      if(hard){
+        const baseH=await seasonalBase('03599350');
+        const rainH=(C.duck&&C.duck.rain)||await rivRain();
+        const wqH=rivClarity(hard,null,rainH,baseH);
+        const zH=estZoneClass(hard,baseH,rainH,wqH,!!((shel&&shel.trend==='rising')||(manch&&manch.trend==='rising')));
+        const ageH=Math.max(0,Math.round((Date.now()-hard.t)/60000));
+        if(ageH>STALE_MIN) zH.warn=(zH.warn?zH.warn+' · ':'')+'Hardison gauge 3h+ old — verify before trusting';
+        C.duckHard={col:hard,up:shel,upNm:'Shelbyville',rain:rainH,cls:zH.cls,klass:zH.klass,warn:zH.warn,ageMin:ageH,wq:wqH,base:baseH};
+      }
       // ── HARPETH — v3 adapter: same math shape; base = USGS seasonal median; always labeled est. ──
       const kng=S['03434500']||null, frk=S['03432350']||null;
       if(kng){
-        const base=await harpethBase();
+        const base=await seasonalBase('03434500');
         const rain=await rivRain('36.10,35.93,36.03','-87.10,-86.87,-86.78'); // Kingston Springs · Franklin · Brentwood
         const wq=rivClarity(kng,null,rain,base); // no turbidity meter on the Harpeth → est.-only (null if no base)
         let cls=null,klass=null,warn='';
@@ -2285,6 +2324,27 @@ async function updateRiver(){
         const ageMin=Math.max(0,Math.round((Date.now()-kng.t)/60000));
         if(ageMin>STALE_MIN) warn=(warn?warn+' · ':'')+'Kingston Springs gauge 3h+ old — verify before trusting';
         C.harpeth={col:kng,up:frk,rain,cls,klass,warn,ageMin,wq,base};
+      }
+      // ── UPPER HARPETH (Franklin gauge, 2026-07-20): Franklin & Brentwood spots read THEIR water —
+      // KS sits ~35 river mi downstream with ~3x the drainage; its cfs must not grade Franklin. ──
+      if(frk){
+        const base2=await seasonalBase('03432350');
+        const rain2=await rivRain('35.93,36.03','-86.87,-86.78'); // Franklin · Brentwood watershed points
+        const wq2=rivClarity(frk,null,rain2,base2);
+        let cls2=null,klass2=null,warn2='';
+        if(base2>0){
+          const R2=frk.cfs/base2;
+          if(R2>=3.3||(frk.trend==='rising'&&R2>=2)){cls2='SKIP';klass2='s';}
+          else if(R2>=2||frk.trend==='rising'){cls2='CAUTION';klass2='c';}
+          else {cls2='GO';klass2='g';}
+          const r24b=rain2?rain2.r24:0;
+          if(cls2==='GO'&&(r24b>=1.0||(wq2&&wq2.label==='MUDDY'))){ cls2='CAUTION';klass2='c';
+            warn2=r24b>=1.0?`watershed rain ${r24b.toFixed(1)}" /24h — expect a rise`:'muddy water — low odds'; }
+          else if(r24b>=0.3) warn2=`watershed rain ${r24b.toFixed(1)}" /24h — expect stain`;
+        }
+        const ageMin2=Math.max(0,Math.round((Date.now()-frk.t)/60000));
+        if(ageMin2>STALE_MIN) warn2=(warn2?warn2+' · ':'')+'Franklin gauge 3h+ old — verify before trusting';
+        C.harpethUp={col:frk,rain:rain2,cls:cls2,klass:klass2,warn:warn2,ageMin:ageMin2,wq:wq2,base:base2};
       }
     }
   }catch(e){/* keep waters null — bite score still renders */}
@@ -2371,6 +2431,30 @@ function renderStrip(){ // render the strip for the FOCUSED water (fetch-free �
       <a href="${GAUGED.harpeth.link}" target="_blank" rel="noopener">gauge ↗</a></span>
       <span class="tw">· ages = USGS publish lag · auto-refresh 15 min · Bite Score = tap the pill · GO/CAUTION/SKIP here = flow vs seasonal median (est.) — no locked Harpeth doctrine yet.</span></span>`
     :`<span class="wr">⚠ USGS gauge offline — water read unavailable</span> <span class="tw">· tap the Bite Score for timing + weather</span>`;
+  } else if(d.key==='duckShel'||d.key==='duckHard'){
+    const nm=d.key==='duckShel'?'Duck @ Shelbyville':'Duck @ Hardison Mill';
+    const zoneNote=d.key==='duckHard'
+      ?'Zone A wading water — never wade a rising gauge · zone read classed vs THIS gauge\'s seasonal median (est.); Columbia\'s locked GO/SKIP doctrine applies at Columbia only'
+      :'upper-Duck zone read (Three Forks · Dement) — classed vs THIS gauge\'s seasonal median (est.) · ⚠ TWRA streamside parking legally closed at ≥400 cfs Normandy release';
+    waterHTML=(st&&st.col)?`${st.klass?`<span class="pill ${st.klass}">${st.cls}</span>`:''}
+      <span><b>${nm}:</b> ${Math.round(st.col.cfs).toLocaleString()} cfs ${arrow(st.col.trend)} ${st.col.trend} <span class="age">(${fmtAge(st.ageMin)} ago)</span><span class="d2">
+      ${st.up?`· <b>upstream (${st.upNm}):</b> ${Math.round(st.up.cfs).toLocaleString()} cfs ${arrow(st.up.trend)} <span class="age">(${fmtAge(ageOf(st.up))} ago)</span>`:''}
+      ${st.base>0?`· seasonal median ${Math.round(st.base)} cfs`:''}</span>
+      ${st.wq?`· water: <span class="wq ${st.wq.label}">${st.wq.label}${st.wq.note?' → clearing':''}</span> <span class="age d2">${st.wq.est?'(est. — flow + rain model)':`(meter · ${Math.round(st.wq.fnu)} FNU)`}</span>`:''}
+      ${st.warn?`· <span class="wr">⚠ ${st.warn}</span>`:''}<span class="d2">
+      <a href="${GAUGED[d.key].link}" target="_blank" rel="noopener">gauge ↗</a></span>
+      <span class="tw">· ${zoneNote} · ages = USGS publish lag · auto-refresh 15 min · Bite Score = tap the pill</span></span>`
+    :`<span class="wr">⚠ USGS gauge offline — water read unavailable</span> <span class="tw">· tap the Bite Score for timing + weather</span>`;
+  } else if(d.key==='harpethUp'){
+    waterHTML=(st&&st.col)?`${st.klass?`<span class="pill ${st.klass}">${st.cls}</span>`:''}
+      <span><b>Harpeth @ Franklin:</b> ${Math.round(st.col.cfs).toLocaleString()} cfs ${arrow(st.col.trend)} ${st.col.trend} <span class="age">(${fmtAge(st.ageMin)} ago)</span><span class="d2">
+      ${st.base>0?`· seasonal median ${Math.round(st.base)} cfs`:''}
+      ${C&&C.harpeth&&C.harpeth.col?`· <b>downstream (Kingston Springs):</b> ${Math.round(C.harpeth.col.cfs).toLocaleString()} cfs ${arrow(C.harpeth.col.trend)} <span class="age">(different water — ~3x the drainage)</span>`:''}</span>
+      ${st.wq?`· water: <span class="wq ${st.wq.label}">${st.wq.label}${st.wq.note?' → clearing':''}</span> <span class="age d2">(est. — flow vs seasonal median + rain)</span>`:''}
+      ${st.warn?`· <span class="wr">⚠ ${st.warn}</span>`:''}<span class="d2">
+      <a href="${GAUGED.harpethUp.link}" target="_blank" rel="noopener">gauge ↗</a></span>
+      <span class="tw">· upper-Harpeth read — Franklin &amp; Brentwood spots are classed vs THIS gauge's seasonal median (est.), not Kingston Springs · ages = USGS publish lag · auto-refresh 15 min · Bite Score = tap the pill</span></span>`
+    :`<span class="wr">⚠ USGS gauge offline — water read unavailable</span> <span class="tw">· tap the Bite Score for timing + weather</span>`;
   } else if(d.kind==='tailwater'&&d.g){
     fetchTail(d); if(d.cda) fetchCda(d); // no-ops when fresh or inflight
     const c=tailCache[d.g.site], rd=c&&c.read;
@@ -2454,16 +2538,16 @@ function renderStrip(){ // render the strip for the FOCUSED water (fetch-free �
 const GAUGE_PINS=[
  {site:'03596000',water:'Duck River',label:'below Manchester',ll:[35.47094,-86.12164],key:'duck',
   down:{to:'Shelbyville',eta:'6–12h'},role:'headwater gauge above Normandy — the Duck’s first storm warning'},
- {site:'03598000',water:'Duck River',label:'Shelbyville',ll:[35.48035,-86.49916],key:'duck',
-  down:{to:'Columbia',eta:'12–24h'},role:'upstream early warning for Columbia + the basin turbidity meter'},
- {site:'03599350',water:'Duck River',label:'Hardison Mill',ll:[35.60868,-86.82222],key:'duck',
-  down:{to:'Columbia',eta:'4–8h'},role:'Zone A wading gauge — rising here = get out of the water'},
+ {site:'03598000',water:'Duck River',label:'Shelbyville',ll:[35.48035,-86.49916],key:'duckShel',
+  down:{to:'Columbia',eta:'12–24h'},role:'Shelbyville-zone gauge (Three Forks · Dement classed here, est.) + Columbia early warning + the basin turbidity meter'},
+ {site:'03599350',water:'Duck River',label:'Hardison Mill',ll:[35.60868,-86.82222],key:'duckHard',
+  down:{to:'Columbia',eta:'4–8h'},role:'Zone A wading gauge — Chapel Hill · Culleoka · Lewisburg spots classed here (est.); rising = get out of the water'},
  {site:'03599500',water:'Duck River',label:'Columbia',ll:[35.61809,-87.03234],key:'duck',prim:true,
   down:null,role:'THE doctrine gauge — GO ≤600 cfs · CAUTION 600–1,000 · SKIP >1,000 or rising'},
- {site:'03432350',water:'Harpeth River',label:'Franklin',ll:[35.92085,-86.86549],key:'harpeth',
-  down:{to:'Kingston Springs',eta:'12–24h'},role:'upstream early warning for the lower Harpeth'},
+ {site:'03432350',water:'Harpeth River',label:'Franklin',ll:[35.92085,-86.86549],key:'harpethUp',
+  down:{to:'Kingston Springs',eta:'12–24h'},role:'upper-Harpeth doctrine gauge — Franklin & Brentwood spots are classed HERE (est. vs seasonal median)'},
  {site:'03434500',water:'Harpeth River',label:'Kingston Springs',ll:[36.12204,-87.09889],key:'harpeth',prim:true,
-  down:null,role:'main Harpeth gauge — classed vs the day’s seasonal median (est.)'},
+  down:null,role:'lower-Harpeth gauge — Kingston Springs park spots are classed here (est. vs seasonal median)'},
  {site:'03424860',water:'Caney Fork',label:'Stonewall',ll:[36.18611,-85.90444],key:null,prim:true,
   cityRef:'Caney Fork — dam tailwater (Long Branch · Buffalo Valley)',
   down:null,role:'Center Hill release gauge — a generation pulse shows here HOURS after the dam turns on'},
@@ -2477,6 +2561,9 @@ function gaugeState(gp){ // {rv,klass,cls} — doctrine class where doctrine exi
   const C=window.__cond||{}, S=window.__sites||{};
   if(gp.site==='03599500'&&C.duck&&C.duck.col) return {rv:C.duck.col,klass:C.duck.klass,cls:C.duck.cls};
   if(gp.site==='03434500'&&C.harpeth&&C.harpeth.col) return {rv:C.harpeth.col,klass:C.harpeth.klass,cls:C.harpeth.cls};
+  if(gp.site==='03432350'&&C.harpethUp&&C.harpethUp.col) return {rv:C.harpethUp.col,klass:C.harpethUp.klass,cls:C.harpethUp.cls};
+  if(gp.site==='03598000'&&C.duckShel&&C.duckShel.col) return {rv:C.duckShel.col,klass:C.duckShel.klass,cls:C.duckShel.cls};
+  if(gp.site==='03599350'&&C.duckHard&&C.duckHard.col) return {rv:C.duckHard.col,klass:C.duckHard.klass,cls:C.duckHard.cls};
   const c=tailCache[gp.site];
   if(c&&c.read) return {rv:c.read.rv,klass:c.read.klass,cls:c.read.cls};
   return {rv:S[gp.site]||null,klass:null,cls:null};
