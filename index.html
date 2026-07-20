@@ -64,8 +64,13 @@
   .riv{position:absolute;left:0;right:0;z-index:1080;display:none;align-items:flex-start;gap:8px;
        padding:7px 14px;font-size:12px;line-height:1.55;background:rgba(38,43,29,.95);color:rgba(239,233,216,.82);
        border-bottom:1px solid rgba(200,165,90,.25);backdrop-filter:blur(6px)}
-  .riv>span{white-space:normal}
+  .riv.live{display:flex}
+  .riv .rfull>span{white-space:normal}
   .riv .pill{margin-top:1px}
+  /* ── strip v4 (2026-07-20): desktop = inline row (unchanged look) · mobile = 2 condensed rows + details sheet ── */
+  .riv .rtop,.riv .rfull{display:contents}
+  .riv .rbrief,.riv .rx{display:none}
+  .riv .pill.mpill{display:none}
   .riv b{color:var(--field);font-weight:700}
   .riv .pill{flex:0 0 auto;display:inline-block;padding:2px 11px;border-radius:999px;font-weight:800;font-size:10.5px;letter-spacing:.12em;color:#fff}
   .riv .g{background:var(--fern)}.riv .c{background:var(--brass);color:#15160f}.riv .s{background:var(--blaze)}
@@ -321,7 +326,7 @@
     .hdr{gap:8px;padding:0 10px;padding-top:env(safe-area-inset-top);height:calc(52px + env(safe-area-inset-top))}
     .hdr .wordmark{font-size:16.5px;letter-spacing:.18em}
     .hdr .guide{display:none}
-    .hbtn{font-size:11.5px;padding:6px 10px}
+    .hbtn{font-size:11.5px;padding:7px 11px}
     .hbtn .lbl{display:none}
     .legend{display:none}
     .legend.open{display:block;right:12px;left:auto}
@@ -329,12 +334,69 @@
     .lchip{display:flex}
     .panel{width:86vw}
     .chint{white-space:normal;text-align:left;font-size:11px;line-height:1.45;padding:7px 8px 7px 13px;width:calc(100vw - 20px);max-width:360px}
-    .riv .tw{display:none}
-    .riv .d2{display:none}
-    .riv .age{display:none}
-    .riv{font-size:11.5px;line-height:1.4;padding:6px 10px;gap:6px;max-height:34vh;overflow-y:auto}
+    /* strip v4 mobile: Bite pill · water · status on row 1 — one-line read on row 2 — tap for the full card */
+    .riv.live{display:block;padding:0;font-size:12px;line-height:1.4}
+    .riv .rtop{display:flex;align-items:center;gap:7px;padding:8px 10px 6px}
+    .riv .rtop .wsel{margin-top:0;overflow:hidden;text-overflow:ellipsis;max-width:38vw;min-width:0;flex:0 1 auto}
+    .riv .pill.mpill{display:inline-block;margin-top:0}
+    .riv .rx{display:flex;margin-left:auto;flex:0 0 auto;align-items:center;justify-content:center;
+             width:32px;height:27px;border:none;background:rgba(239,233,216,.08);border-radius:999px;
+             color:var(--brassL);cursor:pointer}
+    .riv .rx .ico{width:13px;height:13px}
+    .riv .rbrief{display:block;padding:0 12px 9px;color:rgba(239,233,216,.88);font-size:12px;
+                 white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+    .riv .rbrief .wq{font-weight:800}
+    .riv .rfull{display:none}
     .bcard .fx{grid-template-columns:1fr 1fr}
   }
+  /* ── conditions card (full water read, in the bottom sheet — strip v4) ───── */
+  .ccard .cbody{font-size:13.5px;line-height:1.8;color:var(--ink)}
+  .ccard .cbody b{color:var(--pine)}
+  .ccard .cbody .pill{display:inline-block;padding:2px 11px;border-radius:999px;font-weight:800;font-size:10.5px;letter-spacing:.12em;color:#fff;margin-right:3px}
+  .ccard .cbody .pill.g{background:var(--fern)}.ccard .cbody .pill.c{background:var(--brass);color:#15160f}.ccard .cbody .pill.s{background:var(--blaze)}
+  .ccard .cbody .pill.src{background:rgba(168,133,62,.14);color:#7a5a1e;border:1px solid rgba(168,133,62,.5);letter-spacing:.07em}
+  .ccard .cbody .wq{font-weight:800}
+  .ccard .cbody .wq.CLEAR{color:var(--fern)}.ccard .cbody .wq.STAINED{color:#7a5a1e}.ccard .cbody .wq.MUDDY{color:var(--blaze)}
+  .ccard .cbody .wr{color:var(--blaze);font-weight:700}
+  .ccard .cbody .age{color:var(--marsh);font-size:11.5px}
+  .ccard .cbody .d2{color:var(--pine)}
+  .ccard .cbody a{color:#7a5a1e;font-weight:700;text-decoration:none}
+  .ccard .cbody .tw{display:block;margin-top:10px;color:var(--marsh);font-size:11.5px;line-height:1.55;border-top:1px solid var(--hair);padding-top:8px}
+  /* ── river-gauge pins (2026-07-20): live cfs chips on the map ───────────── */
+  .gwrap{background:none;border:none}
+  .gwrap .gchip{transform:translate(-50%,-50%)}
+  .gchip{display:flex;align-items:center;gap:5px;height:25px;padding:0 10px 0 8px;border-radius:999px;
+         background:rgba(25,27,19,.94);border:1.5px solid rgba(200,165,90,.75);color:var(--field);
+         font:700 11px/1 var(--sans);letter-spacing:.02em;white-space:nowrap;width:max-content;
+         box-shadow:0 4px 12px rgba(15,16,11,.45);cursor:pointer}
+  .gchip .gd{width:7px;height:7px;border-radius:50%;flex:0 0 auto;background:var(--marsh)}
+  .gchip.g .gd{background:#8fbf92}.gchip.c .gd{background:var(--brassL)}.gchip.s .gd{background:#d9764a}
+  .gchip .ar{font-weight:800}
+  .gchip .ar.rising{color:#d9764a}.gchip .ar.falling{color:#8fbf92}.gchip .ar.steady{color:var(--brassL)}
+  .gchip.dark{opacity:.72}
+  .gmini{transform:translate(-50%,-50%);width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+         background:rgba(25,27,19,.94);border:1.5px solid rgba(200,165,90,.75);color:var(--brassL);
+         font:800 11px/1 var(--sans);box-shadow:0 3px 9px rgba(15,16,11,.45);cursor:pointer}
+  .gmini.up{color:#d9764a;border-color:rgba(217,118,74,.85)}
+  .gmini.g{border-color:#8fbf92}.gmini.s{border-color:#d9764a}
+  .gpop{font-family:var(--sans);font-size:12.5px;line-height:1.5;min-width:205px;max-width:250px}
+  .gpop .gk{font-size:9.5px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--moss)}
+  .gpop b.gt{font-family:var(--serif);font-size:14.5px;line-height:1.3;display:block;margin:2px 0 5px;color:var(--pine)}
+  .gpop .gv{font-size:12.5px;margin:2px 0;color:var(--ink)}
+  .gpop .gv b{font-family:var(--serif);font-size:16.5px}
+  .gpop .gv .age{color:var(--marsh);font-size:11px}
+  .gpop .pill{display:inline-block;padding:2px 10px;border-radius:999px;font-weight:800;font-size:10px;letter-spacing:.1em;color:#fff;margin:3px 4px 3px 0}
+  .gpop .pill.g{background:var(--fern)}.gpop .pill.c{background:var(--brass);color:#15160f}.gpop .pill.s{background:var(--blaze)}
+  .gpop .dn{margin:7px 0 2px;background:rgba(168,133,62,.12);border:1px solid rgba(168,133,62,.35);border-radius:8px;padding:6px 9px;font-size:11.5px;line-height:1.45}
+  .gpop .dn b{color:#6e5626}
+  .gpop .dn.warn{background:rgba(163,78,36,.10);border-color:rgba(163,78,36,.4)}
+  .gpop .dn.warn b{color:var(--blaze)}
+  .gpop .rl{color:var(--moss);font-size:11px;margin:5px 0 0;line-height:1.45}
+  .gpop .acts{display:flex;gap:7px;margin-top:10px}
+  .gpop .acts .btn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:7px 8px;border-radius:999px;border:none;cursor:pointer;
+       background:var(--brass);color:#15160f;font-weight:700;font-size:11.5px;text-decoration:none;font-family:var(--sans)}
+  .gpop .acts a.btn{background:var(--pine);color:var(--field)}
+  .gpop .src{margin-top:8px;font-size:10px;color:var(--marsh);border-top:1px solid var(--hair);padding-top:6px}
   /* ── desktop: float the Bite Score sheet as a centered card (spot cards use popups) ── */
   @media (min-width:760px){
     .sheet{left:50%;right:auto;width:680px;max-width:calc(100vw - 48px);bottom:22px;
@@ -1013,7 +1075,7 @@ function updateHint(){
   if(show){
     const hh=document.getElementById('hdr').offsetHeight;
     const b=document.getElementById('riv');
-    chint.style.top=(hh+(b.style.display==='flex'?b.offsetHeight:0)+10)+'px';
+    chint.style.top=(hh+(b.classList.contains('live')?b.offsetHeight:0)+10)+'px';
   }
 }
 function dismissHint(){ localStorage.setItem(HINT_KEY,'1'); updateHint(); }
@@ -1093,12 +1155,12 @@ function nearMeHtml(compact){
       (meErr?`<div class="meerr">${meErr}</div>`:'')+
       `<button class="nearbtn" id="nearmego">${I.gps} Find spots near me — use my location</button></div>`;
   }
-  // widen the net: ~30 min → ~60 min → nearest 8 no matter what
+  // widen the net (~30 min → ~60 min → nearest anywhere), then keep ONLY the 5 closest (2026-07-20)
   const all=spots.map(s=>({s,km:kmBetween(mePos,s.park)})).sort((a,b)=>a.km-b.km);
   let near=all.filter(x=>x.km<=RADIUS_KM), label='~30 min';
   if(near.length<5){ near=all.filter(x=>x.km<=RADIUS_KM*2); label='~1 hr'; }
-  if(near.length<1){ near=all.slice(0,8); label='nearest 8'; }
-  near=near.slice(0,15);
+  if(near.length<1){ near=all.slice(0,5); label='nearest 5'; }
+  near=near.slice(0,5); // 5 closest — the drawer is a shortlist, not a directory
   if(compact) near=near.slice().sort((a,b)=>((b.s._t&&b.s._t.sc)||0)-((a.s._t&&a.s._t.sc)||0)).slice(0,5);
   let html=`<div class="city"><h3 class="home">Near you now${compact?' — best proven first':''} <span class="ct">(${near.length} · ${label})</span></h3>`;
   near.forEach(x=>{ html+=spotRow(x.s,
@@ -1270,10 +1332,12 @@ const CHK_ON ='<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentC
 const CHK_OFF='<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/></svg>';
 function buildLayerMenu(){
   const needZoom=Object.keys(LAYERS).some(k=>layState[k]&&map.getZoom()<LAYERS[k].zmin);
-  lmenu.innerHTML = Object.keys(LAYERS).map(k=>
+  lmenu.innerHTML = `<button class="lrow ${gaugeOn?'on':''}" data-gk="1">${gaugeOn?CHK_ON:CHK_OFF}<span><b>River gauges</b><small>live USGS cfs on the map · tap a chip for the downstream read</small></span></button>`
+  + Object.keys(LAYERS).map(k=>
     `<button class="lrow ${layState[k]?'on':''}" data-lk="${k}">${layState[k]?CHK_ON:CHK_OFF}<span><b>${LAYERS[k].label}</b><small>${LAYERS[k].sub}</small></span></button>`
-  ).join('')+`<div class="hint">${needZoom?'<b>Zoom in</b> to load layer pins for the view.<br>':''}Live from TWRA &amp; USGS PAD-US · reference layers, not scouted Caster spots.</div>`;
+  ).join('')+`<div class="hint">${needZoom?'<b>Zoom in</b> to load layer pins for the view.<br>':''}Live from USGS &amp; TWRA · reference layers, not scouted Caster spots.</div>`;
   lmenu.querySelectorAll('[data-lk]').forEach(btn=>btn.onclick=()=>{ setLayer(btn.dataset.lk,!layState[btn.dataset.lk]); buildLayerMenu(); });
+  const gk=lmenu.querySelector('[data-gk]'); if(gk) gk.onclick=()=>{ setGauges(!gaugeOn); buildLayerMenu(); };
 }
 function toggleLayerMenu(open){
   if(open){ toggleHomeMenu(false); buildLayerMenu();
@@ -1398,7 +1462,7 @@ function fixTops(){ // keep the drawer below the masthead + conditions strip
   const hh=document.getElementById('hdr').offsetHeight;
   const b=document.getElementById('riv');
   b.style.top=hh+'px';
-  panel.style.top=(hh+(b.style.display==='flex'?b.offsetHeight:0))+'px';
+  panel.style.top=(hh+(b.classList.contains('live')?b.offsetHeight:0))+'px';
 }
 function setPanel(open){ fixTops(); panel.classList.toggle('open',open); try{ if(open&&localStorage.getItem(ME_OK)==='1'&&Date.now()-meAt>60000) nearMe(true); }catch(e){} scrim.classList.toggle('on',open&&isMobile()); if(open) closeSheet(); }
 window.addEventListener('resize',fixTops);
@@ -2149,7 +2213,7 @@ async function updateRiver(){
   //    so the bite score still shows if a gauge is down ──
   const C={duck:null,harpeth:null};
   try{
-    const u='https://waterservices.usgs.gov/nwis/iv/?sites=03599500,03599350,03598000,03596000,03434500,03432350&parameterCd=00060,63680&period=P3D&format=json';
+    const u='https://waterservices.usgs.gov/nwis/iv/?sites=03599500,03599350,03598000,03596000,03434500,03432350,03424860,03486000&parameterCd=00060,63680&period=P3D&format=json';
     const r=await fetch(u,{cache:'no-store'});
     if(r.ok){
       const j=await r.json(), S={}; let fnu=null;
@@ -2162,6 +2226,7 @@ async function updateRiver(){
           if(Date.now()-new Date(last.dateTime).getTime()<6*3600e3) fnu=+last.value;
         }
       });
+      window.__sites=S; // per-site reads → the river-gauge map pins (2026-07-20)
       // ── DUCK — thresholds + upstream early warning: LOCKED doctrine, unchanged ──
       const col=S['03599500']||null, hard=S['03599350']||null, shel=S['03598000']||null, manch=S['03596000']||null;
       if(col){
@@ -2228,12 +2293,45 @@ async function updateRiver(){
   window.__olk=(await fetchOutlook())||cachedOutlook()||null;
   syncWaterFocus();
   renderStrip();
+  if(gaugeOn) renderGauges(); // refresh the map gauge chips off the same fetch
   // spotty-cell hardening: if the focused water's gauge read failed, retry sooner than the 15-min tick (max 5 tries)
   const focSt=condFocus&&GAUGED[condFocus.key]?C[condFocus.key]:C.duck;
   if(!(focSt&&focSt.col)&&(window._rivRetry=(window._rivRetry||0)+1)<=5) setTimeout(updateRiver,45e3);
   else if(focSt&&focSt.col) window._rivRetry=0;
 }
 
+function condBrief(d,C,st){ // strip v4: ONE-LINE mobile read + status pill — derived from the same caches the full read uses
+  const arrow=t=>t==='rising'?'↗':(t==='falling'?'↘':'→');
+  if(!C&&GAUGED[d.key]) return {txt:'reading the water…',klass:null,cls:null};
+  if(GAUGED[d.key]){
+    if(!(st&&st.col)) return {txt:'⚠ USGS gauge offline — tap for the read',klass:null,cls:null};
+    let t=`<b>${Math.round(st.col.cfs).toLocaleString()} cfs</b> ${arrow(st.col.trend)} ${st.col.trend}`;
+    if(st.wq) t+=` · <span class="wq ${st.wq.label}">${st.wq.label}</span>`;
+    if(st.warn) t+=` · <span class="wr">⚠ ${st.warn}</span>`;
+    return {txt:t,klass:st.klass,cls:st.cls};
+  }
+  if(d.kind==='tailwater'){
+    const c=d.g?tailCache[d.g.site]:null, rd=c&&c.read;
+    if(rd) return {txt:`<b>${Math.round(rd.rv.cfs).toLocaleString()} cfs</b> ${arrow(rd.rv.trend)} · ${rd.txt.split('—')[0].trim()}`,klass:rd.klass,cls:rd.cls};
+    const cc=d.cda?cdaCache[d.cda.obs]:null, cd=cc&&cc.read;
+    if(cd) return {txt:`dam outflow <b>${Math.round(cd.rv.cfs).toLocaleString()} cfs</b> ${arrow(cd.rv.trend)}${cd.sched?' · '+cd.sched.txt:''}`,klass:cd.klass,cls:cd.cls};
+    const nc=d.nw?nwpsCache[d.nw.lid]:null, nd=nc&&nc.read;
+    if(nd) return {txt:`<b>${nd.mode==='flow'?Math.round(nd.rv.cfs).toLocaleString()+' cfs':nd.rv.cfs.toFixed(2)+' ft'}</b> ${arrow(nd.rv.trend)} ${nd.rv.trend}`,klass:nd.klass,cls:nd.cls};
+    return {txt:'release-driven water — check the operator schedule before wading',klass:'c',cls:'DAM'};
+  }
+  if(d.kind==='lake'){
+    const lc=d.lk?lakeCache[d.lk.obs]:null, ld=lc&&lc.read;
+    if(ld) return {txt:`level <b>${ld.ft.toFixed(2)} ft</b> ${arrow(ld.trend)} · wind drives the bite`,klass:null,cls:null};
+    return {txt:'lake water — wind & level drive the bite',klass:null,cls:null};
+  }
+  return {txt:'no live gauge — judge flow & clarity on sight',klass:null,cls:null};
+}
+function openCond(){ // strip v4: the FULL water read, as a card in the bottom sheet (mobile "tap for more")
+  const src=document.querySelector('#riv .rfull'); if(!src) return;
+  const d=condFocus||GAUGED.duck;
+  sheetbody.innerHTML=`<div class="bcard ccard"><div class="btitle">Water conditions <span>· ${d.name}</span></div><div class="cbody">${src.innerHTML.replace(/^\s*<span class="tw">·<\/span>\s*/,'')}</div></div>`;
+  sheet.classList.add('open'); setLegend(false);
+}
 function renderStrip(){ // render the strip for the FOCUSED water (fetch-free — safe to call on focus change)
   const el=document.getElementById('riv'); if(!el) return;
   const C=window.__cond;
@@ -2339,10 +2437,102 @@ function renderStrip(){ // render the strip for the FOCUSED water (fetch-free �
     if(_appLive&&(_gaugeDark||_gaugeStale))
       srcBadge=`<span class="pill src" title="Caster fetched live moments ago — the USGS gauge feed itself is behind. Nothing to refresh.">⚠ USGS FEED ${_gaugeDark?'OFFLINE':'STALE'} · CASTER LIVE</span> `;
   }
-  el.innerHTML=`${pill} ${wsel} <span class="tw">·</span> ${srcBadge}${waterHTML}`;
-  el.style.display='flex';
+  const bf=condBrief(d,C,st);
+  const mpill=bf.cls?`<span class="pill mpill ${bf.klass||'c'}">${bf.cls}</span>`:'';
+  el.innerHTML=`<div class="rtop">${pill} ${wsel} ${mpill}<button class="rx" onclick="openCond()" aria-label="Full water read"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button></div><div class="rbrief" onclick="openCond()">${bf.txt}</div><div class="rfull"><span class="tw">·</span> ${srcBadge}${waterHTML}</div>`;
+  el.classList.add('live');
+  if(sheet.classList.contains('open')&&sheetbody.querySelector('.ccard')) openCond(); // keep an open conditions card live
   fixTops();
 }
+// ── River-gauge pins (2026-07-20): live cfs chips ON the map + downstream travel read ──
+// Coords: USGS site service (exact, pulled 2026-07-20). Travel ETAs: the storm-model calibration
+// ledger (vault: Duck River - Storm Response Ledger) — upstream rain reaches Columbia ~12-24h later,
+// dv crest up to ~2 days behind the first bump. ALWAYS labeled (est.) — measured beats modeled.
+const GAUGE_PINS=[
+ {site:'03596000',water:'Duck River',label:'below Manchester',ll:[35.47094,-86.12164],key:'duck',
+  down:{to:'Shelbyville',eta:'6–12h'},role:'headwater gauge above Normandy — the Duck’s first storm warning'},
+ {site:'03598000',water:'Duck River',label:'Shelbyville',ll:[35.48035,-86.49916],key:'duck',
+  down:{to:'Columbia',eta:'12–24h'},role:'upstream early warning for Columbia + the basin turbidity meter'},
+ {site:'03599350',water:'Duck River',label:'Hardison Mill',ll:[35.60868,-86.82222],key:'duck',
+  down:{to:'Columbia',eta:'4–8h'},role:'Zone A wading gauge — rising here = get out of the water'},
+ {site:'03599500',water:'Duck River',label:'Columbia',ll:[35.61809,-87.03234],key:'duck',prim:true,
+  down:null,role:'THE doctrine gauge — GO ≤600 cfs · CAUTION 600–1,000 · SKIP >1,000 or rising'},
+ {site:'03432350',water:'Harpeth River',label:'Franklin',ll:[35.92085,-86.86549],key:'harpeth',
+  down:{to:'Kingston Springs',eta:'12–24h'},role:'upstream early warning for the lower Harpeth'},
+ {site:'03434500',water:'Harpeth River',label:'Kingston Springs',ll:[36.12204,-87.09889],key:'harpeth',prim:true,
+  down:null,role:'main Harpeth gauge — classed vs the day’s seasonal median (est.)'},
+ {site:'03424860',water:'Caney Fork',label:'Stonewall',ll:[36.18611,-85.90444],key:null,prim:true,
+  cityRef:'Caney Fork — dam tailwater (Long Branch · Buffalo Valley)',
+  down:null,role:'Center Hill release gauge — a generation pulse shows here HOURS after the dam turns on'},
+ {site:'03486000',water:'Watauga River',label:'Elizabethton',ll:[36.35581,-82.22369],key:null,prim:true,
+  cityRef:'Watauga tailwater — Watauga River (Elizabethton · QTA trophy trout)',
+  down:null,role:'Wilbur Dam release gauge — the TVA schedule is the safety check, not this number'}
+];
+const gaugeLayer=L.layerGroup(), gmarks={};
+let gaugeOn=(()=>{ try{ return localStorage.getItem('caster_gauges')!=='0'; }catch(e){ return true; } })();
+function gaugeState(gp){ // {rv,klass,cls} — doctrine class where doctrine exists, raw read otherwise
+  const C=window.__cond||{}, S=window.__sites||{};
+  if(gp.site==='03599500'&&C.duck&&C.duck.col) return {rv:C.duck.col,klass:C.duck.klass,cls:C.duck.cls};
+  if(gp.site==='03434500'&&C.harpeth&&C.harpeth.col) return {rv:C.harpeth.col,klass:C.harpeth.klass,cls:C.harpeth.cls};
+  const c=tailCache[gp.site];
+  if(c&&c.read) return {rv:c.read.rv,klass:c.read.klass,cls:c.read.cls};
+  return {rv:S[gp.site]||null,klass:null,cls:null};
+}
+function gaugeIcon(gp,mini){
+  const st=gaugeState(gp), rv=st.rv;
+  if(mini){ // statewide zoom: a quiet trend dot — blooms into the cfs chip at zoom >=9
+    const ar=rv?(rv.trend==='rising'?'↗':rv.trend==='falling'?'↘':'→'):'·';
+    return L.divIcon({className:'gwrap',iconSize:[0,0],popupAnchor:[0,-12],
+      html:`<div class="gmini ${st.klass||''} ${rv&&rv.trend==='rising'?'up':''}">${ar}</div>`});
+  }
+  const txt=rv?Math.round(rv.cfs).toLocaleString():'—';
+  const ar=rv?`<span class="ar ${rv.trend}">${rv.trend==='rising'?'↗':rv.trend==='falling'?'↘':'→'}</span>`:'';
+  return L.divIcon({className:'gwrap',iconSize:[0,0],popupAnchor:[0,-16],
+    html:`<div class="gchip ${st.klass||''} ${rv?'':'dark'}"><span class="gd"></span>${txt}${ar}</div>`});
+}
+function gaugePopup(gp){
+  const st=gaugeState(gp), rv=st.rv;
+  const arrow=t=>t==='rising'?'↗':(t==='falling'?'↘':'→');
+  const fmtA=m=>m>=120?`${(m/60).toFixed(1)}h`:`${m}m`;
+  const age=rv?Math.max(0,Math.round((Date.now()-rv.t)/60000)):null;
+  const read=rv
+    ?`<div class="gv"><b>${Math.round(rv.cfs).toLocaleString()}</b> cfs ${arrow(rv.trend)} ${rv.trend} <span class="age">(${fmtA(age)} ago)</span></div>
+      <div class="gv"><span class="age">24h range ${Math.round(rv.minV).toLocaleString()}–${Math.round(rv.peakV).toLocaleString()} cfs</span></div>
+      ${st.cls?`<span class="pill ${st.klass}">${st.cls}</span>`:''}`
+    :`<div class="gv"><span class="wr" style="color:var(--blaze);font-weight:700">⚠ no live read — USGS feed dark</span></div>`;
+  let dn='';
+  if(gp.down){
+    const rising=rv&&rv.trend==='rising';
+    dn=`<div class="dn ${rising?'warn':''}"><b>${rising?'⚠ Rise en route downstream':'Downstream'}:</b> water passing this gauge reaches <b>${gp.down.to}</b> in ~${gp.down.eta}, and the crest can lag a day behind the first bump (est. — Caster storm-model calibration).</div>`;
+  }
+  return `<div class="gpop"><span class="gk">River gauge · USGS ${gp.site}</span><b class="gt">${gp.water} @ ${gp.label}</b>
+    ${read}${dn}<div class="rl">${gp.role}.</div>
+    <div class="acts"><button class="btn" onclick="gaugeFocus('${gp.site}')">Track this water</button><a class="btn" href="https://waterdata.usgs.gov/monitoring-location/${gp.site}/" target="_blank" rel="noopener">USGS ↗</a></div>
+    <div class="src">Live USGS data · publishes ~45–75 min behind real time · refreshes with the strip (15 min)</div></div>`;
+}
+function gaugeFocus(site){ // pin → point the conditions strip (and Bite Score) at this gauge's water
+  const gp=GAUGE_PINS.find(g=>g.site===site); if(!gp) return;
+  setCondFocus(gp.key?GAUGED[gp.key]:condDescr(gp.cityRef),true);
+  map.closePopup();
+  if(isMobile()) openCond();
+}
+function renderGauges(){ // zoom-gated: <8 = one trend dot per water · 8 = the full chain as dots · >=9 = cfs chips
+  const z=map.getZoom(), mini=z<9;
+  GAUGE_PINS.forEach(gp=>{
+    let m=gmarks[gp.site];
+    if(!m){ m=gmarks[gp.site]=L.marker(gp.ll,{icon:gaugeIcon(gp,mini),zIndexOffset:600});
+      m.bindPopup(()=>gaugePopup(gp),{maxWidth:260});
+    } else m.setIcon(gaugeIcon(gp,mini));
+    const show=z>=8||gp.prim;
+    if(show){ if(!gaugeLayer.hasLayer(m)) gaugeLayer.addLayer(m); }
+    else if(gaugeLayer.hasLayer(m)) gaugeLayer.removeLayer(m);
+  });
+}
+map.on('zoomend',()=>{ if(gaugeOn) renderGauges(); });
+function setGauges(on){ gaugeOn=!!on; try{ localStorage.setItem('caster_gauges',on?'1':'0'); }catch(e){}
+  if(on){ renderGauges(); gaugeLayer.addTo(map); } else map.removeLayer(gaugeLayer); }
+if(gaugeOn){ renderGauges(); gaugeLayer.addTo(map); }
+
 updateRiver();
 setInterval(updateRiver,15*60*1000);                                          // auto-refresh every 15 min
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)updateRiver();}); // refresh on tab wake (the stale-phone-tab fix)
