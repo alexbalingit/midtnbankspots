@@ -1605,6 +1605,17 @@ function windScore(dir,mph){
   return s;
 }
 const BW={light:35,pressure:25,wind:20,water:20};
+function tempFactor(wtF){ // water-temp band modifier (2026-07-20). Thermal response is textbook bass
+  // physiology (unlike moon — see below), so it FEEDS the score — but today's input is usually the
+  // 5-day-air ESTIMATE, so it nudges (floor 0.7) and never vetoes. Meter read wins when USGS streams one.
+  if(wtF==null) return {m:1,band:null};
+  if(wtF>=58&&wtF<=78) return {m:1,band:'prime'};   // active feeding band
+  if(wtF>78&&wtF<=84)  return {m:0.9,band:'warm'};  // bite compresses toward low light
+  if(wtF>84)           return {m:0.78,band:'hot'};  // midday shutdown — dawn/dusk still real
+  if(wtF>=50)          return {m:0.9,band:'cool'};  // slower metabolism
+  if(wtF>=42)          return {m:0.8,band:'cold'};  // deep & slow
+  return {m:0.7,band:'frigid'};                     // lethargic — finesse only
+}
 function biteScore(f){
   let s=BW.light*f.light+BW.pressure*f.pressure+BW.wind*f.wind+BW.water*f.water; // raw 0-100
   // Bad-water bands (fix 2026-07-09): COMPRESS into a low band instead of a flat clamp, so the
@@ -1612,6 +1623,7 @@ function biteScore(f){
   // of freezing on the ceiling. Muddy never reads PRIME; blown-out (SKIP) sits even lower.
   if(f.water===0) s=s*0.28;           // blown-out flow (SKIP) → 0-28 band (was Math.min(s,28))
   else if(f.muddy) s=s*0.39;          // muddy water = low odds → 0-39 SLOW band (was Math.min(s,39))
+  if(f.tempM!=null) s=s*f.tempM;      // water-temp modifier (2026-07-20): gentle nudge, floor 0.7 — an est.-driven input never vetoes
   if(f.light<=0.25) s=Math.min(s,55); // wrong-time soft gate: bright midday never reads PRIME (time of day = biggest lever)
   return Math.round(s);
 }
@@ -1659,7 +1671,7 @@ function moonSVG(illum,waxing,size){ // phase-accurate inline glyph (zero emoji,
 async function fetchWx(ll){ // Open-Meteo at the given point (default HOME): pressure(+3h trend), wind, cloud. null = unreachable
   try{
     const p=ll||HOME;
-    const u=`https://api.open-meteo.com/v1/forecast?latitude=${p[0]}&longitude=${p[1]}&current=surface_pressure,wind_speed_10m,wind_direction_10m,cloud_cover&hourly=surface_pressure&past_hours=4&forecast_hours=1&wind_speed_unit=mph&timezone=auto`;
+    const u=`https://api.open-meteo.com/v1/forecast?latitude=${p[0]}&longitude=${p[1]}&current=surface_pressure,wind_speed_10m,wind_direction_10m,cloud_cover,temperature_2m,apparent_temperature&hourly=surface_pressure,temperature_2m&past_days=5&forecast_hours=1&wind_speed_unit=mph&temperature_unit=fahrenheit&timezone=auto`;
     const r=await fetch(u); if(!r.ok) return null;
     const j=await r.json();
     const cur=j.current||{}, hp=(j.hourly||{}).surface_pressure||[], ht=(j.hourly||{}).time||[];
@@ -1669,7 +1681,12 @@ async function fetchWx(ll){ // Open-Meteo at the given point (default HOME): pre
     if(p3==null){ for(let i=0;i<hp.length;i++){ if(hp[i]!=null){ p3=hp[i]; break; } } }
     const dP=(pNow!=null&&p3!=null)?pNow-p3:0;
     const trend=dP>1.0?'rising':dP<-1.0?'falling':'steady';
-    const o={inHg:pNow!=null?pNow/33.8639:null,trend,windDir:cur.wind_direction_10m,windMph:cur.wind_speed_10m,cloud:cur.cloud_cover,t:now};
+    // water-temp est. base: mean air temp over the past ~5 days (rivers track the multi-day air average)
+    const hT=(j.hourly||{}).temperature_2m||[]; let tSum=0,tN=0;
+    for(let i=0;i<ht.length;i++){ if(now-new Date(ht[i]).getTime()>=0&&hT[i]!=null){ tSum+=hT[i]; tN++; } }
+    const o={inHg:pNow!=null?pNow/33.8639:null,trend,windDir:cur.wind_direction_10m,windMph:cur.wind_speed_10m,cloud:cur.cloud_cover,
+             tF:cur.temperature_2m!=null?cur.temperature_2m:null,feels:cur.apparent_temperature!=null?cur.apparent_temperature:null,
+             wt5:tN?tSum/tN:null,t:now};
     try{ localStorage.setItem('casterBite_v1',JSON.stringify(o)); }catch(e){}
     return o;
   }catch(e){ return null; }
@@ -1792,7 +1809,7 @@ function outlookBlock(water){
 
 // ── Bite Score card (opens in the shared bottom sheet on pill tap) ───────────
 function fmtAgeM(m){ return m>=120?`${(m/60).toFixed(1)}h`:`${m}m`; }
-function dotCol(x){ return x>=0.7?'var(--fern)':x>=0.4?'var(--brass)':'var(--blaze)'; }
+function dotCol(x){ return x==null?'var(--marsh)':x>=0.7?'var(--fern)':x>=0.4?'var(--brass)':'var(--blaze)'; }
 function lightLabel(now,sun,cloud){
   const [mW,eW]=goldenWins(sun), inW=(m,w)=>m>=w[0]&&m<=w[1];
   if(inW(now,mW)||inW(now,eW)) return 'Golden hour';
@@ -1810,17 +1827,21 @@ function computeBite(){
   const wxAge=wx?Math.round((Date.now()-wx.t)/60000):null, wxStale=wx?wxAge>STALE_MIN:true;
   if(!wx||wxStale) return {paused:true,wx,wxAge,water,sun,nowMin};
   const waterF=water?water.waterF:0.65;
-  const f={light:lightScore(nowMin,sun,wx.cloud),pressure:pressureScore(wx.trend,wx.inHg),wind:windScore(wx.windDir,wx.windMph),water:waterF,muddy:!!(water&&water.muddy)};
+  const wt=(typeof waterTempInfo==='function')?waterTempInfo():null;
+  const tf=tempFactor(wt?wt.f:null);
+  const f={light:lightScore(nowMin,sun,wx.cloud),pressure:pressureScore(wx.trend,wx.inHg),wind:windScore(wx.windDir,wx.windMph),water:waterF,muddy:!!(water&&water.muddy),tempM:tf.m,band:tf.band};
   const s=biteScore(f), v=biteVerdict(s), peak=biteScore(Object.assign({},f,{light:1.0})), ng=nextGolden(nowMin,sun);
   return {paused:false,s,v,f,peak,ng,sun,nowMin,wx,wxAge,water};
 }
 function fxChip(l,v,sc){ return `<div class="fxc"><span class="dt" style="background:${dotCol(sc)}"></span><div><div class="l">${l}</div><div class="v">${v}</div></div></div>`; }
-function verdictLine(v,ng,peak,muddy){
+function verdictLine(v,ng,peak,muddy,band){
   const win=ng.state==='in'?'this window':(ng.win[0]<720?'the morning bite':'the evening bite');
+  const tnote=band==='hot'?' Hot water — the real bite lives in the golden hours.'
+    :(band==='cold'||band==='frigid')?' Cold water — slow way down and fish deep.':'';
   if(muddy) return `Muddy water — low odds today. Let it clear, or work ${win} slow and tight to cover. Peaks at ${peak}.`;
-  if(v.w==='PRIME') return ng.state==='in'?'Strong window right now — get on the water.':`Right conditions, wrong hour — ${win} is the window. Peaks at ${peak}.`;
-  if(v.w==='FAIR') return `Fair right now — ${win} is the play. Peaks at ${peak}.`;
-  return `Tough conditions — best odds are ${win}. Peaks at ${peak}.`;
+  if(v.w==='PRIME') return (ng.state==='in'?'Strong window right now — get on the water.':`Right conditions, wrong hour — ${win} is the window. Peaks at ${peak}.`)+tnote;
+  if(v.w==='FAIR') return `Fair right now — ${win} is the play. Peaks at ${peak}.`+tnote;
+  return `Tough conditions — best odds are ${win}. Peaks at ${peak}.`+tnote;
 }
 function goldBlock(sun,nowMin,peak){
   const [mb,eb]=goldenWins(sun), span=1080, pct=m=>Math.max(0,Math.min(100,(m-240)/span*100));
@@ -1876,13 +1897,16 @@ function renderBiteCard(b){
     <div class="btitle">Bite Score <span>· should you go?</span></div>
     <div class="bhead">
       <div class="ring" style="--p:${s};--c:${v.k==='g'?'var(--fern)':v.k==='c'?'var(--brass)':'var(--blaze)'}"><span class="n">${s}</span><span class="d">/100</span></div>
-      <div><span class="vpill ${v.k}">${v.w}</span><p class="vtxt">${verdictLine(v,ng,peak,f&&f.muddy)}</p></div>
+      <div><span class="vpill ${v.k}">${v.w}</span><p class="vtxt">${verdictLine(v,ng,peak,f&&f.muddy,f&&f.band)}</p></div>
     </div>
     <div class="fx">
       ${fxChip('Water',waterVal,f.water)}
       ${fxChip('Light',lightVal,f.light)}
       ${fxChip('Pressure',pressVal,f.pressure)}
       ${fxChip('Wind',windVal,f.wind)}
+      ${wx.tF!=null?fxChip('Air temp',`${Math.round(wx.tF)}°${wx.feels!=null&&Math.abs(wx.feels-wx.tF)>=3?' · feels '+Math.round(wx.feels)+'°':''}`,null):''}
+      ${(()=>{const wt=(typeof waterTempInfo==='function')?waterTempInfo():null;if(!wt)return '';
+        const tf=tempFactor(wt.f);return fxChip('Water temp',`${wt.txt}${tf.band?' · '+tf.band:''}`,(tf.m-0.7)/0.3);})()}
     </div>
     ${goldBlock(sun,nowMin,peak)}
     ${outlookBlock(water)}
@@ -2234,20 +2258,24 @@ async function updateRiver(){
   //    so the bite score still shows if a gauge is down ──
   const C={duck:null,harpeth:null};
   try{
-    const u='https://waterservices.usgs.gov/nwis/iv/?sites=03599500,03599350,03598000,03596000,03434500,03432350,03424860,03486000&parameterCd=00060,63680&period=P3D&format=json';
+    const u='https://waterservices.usgs.gov/nwis/iv/?sites=03599500,03599350,03598000,03596000,03434500,03432350,03424860,03486000&parameterCd=00060,63680,00010&period=P3D&format=json';
     const r=await fetch(u,{cache:'no-store'});
     if(r.ok){
-      const j=await r.json(), S={}; let fnu=null;
+      const j=await r.json(), S={}, WT={}; let fnu=null;
       (j.value.timeSeries||[]).forEach(ts=>{
         const site=ts.sourceInfo.siteCode[0].value, param=ts.variable.variableCode[0].value, vals=(ts.values[0]||{}).value||[];
         if(!vals.length) return;
         if(param==='00060') S[site]=rivRead(vals);
+        else if(param==='00010'){ // water-temp meter — TRUST ONLY FRESH (<6h). All 8 sites verified dark 2026-07-20;
+          const last=vals[vals.length-1];                        // this adapter lights up the moment USGS resumes the feed.
+          if(Date.now()-new Date(last.dateTime).getTime()<6*3600e3) WT[site]={f:(+last.value)*9/5+32,t:new Date(last.dateTime).getTime()};
+        }
         else if(param==='63680'&&site==='03598000'){ // Shelbyville turbidity meter — trust only a fresh reading (<6h old)
           const last=vals[vals.length-1];
           if(Date.now()-new Date(last.dateTime).getTime()<6*3600e3) fnu=+last.value;
         }
       });
-      window.__sites=S; // per-site reads → the river-gauge map pins (2026-07-20)
+      window.__sites=S; window.__wtemp=WT; // per-site reads → the river-gauge map pins + water-temp meters (2026-07-20)
       // ── DUCK — thresholds + upstream early warning: LOCKED doctrine, unchanged ──
       const col=S['03599500']||null, hard=S['03599350']||null, shel=S['03598000']||null, manch=S['03596000']||null;
       if(col){
@@ -2389,6 +2417,16 @@ function condBrief(d,C,st){ // strip v4: ONE-LINE mobile read + status pill — 
   }
   return {txt:'no live gauge — judge flow & clarity on sight',klass:null,cls:null};
 }
+const ZONE_SITE={duck:'03599500',duckShel:'03598000',duckHard:'03599350',harpeth:'03434500',harpethUp:'03432350'};
+function waterTempInfo(){ // meter first (none streaming as of 2026-07-20 — adapter armed) · est. only on free-flowing water
+  const d=condFocus||GAUGED.duck, WT=window.__wtemp||{}, wx=window.__wx;
+  const site=GAUGED[d.key]?ZONE_SITE[d.key]:(d.g?d.g.site:null);
+  const m=site?WT[site]:null;
+  if(m) return {f:m.f,txt:`${Math.round(m.f)}° (meter)`,est:false};
+  if(d.kind==='tailwater') return null; // bottom-draw releases run far colder than air — an air model would lie
+  if(wx&&wx.wt5!=null) return {f:wx.wt5,txt:`~${Math.round(wx.wt5)}° (est. — 5-day air model)`,est:true};
+  return null;
+}
 function openCond(){ // strip v4: the FULL water read, as a card in the bottom sheet (mobile "tap for more")
   const src=document.querySelector('#riv .rfull'); if(!src) return;
   const d=condFocus||GAUGED.duck;
@@ -2526,7 +2564,11 @@ function renderStrip(){ // render the strip for the FOCUSED water (fetch-free �
   }
   const bf=condBrief(d,C,st);
   const mpill=bf.cls?`<span class="pill mpill ${bf.klass||'c'}">${bf.cls}</span>`:'';
-  el.innerHTML=`<div class="rtop">${pill} ${wsel} ${mpill}<button class="rx" onclick="openCond()" aria-label="Full water read"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button></div><div class="rbrief" onclick="openCond()">${bf.txt}</div><div class="rfull"><span class="tw">·</span> ${srcBadge}${waterHTML}</div>`;
+  const wxb=window.__wx, wt=waterTempInfo();
+  const briefTxt=(wxb&&wxb.tF!=null?`${Math.round(wxb.tF)}° · `:'')+bf.txt;
+  const wxTail=(wxb&&wxb.tF!=null)
+    ?`<span class="d2"> · air ${Math.round(wxb.tF)}°${wxb.feels!=null&&Math.abs(wxb.feels-wxb.tF)>=3?` (feels ${Math.round(wxb.feels)}°)`:''}${wt?` · water ${wt.txt}`:''}</span>`:'';
+  el.innerHTML=`<div class="rtop">${pill} ${wsel} ${mpill}<button class="rx" onclick="openCond()" aria-label="Full water read"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button></div><div class="rbrief" onclick="openCond()">${briefTxt}</div><div class="rfull"><span class="tw">·</span> ${srcBadge}${waterHTML}${wxTail}</div>`;
   el.classList.add('live');
   if(sheet.classList.contains('open')&&sheetbody.querySelector('.ccard')) openCond(); // keep an open conditions card live
   fixTops();
