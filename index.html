@@ -1335,7 +1335,7 @@ const CHK_ON ='<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentC
 const CHK_OFF='<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/></svg>';
 function buildLayerMenu(){
   const needZoom=Object.keys(LAYERS).some(k=>layState[k]&&map.getZoom()<LAYERS[k].zmin);
-  lmenu.innerHTML = `<button class="lrow ${gaugeOn?'on':''}" data-gk="1">${gaugeOn?CHK_ON:CHK_OFF}<span><b>River gauges</b><small>live USGS cfs on the map · tap a chip for the downstream read</small></span></button>`
+  lmenu.innerHTML = `<button class="lrow ${gaugeOn?'on':''}" data-gk="1">${gaugeOn?CHK_ON:CHK_OFF}<span><b>River gauges &amp; lake levels</b><small>live USGS cfs + Corps pool elevation on the map · tap a chip</small></span></button>`
   + Object.keys(LAYERS).map(k=>
     `<button class="lrow ${layState[k]?'on':''}" data-lk="${k}">${layState[k]?CHK_ON:CHK_OFF}<span><b>${LAYERS[k].label}</b><small>${LAYERS[k].sub}</small></span></button>`
   ).join('')+`<div class="hint">${needZoom?'<b>Zoom in</b> to load layer pins for the view.<br>':''}Live from USGS &amp; TWRA · reference layers, not scouted Caster spots.</div>`;
@@ -1703,7 +1703,7 @@ async function fetchOutlook(){ // loc0 = HOME (wind/pressure/cloud) · loc1 = Sh
   // Rain risk-case: single-model rain lowballs July convective storms (proven 2026-07-06: GFS said ~0" all
   // week while ECMWF saw 1.1" Saturday and Alex's weather app agreed). rainMax = wettest of GFS/ICON/ECMWF.
   try{
-    const u='https://api.open-meteo.com/v1/forecast?latitude=35.615,35.48,35.45&longitude=-87.035,-86.50,-86.79&daily=precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_direction_10m_dominant,cloud_cover_mean,surface_pressure_mean&forecast_days=7&precipitation_unit=inch&wind_speed_unit=mph&timezone=auto';
+    const u='https://api.open-meteo.com/v1/forecast?latitude=35.615,35.48,35.45&longitude=-87.035,-86.50,-86.79&daily=precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_direction_10m_dominant,cloud_cover_mean,surface_pressure_mean,temperature_2m_mean&forecast_days=7&precipitation_unit=inch&wind_speed_unit=mph&temperature_unit=fahrenheit&timezone=auto';
     const u2='https://api.open-meteo.com/v1/forecast?latitude=35.48,35.45&longitude=-86.50,-86.79&daily=precipitation_sum&models=gfs_seamless,icon_seamless,ecmwf_ifs025&forecast_days=7&precipitation_unit=inch&timezone=auto';
     const [r,r2]=await Promise.all([fetch(u),fetch(u2).catch(()=>null)]);
     if(!r.ok) return null;
@@ -1726,6 +1726,7 @@ async function fetchOutlook(){ // loc0 = HOME (wind/pressure/cloud) · loc1 = Sh
       windMph:home.wind_speed_10m_max?+home.wind_speed_10m_max[i]:null,
       windDir:home.wind_direction_10m_dominant?+home.wind_direction_10m_dominant[i]:null,
       cloud:home.cloud_cover_mean?+home.cloud_cover_mean[i]:null,
+      tMean:home.temperature_2m_mean?+home.temperature_2m_mean[i]:null,
       press:home.surface_pressure_mean?+home.surface_pressure_mean[i]:null};})};
     try{ localStorage.setItem('casterOutlook_v1',JSON.stringify(o)); }catch(e){}
     return o;
@@ -1734,6 +1735,7 @@ async function fetchOutlook(){ // loc0 = HOME (wind/pressure/cloud) · loc1 = Sh
 function cachedOutlook(){ try{ return JSON.parse(localStorage.getItem('casterOutlook_v1')); }catch(e){ return null; } }
 function computeOutlook(olk,water){
   if(!olk||!olk.days||!olk.days.length) return null;
+  let wtE=(window.__wx&&window.__wx.wt5!=null)?window.__wx.wt5:null; // day-0 seed = live 5-day air-mean water est. (2026-07-20: outlook now applies the temp modifier too — no day-0 skew)
   const BASE=[1800,2000,2400,1800,800,350,300,250,250,300,800,1500]; // ~monthly base cfs @ Columbia (seasonal flow doctrine)
   let cfs=(water&&water.cfs!=null)?water.cfs:null;
   let prevEff=0,prevMax=0,prevP=0; // today's arriving slug ≈ yesterday's PROBABILITY-WEIGHTED risk rain (12-24h Shelbyville→Columbia lag)
@@ -1758,7 +1760,9 @@ function computeOutlook(olk,water){
     const dP=(d.press!=null&&pPrev!=null)?d.press-pPrev:0;
     const pf=dP<=-1.5?1.0:(dP>=1.5?0.45:0.8);                  // day-over-day frontal signal
     const wf=windScore(d.windDir,d.windMph);
-    let s=biteScore({light:1.0,pressure:pf,wind:wf,water:waterF,muddy}); // light=1: plan assumes golden windows
+    if(d.tMean!=null) wtE=(wtE!=null)?wtE*0.75+d.tMean*0.25:d.tMean; // water temp lags air (~75/25 daily blend, est.)
+    const tfD=tempFactor(wtE);
+    let s=biteScore({light:1.0,pressure:pf,wind:wf,water:waterF,muddy,tempM:tfD.m}); // light=1: plan assumes golden windows
     const rmax=d.rainMax!=null?d.rainMax:d.rainIn;
     if(d.rainP>=35){                                            // smooth storm-risk ramp (no 39-vs-40 cliffs):
       const t=Math.min(1,(d.rainP-35)/30);                      // 35% → cap 95 · 65%+ → cap 55, linear between
@@ -2155,6 +2159,7 @@ function fetchLake(d){
       }
       lakeCache[l.obs]={t:Date.now(),inflight:false,read};
       if(condFocus&&condFocus.lk&&condFocus.lk.obs===l.obs) renderStrip();
+      try{ if(gaugeOn) renderGauges(); }catch(e){} // lake chips light up as reads land
     })
     .catch(()=>{ lakeCache[l.obs]={t:Date.now(),inflight:false,read:null}; });
 }
@@ -2303,8 +2308,12 @@ async function updateRiver(){
         try{
           const day=new Date().toISOString().slice(0,10);
           const Lg=JSON.parse(localStorage.getItem('casterStormLedger_v1')||'{}');
+          const _cw=cachedWx(); // zone + temp snapshot (2026-07-20): the est.-threshold & temp-band refit dataset builds itself
           Lg[day]={cfs:Math.round(col.cfs),trend:col.trend,shel:shel?Math.round(shel.cfs):null,
-                   manch:manch?Math.round(manch.cfs):null,r24:rain?+rain.r24.toFixed(2):null,r48:rain?+rain.r48.toFixed(2):null,
+                   manch:manch?Math.round(manch.cfs):null,hard:hard?Math.round(hard.cfs):null,
+                   kng:S['03434500']?Math.round(S['03434500'].cfs):null,frk:S['03432350']?Math.round(S['03432350'].cfs):null,
+                   air:_cw&&_cw.tF!=null?Math.round(_cw.tF):null,wt:_cw&&_cw.wt5!=null?Math.round(_cw.wt5):null,
+                   r24:rain?+rain.r24.toFixed(2):null,r48:rain?+rain.r48.toFixed(2):null,
                    wq:wq?wq.label:null};
           const ks=Object.keys(Lg).sort(); while(ks.length>90) delete Lg[ks.shift()];
           localStorage.setItem('casterStormLedger_v1',JSON.stringify(Lg));
@@ -2597,6 +2606,20 @@ const GAUGE_PINS=[
   cityRef:'Watauga tailwater — Watauga River (Elizabethton · QTA trophy trout)',
   down:null,role:'Wilbur Dam release gauge — the TVA schedule is the safety check, not this number'}
 ];
+// ── Lake-level pins (2026-07-20): live Corps pool elevation ON the map — the lake analog of the
+// gauge chips. Only the 4 lakes with an open CWMS feed; TVA lakes get NO pin (no feed, no fake data).
+// Coords: OHHT1/BAHK2 = official NWS pool gauges · Dale Hollow = dam coords · Cordell Hull = dam pool
+// beside the grounded tailwater ramp.
+const LAKE_PINS=[
+ {obs:'OHHT1-OLD_HICKORY',name:'Old Hickory Lake',dam:'Old Hickory Dam',ll:[36.2641,-86.63912],
+  cityRef:'Old Hickory Lake — lower (Hendersonville · Rockland · Sanders Ferry)'},
+ {obs:'COHT1-CORDELL_HULL',name:'Cordell Hull Lake',dam:'Cordell Hull Dam',ll:[36.28800,-85.93400],
+  cityRef:'Cordell Hull Lake — Carthage / Gainesboro (Cumberland arm)'},
+ {obs:'BAHK2-BARKLEY',name:'Lake Barkley',dam:'Barkley Dam (KY)',ll:[37.01694,-88.22361],
+  cityRef:'Lake Barkley — Dover & Cumberland River (Stewart Co. · trophy blue cat)'},
+ {obs:'DLHT1-DALE_HOLLOW',name:'Dale Hollow Lake',dam:'Dale Hollow Dam',ll:[36.53785,-85.45132],
+  cityRef:'Dale Hollow Lake — TN side (Celina · Byrdstown · smallmouth)'}
+];
 const gaugeLayer=L.layerGroup(), gmarks={};
 let gaugeOn=(()=>{ try{ return localStorage.getItem('caster_gauges')!=='0'; }catch(e){ return true; } })();
 function gaugeState(gp){ // {rv,klass,cls} — doctrine class where doctrine exists, raw read otherwise
@@ -2649,6 +2672,34 @@ function gaugeFocus(site){ // pin → point the conditions strip (and Bite Score
   map.closePopup();
   if(isMobile()) openCond();
 }
+function lakeRead(lp){ const c=lakeCache[lp.obs]; return (c&&c.read)?c.read:null; }
+function lakeKlass(rd){ return (rd&&rd.trend==='falling'&&rd.d24<=-0.15)?'c':'g'; } // fast-falling pool = caution (matches the strip)
+function lakeIcon(lp,mini){
+  const rd=lakeRead(lp), k=rd?lakeKlass(rd):'';
+  const ar=rd?(rd.trend==='rising'?'↗':rd.trend==='falling'?'↘':'→'):'·';
+  if(mini) return L.divIcon({className:'gwrap',iconSize:[0,0],popupAnchor:[0,-12],
+    html:`<div class="gmini ${k}">${ar}</div>`});
+  const lvl=`<svg class="gw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 8h18"/><path d="M4 14c2.3-2.6 4.2-2.6 6.5 0s4.2 2.6 6.5 0"/><path d="M4 19c2.3-2.6 4.2-2.6 6.5 0s4.2 2.6 6.5 0"/></svg>`;
+  return L.divIcon({className:'gwrap',iconSize:[0,0],popupAnchor:[0,-4],
+    html:`<div class="gchip ${k} ${rd?'':'dark'}">${lvl}${rd?rd.ft.toFixed(1):'—'}${rd?'<span class="u">ft</span>':''}${rd?`<span class="ar ${rd.trend}">${rd.trend==='rising'?'↗':rd.trend==='falling'?'↘':'→'}</span>`:''}</div>`});
+}
+function lakePopup(lp){
+  const rd=lakeRead(lp);
+  const fmtA=m=>m>=120?`${(m/60).toFixed(1)}h`:`${m}m`;
+  const dTxt=x=>`${x>=0?'up ':'down '}${Math.abs(x).toFixed(2)} ft`;
+  const read=rd
+    ?`<div class="gv"><b>${rd.ft.toFixed(2)}</b> ft pool ${rd.trend==='rising'?'↗':rd.trend==='falling'?'↘':'→'} ${rd.trend} <span class="age">(${fmtA(rd.ageMin)} ago)</span></div>
+      <div class="gv"><span class="age">${dTxt(rd.d24)} /24h · ${dTxt(rd.d7)} /7d</span></div>
+      <span class="pill ${lakeKlass(rd)}">${rd.trend==='falling'&&rd.d24<=-0.15?'DROPPING':'POOL '+rd.trend.toUpperCase()}</span>`
+    :`<div class="gv"><span style="color:var(--blaze);font-weight:700">reading the Corps pool level…</span></div>`;
+  return `<div class="gpop"><span class="gk">Lake level · Corps CWMS</span><b class="gt">${lp.name}</b>
+    ${read}<div class="dn"><b>What it means:</b> a dropping pool pulls fish off shallow bank cover and can strand access points; a steady or slowly rising pool keeps the bank game on. Wind still drives the lake bite — the Bite Score wind read is AT this lake.</div>
+    <div class="rl">Corps operations data (${lp.dam}) — the man-rev feed can lag hours; the age stamp is the truth.</div>
+    <div class="acts"><button class="btn" onclick="lakeFocus('${lp.obs}')">Track this lake</button><a class="btn" href="https://water.usace.army.mil/" target="_blank" rel="noopener">Corps ↗</a></div>
+    <div class="src">Refreshes with the strip (15 min) · TVA lakes have no open feed — no pin rather than fake data</div></div>`;
+}
+function lakeFocus(obs){ const lp=LAKE_PINS.find(x=>x.obs===obs); if(!lp) return;
+  setCondFocus(condDescr(lp.cityRef),true); map.closePopup(); if(isMobile()) openCond(); }
 function renderGauges(){ // zoom-gated: <8 = one trend dot per water · 8 = the full chain as dots · >=9 = cfs chips
   const z=map.getZoom(), mini=z<9;
   GAUGE_PINS.forEach(gp=>{
@@ -2659,6 +2710,14 @@ function renderGauges(){ // zoom-gated: <8 = one trend dot per water · 8 = the 
     const show=z>=8||gp.prim;
     if(show){ if(!gaugeLayer.hasLayer(m)) gaugeLayer.addLayer(m); }
     else if(gaugeLayer.hasLayer(m)) gaugeLayer.removeLayer(m);
+  });
+  LAKE_PINS.forEach(lp=>{ // lakes: always one pin per water (they're geographically spread — no collisions)
+    fetchLake({lk:{obs:lp.obs,dam:lp.dam}}); // TTL/inflight-guarded — refreshes with the same cycle
+    let m=gmarks[lp.obs];
+    if(!m){ m=gmarks[lp.obs]=L.marker(lp.ll,{icon:lakeIcon(lp,mini),zIndexOffset:600});
+      m.bindPopup(()=>lakePopup(lp),{maxWidth:260});
+      gaugeLayer.addLayer(m);
+    } else m.setIcon(lakeIcon(lp,mini));
   });
 }
 map.on('zoomend',()=>{ if(gaugeOn) renderGauges(); });
