@@ -34,7 +34,7 @@
   .ico{width:16px;height:16px;flex:0 0 auto;vertical-align:-3px}
   #map{position:absolute;inset:0;z-index:1;background:#e9e2cf}
   /* parchment tint on the basemap so pins own the scene */
-  .leaflet-tile-pane{filter:grayscale(.35) sepia(.30) saturate(.72) brightness(1.03) contrast(.96)}
+  .leaflet-tile-pane{filter:grayscale(.55) sepia(.34) saturate(.52) brightness(1.05) contrast(.94)}
   .leaflet-container{font-family:var(--sans)}
 
   /* contour textures */
@@ -926,7 +926,9 @@ const I = {
 // ── map + tinted basemap ─────────────────────────────────────────────────────
 const map = L.map('map',{zoomControl:false}).setView([35.62,-86.66],9);
 L.control.zoom({position:'bottomleft'}).addTo(map);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19, attribution:'&copy; OpenStreetMap &copy; CARTO'}).addTo(map);
+// Basemap swapped 2026-08-31: CARTO began watermarking keyless tiles ("API KEY REQUIRED"). OSM standard is keyless; cream look comes from the .leaflet-tile-pane CSS filter.
+// CARTO fallback (requires free key from carto.com/basemaps/apikey): L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png?api_key=YOUR_KEY',{maxZoom:19, attribution:'&copy; OpenStreetMap &copy; CARTO'}).addTo(map);
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19, attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
 
 function pinIcon(color, water){
   const mb=isMobile(), pw=mb?26:30, ph=mb?33:38, wd=mb?19:22;
