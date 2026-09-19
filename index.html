@@ -382,6 +382,27 @@
          font:800 11px/1 var(--sans);box-shadow:0 3px 9px rgba(15,16,11,.45);cursor:pointer}
   .gmini.up{color:#d9764a;border-color:rgba(217,118,74,.85)}
   .gmini.g{border-color:#8fbf92}.gmini.s{border-color:#d9764a}
+  /* ── kayak launch chips (2026-09-18, Kayak Layer Phase 1) ── */
+  .kwrap{background:none;border:none}
+  .kwrap .kchip{transform:translate(-50%,-50%)}
+  .kchip{position:relative;display:flex;align-items:center;gap:5px;height:25px;padding:0 9px 0 7px;border-radius:999px;
+         background:rgba(25,27,19,.94);border:1.5px solid rgba(200,165,90,.75);color:var(--field);
+         font:700 10.5px/1 var(--sans);letter-spacing:.04em;white-space:nowrap;width:max-content;
+         box-shadow:0 4px 12px rgba(15,16,11,.45);cursor:pointer}
+  .kchip .kg{width:15px;height:15px;flex:0 0 auto;color:var(--brassL)}
+  .kchip.go{border-color:#8fbf92}.kchip.go .kg{color:#8fbf92}
+  .kchip.caution{border-color:var(--brassL)}
+  .kchip.low{opacity:.8;border-color:rgba(200,165,90,.45)}
+  .kchip.skip{opacity:.62;border-color:rgba(217,118,74,.85);text-decoration:line-through;text-decoration-color:#d9764a}
+  .kchip.skip .kg{color:#d9764a}
+  .kchip.unknown{opacity:.75;border-style:dashed}
+  .kmini{transform:translate(-50%,-50%);width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+         background:rgba(25,27,19,.94);border:1.5px solid rgba(200,165,90,.75);color:var(--brassL);box-shadow:0 3px 9px rgba(15,16,11,.45);cursor:pointer}
+  .kmini svg{width:11px;height:11px}
+  .kmini.go{border-color:#8fbf92;color:#8fbf92}.kmini.skip{border-color:#d9764a;color:#d9764a;opacity:.7}.kmini.unknown{border-style:dashed}
+  .gpop .kband{font-size:11px;color:var(--marsh);margin-top:2px}
+  .gpop .ktrip{margin-top:6px;font-size:12px}.gpop .ktrip b{color:var(--brassL)}
+  .gpop .knot{margin-top:6px;padding:6px 8px;border-radius:8px;background:rgba(217,118,74,.12);color:#a34e24;font-weight:700;font-size:12px}
   .gpop{font-family:var(--sans);font-size:12.5px;line-height:1.5;min-width:205px;max-width:250px}
   .gpop .gk{font-size:9.5px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--moss)}
   .gpop b.gt{font-family:var(--serif);font-size:14.5px;line-height:1.3;display:block;margin:2px 0 5px;color:var(--pine)}
@@ -1357,11 +1378,13 @@ const CHK_OFF='<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentC
 function buildLayerMenu(){
   const needZoom=Object.keys(LAYERS).some(k=>layState[k]&&map.getZoom()<LAYERS[k].zmin);
   lmenu.innerHTML = `<button class="lrow ${gaugeOn?'on':''}" data-gk="1">${gaugeOn?CHK_ON:CHK_OFF}<span><b>River gauges &amp; lake levels</b><small>live USGS cfs + Corps pool elevation on the map · tap a chip</small></span></button>`
+  + `<button class="lrow ${kayakOn?'on':''}" data-kk="1">${kayakOn?CHK_ON:CHK_OFF}<span><b>Kayak launches</b><small>TWRA put-ins on the Duck · flow-gated: a launch goes dark when the river is outside its safe band</small></span></button>`
   + Object.keys(LAYERS).map(k=>
     `<button class="lrow ${layState[k]?'on':''}" data-lk="${k}">${layState[k]?CHK_ON:CHK_OFF}<span><b>${LAYERS[k].label}</b><small>${LAYERS[k].sub}</small></span></button>`
   ).join('')+`<div class="hint">${needZoom?'<b>Zoom in</b> to load layer pins for the view.<br>':''}Live from USGS &amp; TWRA · reference layers, not scouted Caster spots.</div>`;
   lmenu.querySelectorAll('[data-lk]').forEach(btn=>btn.onclick=()=>{ setLayer(btn.dataset.lk,!layState[btn.dataset.lk]); buildLayerMenu(); });
   const gk=lmenu.querySelector('[data-gk]'); if(gk) gk.onclick=()=>{ setGauges(!gaugeOn); buildLayerMenu(); };
+  const kk=lmenu.querySelector('[data-kk]'); if(kk) kk.onclick=()=>{ setKayak(!kayakOn); buildLayerMenu(); };
 }
 function toggleLayerMenu(open){
   if(open){ toggleHomeMenu(false); buildLayerMenu();
@@ -2464,6 +2487,7 @@ async function updateRiver(){
   syncWaterFocus();
   renderStrip();
   if(gaugeOn) renderGauges(); // refresh the map gauge chips off the same fetch
+  try{ if(kayakOn) renderKayak(); }catch(e){} // kayak launches re-gate off the same read
   // spotty-cell hardening: if the focused water's gauge read failed, retry sooner than the 15-min tick (max 5 tries)
   const focSt=condFocus&&GAUGED[condFocus.key]?C[condFocus.key]:C.duck;
   if(!(focSt&&focSt.col)&&(window._rivRetry=(window._rivRetry||0)+1)<=5) setTimeout(updateRiver,45e3);
@@ -2871,6 +2895,88 @@ function openRank(){
 }
 
 updateRiver();
+// ═══════════════════════════════════════════════════════════════════════════════════════
+// KAYAK LAUNCH LAYER — Phase 1 (2026-09-18). Spec: Fishing/Spots/Caster - Kayak Layer - Spec & Build Prompt.md
+// The Launch is the unit: a TWRA put-in scored for a paddler, with reachable Caster spots as children.
+// HARD GATE: a river launch with no safe_cfs band never renders; when the live gauge is outside the band
+// (or the strip says SKIP) the pin goes dark/struck and Navigate is removed — dangerous flow means nobody
+// gets on the water, and no other score can override it. Radii locked by Alex: out-and-back ≤1.0 mi one-way
+// (paddle up, drift home) · float 3–5 mi downstream to a named takeout. Seed bands carry cfs_review:true.
+// State key (must survive edits, same law as caster_gauges): caster_kayak — default OFF on first visit.
+// GENERATED by build-launches.mjs — 2026-09-19 — TWRA seed, safe_cfs pending review
+const launches = [{"k":"twra-97","n":"Sowell Mill Pk","water":"Duck River","ll":[35.57089,-86.87177],"src":{"twra_oid":97,"layer":"Boat_Launch_Sites","owner":"TWRA"},"access":{"legal":true,"style":"carry","canoe":true,"fee":false,"hours":"24h","surface":"Dirt ramp · Gravel lot","restrooms":false,"lit":false},"cond":{"gauge":"duckHard","safe_cfs":[120,600],"cfs_review":true},"trip":{"oab":["leftwich"],"float":[]},"effort":null,"human":null,"todo":true},
+{"k":"twra-98","n":"Chickasaw Trace Park","water":"Duck River","ll":[35.66282,-87.09318],"src":{"twra_oid":98,"layer":"Boat_Launch_Sites","owner":"TWRA"},"access":{"legal":true,"style":"ramp","canoe":true,"fee":false,"hours":"24h","surface":"Concrete ramp · Gravel lot","restrooms":true,"lit":false},"cond":{"gauge":"duck","safe_cfs":[150,700],"cfs_review":true},"trip":{"oab":["chickasaw"],"float":[]},"effort":null,"human":null,"todo":true},
+{"k":"twra-99","n":"Carpenter Bridge Access","water":"Duck River","ll":[35.61825,-86.86645],"src":{"twra_oid":99,"layer":"Boat_Launch_Sites","owner":"TWRA"},"access":{"legal":true,"style":"carry","canoe":false,"fee":false,"hours":"24h","surface":"Gravel ramp · Gravel lot","restrooms":false,"lit":false},"cond":{"gauge":"duckHard","safe_cfs":[120,600],"cfs_review":true},"trip":{"oab":["carpenter-bridge"],"float":[{"takeout":"twra-97","mi":3.3,"dir":"lng-heuristic","targets":["leftwich","carpenter-bridge"]},{"takeout":"twra-145","mi":4.4,"dir":"lng-heuristic","targets":["carpenter-bridge","howard-bridge"]}]},"effort":null,"human":null,"todo":true},
+{"k":"twra-137","n":"Shelbyville City Park","water":"Duck River","ll":[35.47907,-86.46261],"src":{"twra_oid":137,"layer":"Boat_Launch_Sites","owner":"City"},"access":{"legal":true,"style":"ramp","canoe":true,"fee":false,"hours":"5am-9pm","surface":"Concrete ramp · Paved lot","restrooms":false,"lit":false},"cond":{"gauge":"duckShel","safe_cfs":[80,400],"cfs_review":true,"note":"Normandy tailwater — parking legally closed at ≥400 cfs release"},"trip":{"oab":["fishermans"],"float":[{"takeout":"twra-772","mi":4.8,"dir":"lng-heuristic","targets":["fishermans"]}]},"effort":null,"human":null,"todo":true},
+{"k":"twra-145","n":"Howard Bridge Road Access","water":"Duck River","ll":[35.57261,-86.92211],"src":{"twra_oid":145,"layer":"Boat_Launch_Sites","owner":"TWRA"},"access":{"legal":true,"style":"ramp","canoe":true,"fee":false,"hours":"24h","surface":"Concrete ramp · Gravel lot","restrooms":false,"lit":false},"cond":{"gauge":"duck","safe_cfs":[150,700],"cfs_review":true},"trip":{"oab":["howard-bridge"],"float":[]},"effort":null,"human":null,"todo":true},
+{"k":"twra-146","n":"Lillard's Mill","water":"Duck River","ll":[35.58551,-86.7868],"src":{"twra_oid":146,"layer":"Boat_Launch_Sites","owner":"TWRA"},"access":{"legal":true,"style":"ramp","canoe":true,"fee":false,"hours":"24h","surface":"Concrete ramp · Paved lot","restrooms":false,"lit":false},"cond":{"gauge":"duckHard","safe_cfs":[120,600],"cfs_review":true},"trip":{"oab":["milltown"],"float":[{"takeout":"twra-97","mi":4.9,"dir":"lng-heuristic","targets":["leftwich","milltown"]}]},"effort":null,"human":null,"todo":true},
+{"k":"twra-147","n":"Riverside Access Area","water":"Duck River","ll":[35.61841,-87.02521],"src":{"twra_oid":147,"layer":"Boat_Launch_Sites","owner":"TWRA"},"access":{"legal":true,"style":"ramp","canoe":true,"fee":false,"hours":"24h","surface":"Concrete ramp · Gravel lot","restrooms":false,"lit":true},"cond":{"gauge":"duck","safe_cfs":[150,700],"cfs_review":true},"trip":{"oab":["riverwalk","riverside"],"float":[{"takeout":"twra-98","mi":4.9,"dir":"lng-heuristic","targets":["riverwalk","riverside","chickasaw"]}]},"effort":null,"human":null,"todo":true},
+{"k":"twra-265","n":"Williamsport Bridge","water":"Duck River","ll":[35.69491,-87.22081],"src":{"twra_oid":265,"layer":"Boat_Launch_Sites","owner":"TWRA"},"access":{"legal":true,"style":"ramp","canoe":true,"fee":false,"hours":"24h","surface":"Concrete ramp · Gravel lot","restrooms":false,"lit":false},"cond":{"gauge":"duck","safe_cfs":[150,700],"cfs_review":true},"trip":{"oab":["williamsport","williamsport-bridge"],"float":[]},"effort":null,"human":null,"todo":true},
+{"k":"twra-266","n":"Iron Bridge Access","water":"Duck River","ll":[35.61191,-87.00281],"src":{"twra_oid":266,"layer":"Boat_Launch_Sites","owner":"TWRA"},"access":{"legal":true,"style":"ramp","canoe":true,"fee":false,"hours":"24h","surface":"Concrete ramp · Gravel lot","restrooms":false,"lit":true},"cond":{"gauge":"duck","safe_cfs":[150,700],"cfs_review":true},"trip":{"oab":["iron-bridge","yanahli"],"float":[]},"effort":null,"human":null,"todo":true},
+{"k":"twra-117","n":"Henry Horton Park","water":"Duck River","ll":[35.59106,-86.688],"src":{"twra_oid":117,"layer":"Paddling_Access_Sites","owner":"TDEC"},"access":{"legal":true,"style":"carry","canoe":true,"fee":false,"hours":"sunrise-sunset","surface":"Asphalt ramp · Paved lot","restrooms":true,"lit":false},"cond":{"gauge":"duckHard","safe_cfs":[120,600],"cfs_review":true},"trip":{"oab":["henry-horton","henry-horton-ramp"],"float":[]},"effort":null,"human":null,"todo":true},
+{"k":"twra-769","n":"Three Forks bridge","water":"Duck River","ll":[35.47998,-86.32433],"src":{"twra_oid":769,"layer":"Paddling_Access_Sites","owner":"TVA"},"access":{"legal":true,"style":"carry","canoe":true,"fee":false,"hours":"24h","surface":"  ramp · Gravel lot","restrooms":false,"lit":false},"cond":{"gauge":"duckShel","safe_cfs":[80,400],"cfs_review":true,"note":"Normandy tailwater — parking legally closed at ≥400 cfs release"},"trip":{"oab":["three-forks"],"float":[{"takeout":"twra-770","mi":3.2,"dir":"lng-heuristic","targets":["mullins-mill","three-forks"]}]},"effort":null,"human":null,"todo":true},
+{"k":"twra-770","n":"Mullins Mill Bridge","water":"Duck River","ll":[35.46824,-86.37905],"src":{"twra_oid":770,"layer":"Paddling_Access_Sites","owner":"TVA"},"access":{"legal":true,"style":"carry","canoe":true,"fee":false,"hours":"24h","surface":"  ramp · Gravel lot","restrooms":false,"lit":false},"cond":{"gauge":"duckShel","safe_cfs":[80,400],"cfs_review":true,"note":"Normandy tailwater — parking legally closed at ≥400 cfs release"},"trip":{"oab":["mullins-mill"],"float":[{"takeout":"twra-137","mi":4.8,"dir":"lng-heuristic","targets":["mullins-mill","vfw","fishermans"]},{"takeout":"twra-1065","mi":4,"dir":"lng-heuristic","targets":["mullins-mill"]}]},"effort":null,"human":null,"todo":true},
+{"k":"twra-772","n":"Warners Bridge","water":"Duck River","ll":[35.50639,-86.5418],"src":{"twra_oid":772,"layer":"Paddling_Access_Sites","owner":"County"},"access":{"legal":true,"style":"carry","canoe":true,"fee":false,"hours":"24h","surface":"  ramp · Dirt lot","restrooms":false,"lit":false},"cond":{"gauge":"duckShel","safe_cfs":[80,400],"cfs_review":true,"note":"Normandy tailwater — parking legally closed at ≥400 cfs release"},"trip":{"oab":[],"float":[]},"effort":null,"human":null,"todo":true,"takeoutOnly":true},
+{"k":"twra-990","n":"Dement Bridge","water":"Duck River","ll":[35.46633,-86.29388],"src":{"twra_oid":990,"layer":"Paddling_Access_Sites","owner":"TVA"},"access":{"legal":true,"style":"carry","canoe":true,"fee":false,"hours":"24h","surface":"  ramp · Gravel lot","restrooms":false,"lit":false},"cond":{"gauge":"duckShel","safe_cfs":[80,400],"cfs_review":true,"note":"Normandy tailwater — parking legally closed at ≥400 cfs release"},"trip":{"oab":["dement"],"float":[{"takeout":"twra-770","mi":4.8,"dir":"lng-heuristic","targets":["mullins-mill","dement"]}]},"effort":null,"human":null,"todo":true},
+{"k":"twra-991","n":"Pollard Boat Launching Area","water":"Duck River","ll":[35.45878,-86.25835],"src":{"twra_oid":991,"layer":"Paddling_Access_Sites","owner":"TWRA"},"access":{"legal":true,"style":"carry","canoe":true,"fee":false,"hours":"24h","surface":"  ramp · Dirt lot","restrooms":false,"lit":false},"cond":{"gauge":"duckShel","safe_cfs":[80,400],"cfs_review":true,"note":"Normandy tailwater — parking legally closed at ≥400 cfs release"},"trip":{"oab":[],"float":[{"takeout":"twra-769","mi":4,"dir":"lng-heuristic","targets":["three-forks","dement"]}]},"effort":null,"human":null,"todo":true},
+{"k":"twra-1005","n":"Fountain Creek","water":"Duck River","ll":[35.56777,-86.96436],"src":{"twra_oid":1005,"layer":"Paddling_Access_Sites","owner":"TWRA"},"access":{"legal":true,"style":"carry","canoe":true,"fee":false,"hours":"24h","surface":"Gravel ramp · Gravel lot","restrooms":false,"lit":false},"cond":{"gauge":"duckHard","safe_cfs":[120,600],"cfs_review":true},"trip":{"oab":["fountain-creek"],"float":[{"takeout":"twra-147","mi":4.9,"dir":"lng-heuristic","targets":["riverwalk","riverside","fountain-creek"]},{"takeout":"twra-266","mi":3.7,"dir":"lng-heuristic","targets":["iron-bridge","yanahli","fountain-creek"]}]},"effort":null,"human":null,"todo":true},
+{"k":"twra-1065","n":"Hwy 82 Bridge","water":"Duck River","ll":[35.46007,-86.44943],"src":{"twra_oid":1065,"layer":"Paddling_Access_Sites","owner":"TVA"},"access":{"legal":true,"style":"carry","canoe":true,"fee":false,"hours":"check posted","surface":"? ramp · Gravel lot","restrooms":false,"lit":false},"cond":{"gauge":"duckShel","safe_cfs":[80,400],"cfs_review":true,"note":"Normandy tailwater — parking legally closed at ≥400 cfs release"},"trip":{"oab":[],"float":[]},"effort":null,"human":null,"todo":true,"takeoutOnly":true}];
+
+const kayakLayer=L.layerGroup(), kmarks={};
+let kayakOn=(()=>{ try{ return localStorage.getItem('caster_kayak')==='1'; }catch(e){ return false; } })();
+const kslug=t=>t.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+const SPOT_BY_KEY={}; spots.forEach(s=>{ SPOT_BY_KEY[s.cast||kslug(s.n)]=s; });
+const LAUNCH_BY_KEY={}; launches.forEach(l=>{ LAUNCH_BY_KEY[l.k]=l; });
+const KAYAK_SVG='<svg class="kg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 14c4-2.4 16-2.4 20 0-4 2.4-16 2.4-20 0Z"/><path d="M8 6l8 12"/><path d="M6.6 4.6l3 1.4M14.4 19.4l3-1.4"/><circle cx="12" cy="10" r="1.3" fill="currentColor"/></svg>';
+function launchValid(l){ return l&&l.cond&&Array.isArray(l.cond.safe_cfs)&&l.cond.safe_cfs.length===2&&isFinite(l.cond.safe_cfs[0])&&isFinite(l.cond.safe_cfs[1])&&GAUGED[l.cond.gauge]; }
+function launchRead(l){ const C=window.__cond||{}, st=C[l.cond.gauge]; return (st&&st.col&&st.col.cfs!=null)?{cfs:st.col.cfs,trend:st.col.trend,cls:st.cls,klass:st.klass,t:st.col.t}:null; }
+function launchGate(l){ // 'skip' (dangerous — no Navigate) · 'unknown' (no live read — no Navigate) · 'low' · 'caution' · 'go'
+  const rd=launchRead(l); if(!rd) return {state:'unknown',rd:null};
+  const [lo,hi]=l.cond.safe_cfs;
+  if(rd.cfs>hi||rd.cls==='SKIP') return {state:'skip',rd};
+  if(rd.cfs<lo) return {state:'low',rd};
+  if(rd.cls==='CAUTION'||rd.trend==='rising') return {state:'caution',rd};
+  return {state:'go',rd};
+}
+function kayakIcon(l,mini){
+  const g=launchGate(l);
+  if(mini) return L.divIcon({className:'kwrap',iconSize:[0,0],html:`<div class="kmini ${g.state}">${KAYAK_SVG}</div>`});
+  const lbl={go:'GO',caution:'CAUTION',low:'LOW',skip:'NOT TODAY',unknown:'NO READ'}[g.state];
+  return L.divIcon({className:'kwrap',iconSize:[0,0],html:`<div class="kchip ${g.state}">${KAYAK_SVG}${lbl}</div>`});
+}
+function kayakPopup(l){
+  const g=launchGate(l), rd=g.rd, [lo,hi]=l.cond.safe_cfs, a=l.access;
+  const nm=k=>{ const s=SPOT_BY_KEY[k]; return s?s.n.replace(/ \(.*$/,''):k; };
+  const acc=[a.style==='ramp'?'Ramp':'Carry-down',a.surface,a.hours,a.fee?'fee':'free',a.restrooms?'restrooms':null,a.lit?'lit lot':null].filter(Boolean).join(' · ');
+  const arrow=t=>t==='rising'?'↗':(t==='falling'?'↘':'→');
+  const flow=rd?`<div class="gv"><b>${Math.round(rd.cfs).toLocaleString()}</b> cfs ${arrow(rd.trend)} ${rd.trend} <span class="pill ${g.state==='go'?'g':g.state==='caution'?'c':g.state==='skip'?'s':''}">${{go:'GO',caution:'CAUTION',low:'LOW WATER',skip:'NOT TODAY',unknown:'NO READ'}[g.state]}</span></div>`
+                :`<div class="gv"><span style="color:var(--blaze);font-weight:700">⚠ no live read — check the gauge before you drive</span></div>`;
+  const band=`<div class="kband">Kayak safe band ${lo}–${hi.toLocaleString()} cfs @ ${GAUGED[l.cond.gauge].name}${l.cond.cfs_review?' · seed band, under review':''}${l.cond.note?' · '+l.cond.note:''}</div>`;
+  const tk=l.takeoutOnly?`<div class="ktrip"><b>Takeout</b> — no earned targets within 1 mi; this launch closes a float from upstream.</div>`:'';
+  const oab=l.trip.oab.length?`<div class="ktrip"><b>Out &amp; back</b> (≤1 mi up, drift home): ${l.trip.oab.map(nm).join(' · ')}</div>`:'';
+  const fl=l.trip.float.filter(f=>f.targets.length&&LAUNCH_BY_KEY[f.takeout]).map(f=>`<div class="ktrip"><b>Float</b> ${f.mi} mi → take out at ${LAUNCH_BY_KEY[f.takeout].n}: ${f.targets.map(nm).join(' · ')}</div>`).join('');
+  const warn=g.state==='skip'?`<div class="knot">Not today — flow is outside the safe band. Nobody gets on the water.</div>`:g.state==='unknown'?`<div class="knot">No live read — navigation held until the gauge reports.</div>`:g.state==='low'?`<div class="knot" style="background:rgba(200,165,90,.14);color:var(--moss)">Low water — expect to drag riffles.</div>`:'';
+  const nav=(g.state==='skip'||g.state==='unknown')?'':`<a class="btn" href="${gdir(l.ll)}" target="_blank" rel="noopener">Navigate ↗</a>`;
+  return `<div class="gpop"><span class="gk">Kayak launch · TWRA ${l.src.owner!=='TWRA'?'('+l.src.owner+')':''}</span><b class="gt">${l.n}</b>
+    <div class="rl">${l.water} · ${acc}</div>${flow}${band}${warn}${tk}${oab}${fl}
+    <div class="acts">${nav}<button class="btn" onclick="setCondFocus(GAUGED['${l.cond.gauge}'],true)">Track this water</button></div>
+    <div class="src">TWRA access data · flow gate reads the live USGS strip · ${l.ll[0].toFixed(5)}, ${l.ll[1].toFixed(5)}</div></div>`;
+}
+function renderKayak(){
+  const mini=map.getZoom()<9;
+  launches.forEach(l=>{
+    if(!launchValid(l)) return; // no band → not rendered (spec §4)
+    let m=kmarks[l.k];
+    if(!m){ m=kmarks[l.k]=L.marker(l.ll,{icon:kayakIcon(l,mini),zIndexOffset:650});
+      m.on('click',()=>openGaugeUI(kayakPopup(l),l.ll)); kayakLayer.addLayer(m); }
+    else m.setIcon(kayakIcon(l,mini));
+  });
+}
+map.on('zoomend',()=>{ if(kayakOn) renderKayak(); });
+function setKayak(on){ kayakOn=!!on; try{ localStorage.setItem('caster_kayak',on?'1':'0'); }catch(e){}
+  if(on){ renderKayak(); kayakLayer.addTo(map); } else map.removeLayer(kayakLayer); }
+if(kayakOn){ renderKayak(); kayakLayer.addTo(map); }
+window.__kayak={launches,launchGate,launchValid,renderKayak,setKayak}; // test hook
 setInterval(updateRiver,15*60*1000);                                          // auto-refresh every 15 min
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)updateRiver();}); // refresh on tab wake (the stale-phone-tab fix)
 </script>
